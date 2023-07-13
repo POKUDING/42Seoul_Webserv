@@ -73,6 +73,13 @@ int main() {
         exit(EXIT_FAILURE);
     }
 
+	//소켓 논블록처리
+	if (fcntl(server_fd, F_SETFL, O_NONBLOCK) == -1) {
+		errorHandle::printError();
+        	close(server_fd);
+		exit(EXIT_FAILURE);
+	}
+
     // kqueue 객체 생성
     int kq = kqueue();
     if (kq == -1) {

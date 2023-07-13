@@ -1,5 +1,6 @@
 #include <iostream>
 #include "errorHandle.hpp"
+#include "config.hpp"
 
 int	main(int argc, char* argv[], char** env)
 {
@@ -7,17 +8,15 @@ int	main(int argc, char* argv[], char** env)
 		errorHandle::printError(ERR_INPUT_FILE);
 		exit(EXIT_SUCCESS);
 	}
-	
-	//open conf file
-	if (argc == 0) {
-		// ./default.conf 사용
-	} else {
-		//변수파일 사용
-	}
 
-	//if open OK => parsing start
+	//Config() => parsing start
+	Config config;
 
+	argv[1] ? config.parse(argv[1]) : config.parse();
 	
+	(void)env;
+
+
 		
 	return 0;
 }

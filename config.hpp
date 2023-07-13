@@ -51,6 +51,8 @@ class Server
 	public:
 		Server();
 
+		//location parsing related function to be added
+
 		const vector<Location>&		getLocation() const;
 		const map<string, string>&	getErrorPage() const;
 		const vector<string>&		getServerName() const;
@@ -80,9 +82,13 @@ class Config
 	public:
 		Config();
 
+		//config parsing related function to be added
+		void					parse(const string& file = "./default.conf");
+
 		const vector<Server>&	getServer() const;	
 
 		void					addServer(const Server& mServer);
+		
 
 	private:
 		vector<Server>	mServer;

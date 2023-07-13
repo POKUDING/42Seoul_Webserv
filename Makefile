@@ -1,6 +1,7 @@
 NAME =	webserv
 
 SRCS =	main.cpp \
+		errorHandle.cpp \
 		config.cpp
 
 OBJS =	$(SRCS:.cpp=.o)

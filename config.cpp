@@ -34,7 +34,8 @@ int							Server::getListen() const { return this->mListen; }
 int							Server::getClientMaxBodySize() const { return this->mClientMaxBodySize; }
 
 void						Server::addLocation(const Location& mLocation) { this->mLocation.push_back(mLocation); }
-void						Server::addErrorPage(const string& code, const string& page) { this->mErrorPage.insert({code, page}); }
+// void						Server::addErrorPage(const string& code, const string& page) { this->mErrorPage.insert({code, page}); }
+void						Server::addErrorPage(const string& code, const string& page) { this->mErrorPage.insert(pair<string, string>(code, page)); }
 void						Server::addServerName(const string& mServerName) { this->mServerName.push_back(mServerName); }
 void						Server::setRoot(const string& mRoot) { this->mRoot = mRoot; }
 void						Server::setListen(int mListen) { this->mListen = mListen; }
@@ -42,6 +43,23 @@ void						Server::setClientMaxBodySize(int mClientMaxBodySize) { this->mClientMa
 
 //Config ===============================
 Config::Config() { }
+
+void					Config::parse(const string& file)
+{
+	cout << file << endl;
+	//file open
+
+	//parsing : while (getline())
+	//	if (server)
+		// Server() server
+		// server.addServer(server.parse(fd));
+
+		
+
+	
+
+
+}
 
 const vector<Server>&	Config::getServer() const { return this->mServer; }
 

@@ -16,7 +16,7 @@
 #include "errorHandle.hpp"
 #include "basic.hpp"
 
-#define MAX_EVENTS 10
+#define MAX_EVENTS 1024
 #define BACKLOG 128
 
 // using namespace std;

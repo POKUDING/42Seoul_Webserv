@@ -1,22 +1,33 @@
 #include <iostream>
-#include "errorHandle.hpp"
-#include "config.hpp"
+#include "ErrorHandle.hpp"
+#include "Config.hpp"
 
 int	main(int argc, char* argv[], char** env)
 {
+	(void)env;
+	
 	if (argc > 2) {
-		errorHandle::printError(ERR_INPUT_FILE);
-		exit(EXIT_SUCCESS);
+		ErrorHandle::printError(ERR_INPUT_FILE);
+		exit(EXIT_FAILURE);
 	}
 
 	//Config() => parsing start
-	Config config;
+	Config Config;
 
-	argv[1] ? config.parse(argv[1]) : config.parse();
+	try {
+
+		argv[1] ? Config.parse(argv[1]) : Config.parse();
+
+		//print all
+		
+	} catch (const exception& e) {
+		cout << e.what() << endl;
+		exit(EXIT_FAILURE);
+	}
 	
-	(void)env;
+	
 
 
 		
-	return 0;
+	return EXIT_SUCCESS;
 }

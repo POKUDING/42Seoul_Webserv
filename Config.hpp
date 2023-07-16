@@ -3,6 +3,7 @@
 #define CONFIG_HPP
 
 #include <iostream>
+#include <cstdlib>
 #include <fstream>
 #include <vector>
 #include <map>

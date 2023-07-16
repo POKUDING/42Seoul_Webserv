@@ -1,7 +1,7 @@
 #include "Config.hpp"
 
 //Location ===============================
-Location::Location(const string& mKey): mKey(mKey) { memset(this, 0, sizeof(Location)); }
+Location::Location(const string& mKey): mKey(mKey), mAutoIndex(false) {}
 
 void	Location::setValue(const vector<string>& temp)
 {
@@ -103,40 +103,18 @@ void					Location::setPhp(const string& mPhp) { this->mPhp = mPhp; }
 void					Location::setReturn(const string& mReturn) { this->mReturn = mReturn; }
 
 //Server ===============================
-Server::Server() { memset(this, 0, sizeof(Server)); }
+Server::Server() {}
 
 void	Server::setValue(const vector<string>& temp)
 {
 	if (temp[0] == "error_page" && temp.size() > 2) {
 		for (size_t i = 1; i < temp.size() - 1; i++) {
-			
-			cout << &(this->mErrorPage) << endl;
-			cout << temp[i] << endl;
-			cout << temp[temp.size() - 1] << endl;
-			// this->mErrorPage[temp[i]] = temp[temp.size() - 1];
-			cout << "111111" << endl;
-
-			this->mErrorPage.insert(pair<string, string>("asd", "asd"));
-			// make_pair()
-			pair<string, string> p = pair<string, string>("a", "b");
-			cout << "111111" << endl;
-			// cout << p << endl;
-			cout << "22222" << endl;
-			this->mErrorPage.insert(p);
-			cout << "2233333" << endl;
-
-			// this->addErrorPage(temp[i], temp[temp.size() - 1]);
-			const vector<string>::const_iterator it = temp.begin() + i - 1;
-			const vector<string>::const_iterator it2 = temp.end() - 1;
-
-			string a = *it;
-			string b = *it2;
-			this->mErrorPage.insert(pair<string, string>(a, b));
+			this->addErrorPage(temp[i], temp[temp.size() - 1]);
 			return ;
 		}
 		return ;
 	} else if (temp[0] == "server_name") {
-		for (size_t i = 1; i < temp.size() - 1; i++) {
+		for (size_t i = 1; i < temp.size() - 1; i++) { //-1 뻬야하지 않나요?
 			this->addServerName(temp[i]);
 		}
 		return ;
@@ -247,7 +225,7 @@ Config::Config() { }
 void					Config::parse(const string& file)
 {
 	//file open
-	ifstream f_dataRead(file, ios_base::in);
+	ifstream f_dataRead(file.c_str(), ios_base::in);
     if (!f_dataRead) {
 		ErrorHandle::printError();
 		exit(EXIT_FAILURE);
@@ -300,10 +278,10 @@ void	Config::printMembers()
 		cout << "ClientMaxBodySize: " << mServer[i].getClientMaxBodySize() << "\n";
 		for (size_t j = 0; j < mServer[i].getLocation().size(); ++j)
 		{
-			cout << "\tLocation" << mServer[i].getLocation()[j].getKey() << ": \n";
+			cout << "\tLocation " << mServer[i].getLocation()[j].getKey() << ": \n";
 			cout << "\tLimitExcept: \n";
 			for (size_t k = 0; k < mServer[i].getLocation()[j].getLimitExcept().size(); ++k)
-				cout << "\t" << k << ": " << mServer[i].getLocation()[j].getLimitExcept()[j] << "\n";
+				cout << "\t" << k << ": " << mServer[i].getLocation()[j].getLimitExcept()[k] << "\n";
 			cout << "\tRoot: " << mServer[i].getLocation()[j].getRoot() << "\n";
 			cout << "\tFastcgiPass: " << mServer[i].getLocation()[j].getFastcgiPass() << "\n";
 			cout << "\tIndex: " << mServer[i].getLocation()[j].getIndex() << "\n";
@@ -311,7 +289,7 @@ void	Config::printMembers()
 			cout << "\tSh: " << mServer[i].getLocation()[j].getSh() << "\n";
 			cout << "\tPy: " << mServer[i].getLocation()[j].getPy() << "\n";
 			cout << "\tPhp: " << mServer[i].getLocation()[j].getPhp() << "\n";
-			cout << "\tSh: " << mServer[i].getLocation()[j].getReturn() << "\n";
+			cout << "\tSh: " << mServer[i].getLocation()[j].getReturn() << "\n\n";
 		} 
 	}
 }

@@ -24,7 +24,8 @@ int	main(int argc, char* argv[], char** env)
 		cout << e.what() << endl;
 		exit(EXIT_FAILURE);
 	}
-	
+	cout <<"\n\nsucess\n" <<endl;
+	Config.printMembers();
 	
 
 

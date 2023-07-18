@@ -9,19 +9,25 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include "Config.hpp"
+#include "Client.hpp"
 
 class Websrv
 {
+	public:
+		Websrv(const Config& config);
+		virtual ~Websrv();
+		void	run();
+
 	private:
-		map<int,const Server&>	fd_servers;
+		map<int,const Server&>	mFdServers;
+		vector<Client>			mClients;
+		int						mKq;
 		
 		void	initSocket(const vector<Server>& servers);
+		void	initKque();
 		// Websrv(void);
 		// Websrv(const Websrv& src);
 		// Websrv& operator=(Websrv const& rhs);
-	public:
-		Websrv(const Config& config);
-		virtual ~Websrv(void);
 };
 
 #endif //WEBSRV_HPP

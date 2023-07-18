@@ -1,5 +1,23 @@
 #include "Websrv.hpp"
 
+// constructors and destructor
+
+Websrv::Websrv(const Config& config)
+{
+	this->initSocket(config.getServer());
+}
+
+Websrv::~Websrv()
+{
+	for (map<int,const Server&>::iterator it = mFdServers.begin(); it != mFdServers.end(); it++)
+		close(it->first);
+
+	if (mKq)	//kq 초기값이 없어서 이거 애매할수도
+		close(mKq);
+}
+
+// member functions
+
 void	Websrv::initSocket(const vector<Server>& servers)
 {
 	int		fd_tmp;
@@ -21,22 +39,89 @@ void	Websrv::initSocket(const vector<Server>& servers)
 			throw runtime_error("Error: socket listen failed.");
 		if (fcntl(fd_tmp, F_SETFL, O_NONBLOCK) == -1)			//소켓 논블록처리
 			throw runtime_error("Error: socket nonblock failed.");
-		this->fd_servers.insert(pair<int,const Server&>(fd_tmp, servers[i]));
+		this->mFdServers.insert(pair<int,const Server&>(fd_tmp, servers[i]));
 	}
 
 	// cout << "start" << endl;
-	// for (map<int,const Server&>::iterator it = fd_servers.begin(); it != fd_servers.end(); ++it)
+	// for (map<int,const Server&>::iterator it = mFdServers.begin(); it != mFdServers.end(); ++it)
 	// 	cout << it->first << ": " << it->second.getListen() << endl;
 	// cout << "end" << endl;
 }
 
-Websrv::Websrv(const Config& config)
+void	Websrv::initKque()
 {
-	this->initSocket(config.getServer());
+	struct kevent	event;
+	mKq = kqueue();
+	if (mKq == -1)
+		throw runtime_error("Error: kqueue create failed.");
+	for (map<int,const Server&>::iterator it = mFdServers.begin(); it != mFdServers.end(); it++) {
+		EV_SET(&event, it->first, EVFILT_READ, EV_ADD, 0, 0, NULL);
+	    if (kevent(mKq, &event, 1, NULL, 0, NULL) == -1)
+			throw runtime_error("Error: kevent add failed.");
+	}
 }
 
-Websrv::~Websrv(void)
+void	Websrv::run()
 {
-	for(map<int,const Server&>::iterator it = fd_servers.begin(); it != fd_servers.end(); it++)
-		close(it->first);
+	struct kevent events[MAX_EVENT];
+
+	this->initKque();
+	int event_num;
+	while (1) {
+		event_num = kevent(mKq, NULL, 0, events, MAX_EVENT, NULL);
+		if (event_num == -1)
+			throw runtime_error("Error: Kqueue event detection failed");
+
+		for (int i = 0; i < event_num; ++i) {
+			if (events[i].filter == EV_ERROR)
+				throw runtime_error("Error: event filter error"); // ㅇㅏㄹ마ㅈ게 수수정  해해주주세세요요.
+			
+			for (map<int,const Server&>::iterator it = mFdServers.begin(); it != mFdServers.end(); ++it)
+			{
+				// 1) event가 server socket 인 경우 (new_client 등록 요청)
+				if (events[i].ident == static_cast<uintptr_t>(it->first)) {
+
+					Client client_tmp;
+					struct kevent event_tmp;
+					struct sockaddr_in client_addr;
+					
+					// 새로운 연결 요청 수락
+					socklen_t client_len = sizeof(client_addr);
+					client_tmp.setFd(accept(it->first, reinterpret_cast<struct sockaddr*>(&client_addr), &client_len));
+					if (client_tmp.getFd() == -1)
+						throw runtime_error("Error: client accept failed");
+					
+					// 새로운 클라이언트 소켓을 kqueue에 등록
+					EV_SET(&event_tmp, client_tmp.getFd(), EVFILT_READ, EV_ADD, 0, 0, NULL);
+					if (kevent(mKq, &event_tmp, 1, NULL, 0, NULL) == -1)
+						throw runtime_error("Error: client kevent add error");
+					mClients.push_back(client_tmp);
+				}
+			}
+			for (vector<Client>::iterator it = mClients.begin(); it !=  mClients.end(); ++it)
+			{
+				if (events[i].ident == it->getFd())
+					{
+					// 2) event가 client socket 인 경우
+						// 2-1) 연결 끊김 (이게 client socket으로 오는지 봐야함)
+					
+						// 2-2) request 진행
+							//request 읽기 시작 => recv() 요청
+							//request 읽기 완료 => recv() return 값 받아서 진행
+							//request 파싱	   => request parsing
+							//(parsing 결과에 따라) ARequest 객체 생성
+							//				  => (객체 내에서 추가 parsing 진행?)
+							//				  
+						
+					}
+			}
+			
+					
+			
+
+		}
+	}
+	 
+
+	
 }

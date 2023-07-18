@@ -9,14 +9,14 @@ using namespace std;
 
 class WebsrvUtil
 {
+	public:
+		static vector<string>	splitString(string str, string del);
+		static vector<string>	splitString(string str);
 	private:
 		WebsrvUtil();
 		WebsrvUtil(WebsrvUtil& src);
 		WebsrvUtil& operator = (WebsrvUtil& src);
 		~WebsrvUtil();
-	public:
-		static vector<string>	splitString(string str, string del);
-		static vector<string>	splitString(string str);
 };
 
 #endif

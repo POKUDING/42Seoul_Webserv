@@ -11,10 +11,9 @@
 
 class ErrorHandle
 {
-
-public:
-	// static void printError();
-	static void printError(const std::string & msg = strerror(errno));
+	public:
+		// static void printError();
+		static void printError(const std::string & msg = strerror(errno));
 	
 };
 

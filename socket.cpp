@@ -13,7 +13,7 @@
 #include <csignal>
 #include <fcntl.h>
 
-#include "errorHandle.hpp"
+#include "ErrorHandle.hpp"
 #include "basic.hpp"
 
 #define MAX_EVENTS 1024
@@ -41,13 +41,13 @@ int main() {
 	// 왜 SOCK_NONBLOCK 안되지
     int server_fd = socket(AF_INET, SOCK_STREAM,  0);
     if (server_fd == -1) {
-		errorHandle::printError();
+		ErrorHandle::printError();
 		exit(EXIT_FAILURE);
     }
 
 	int optval = 1;
 	if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval)) == -1) {
-		errorHandle::printError();
+		ErrorHandle::printError();
         close(server_fd);
 		exit(EXIT_FAILURE);
 	}
@@ -61,21 +61,21 @@ int main() {
 
     // 서버 소켓에 바인딩
     if (bind(server_fd, reinterpret_cast<struct sockaddr*>(&server_addr), sizeof(server_addr)) == -1) {
-		errorHandle::printError();
+		ErrorHandle::printError();
         close(server_fd);
         exit(EXIT_FAILURE);
     }
 
     // 연결 대기 상태로 진입
     if (listen(server_fd, BACKLOG) == -1) {
-		errorHandle::printError();
+		ErrorHandle::printError();
         close(server_fd);
         exit(EXIT_FAILURE);
     }
 
 	//소켓 논블록처리
 	if (fcntl(server_fd, F_SETFL, O_NONBLOCK) == -1) {
-		errorHandle::printError();
+		ErrorHandle::printError();
         	close(server_fd);
 		exit(EXIT_FAILURE);
 	}
@@ -83,7 +83,7 @@ int main() {
     // kqueue 객체 생성
     int kq = kqueue();
     if (kq == -1) {
-        errorHandle::printError();
+        ErrorHandle::printError();
         close(server_fd);
         exit(EXIT_FAILURE);
     }
@@ -91,7 +91,7 @@ int main() {
     // 서버 소켓을 kqueue에 등록
     EV_SET(&event, server_fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
     if (kevent(kq, &event, 1, NULL, 0, NULL) == -1) {
-        errorHandle::printError();
+        ErrorHandle::printError();
         close(server_fd);
         close(kq);
         exit(EXIT_FAILURE);

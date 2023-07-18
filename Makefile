@@ -1,13 +1,13 @@
 NAME =	webserv
 
 SRCS =	main.cpp \
-		errorHandle.cpp \
-		config.cpp
+		ErrorHandle.cpp WebsrvUtil.cpp \
+		Config.cpp Websrv.cpp
 
 OBJS =	$(SRCS:.cpp=.o)
 
 CPP =	c++
-CPPFLAGS = -Wall -Werror -Wextra -std=c++98# -fsanitize=address
+CPPFLAGS = -Wall -Werror -Wextra -std=c++98# -g -fsanitize=address
 
 all:	$(NAME)
 
@@ -26,4 +26,4 @@ fclean:	clean
 
 re:
 	make fclean
-	make all
+	make all -j 8

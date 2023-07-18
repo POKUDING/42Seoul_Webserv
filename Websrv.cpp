@@ -28,7 +28,10 @@ void	Websrv::initSocket(const vector<Server>& servers)
 	server_addr.sin_addr.s_addr = htonl(INADDR_ANY);	//호스트 주소 자동할당옵션
 	for(size_t i = 0; i < servers.size(); i++)
 	{
-		//socket 생성
+		//(socket 상속) server socket 생성
+		//server socket 확인용 map은 필요없어지는가요? 그런가요
+
+
 		fd_tmp = socket(AF_INET, SOCK_STREAM, 0);
 		if (fd_tmp == -1)
 			throw runtime_error("Error: socket open failed.");
@@ -55,6 +58,9 @@ void	Websrv::initKque()
 	if (mKq == -1)
 		throw runtime_error("Error: kqueue create failed.");
 	for (map<int,const Server&>::iterator it = mFdServers.begin(); it != mFdServers.end(); it++) {
+		
+		//EV_SET에 server socket 추가 (NULL 변경)
+		
 		EV_SET(&event, it->first, EVFILT_READ, EV_ADD, 0, 0, NULL);
 	    if (kevent(mKq, &event, 1, NULL, 0, NULL) == -1)
 			throw runtime_error("Error: kevent add failed.");
@@ -69,13 +75,24 @@ void	Websrv::run()
 	int event_num;
 	while (1) {
 		event_num = kevent(mKq, NULL, 0, events, MAX_EVENT, NULL);
-		if (event_num == -1)
+		if (event_num == -1) {
+			//에러 발생하면 해당 건만 error log 등으로 별도 처리,
+			//웹서버는 그대로 진행되어야 함 (혹은 재시작?)
 			throw runtime_error("Error: Kqueue event detection failed");
+		}
+
+		//events에 있는 socket으로 type, fd 확인가능해짐
 
 		for (int i = 0; i < event_num; ++i) {
-			if (events[i].filter == EV_ERROR)
-				throw runtime_error("Error: event filter error"); // ㅇㅏㄹ마ㅈ게 수수정  해해주주세세요요.
+			if (events[i].filter == EV_ERROR) {
+				//에러 발생하면 해당 건만 error log 등으로 별도 처리,
+				//웹서버는 그대로 진행되어야 함 (혹은 재시작?)
+				throw runtime_error("Error: event filter error");
+			}
 			
+
+			// 1) event가 server socket 인 경우 (new_client 등록 요청)
+			// if (events[i].udata.type == SERVER)
 			for (map<int,const Server&>::iterator it = mFdServers.begin(); it != mFdServers.end(); ++it)
 			{
 				// 1) event가 server socket 인 경우 (new_client 등록 요청)
@@ -98,6 +115,9 @@ void	Websrv::run()
 					mClients.push_back(client_tmp);
 				}
 			}
+
+			// 2) event가 client socket 인 경우
+			// else if (events[i].udata.type == CLIENT)
 			for (vector<Client>::iterator it = mClients.begin(); it !=  mClients.end(); ++it)
 			{
 				if (events[i].ident == it->getFd())

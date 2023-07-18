@@ -51,6 +51,9 @@ void					Location::parse(ifstream& f_dataRead)
 		if (temp.size() == 0 || temp[0][0] == '#')
 			continue;
 		if (temp[0][0] == '}' && temp.size() == 1) {
+			//limit_except 가 없을 경우 get, post, delete 추가
+
+
 			return ;//end parsing
 		} else if (temp.size() < 2) {
 			throw runtime_error("Error: Invalid location: too less value");
@@ -116,7 +119,7 @@ void					Location::printMembers() const
 }
 
 //Server ===============================
-Server::Server() { }
+Server::Server(): mRoot("/"), mListen(80), mClientMaxBodySize(MAX_BODY_SIZE) { }
 
 void	Server::setValue(const vector<string>& temp)
 {
@@ -167,6 +170,9 @@ void					Server::parse(ifstream& f_dataRead)
 			location.parse(f_dataRead);
 			this->addLocation(location);
 		} else {
+			if (!(line.length() - 1 == line.find(';')))
+				throw runtime_error("Error: Invalid location: ';'");
+				
 			line = line.substr(0, line.length() - 1);
 			temp = WebsrvUtil::splitString(line);
 			setValue(temp);
@@ -194,9 +200,10 @@ void						Server::setListen(const string& mListen)
 
 	//int check
 	if (mListen.size() > 5)
-		throw runtime_error("Error: invalid listen port");
+		throw runtime_error("Error: too big listen port");
 	for(size_t i = 0; i < mListen.size(); i++)
 	{
+		cout << mListen << endl;
 		if (!isdigit(mListen[i]))
 			throw runtime_error("Error: invalid listen port");
 	}
@@ -296,4 +303,4 @@ void	Config::printMembers() const
 
 const vector<Server>&	Config::getServer() const { return this->mServer; }
 
-void					Config::addServer(Server Server) { this->mServer.push_back(Server); }
+void					Config::addServer(Server& Server) { this->mServer.push_back(Server); }

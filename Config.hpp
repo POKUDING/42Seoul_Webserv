@@ -90,7 +90,7 @@ class Server
 		vector<string>		mServerName;
 		string				mRoot;
 		int					mListen;
-		int					mClientMaxBodySize;
+		int					mClientMaxBodySize;	
 		map<string, string>	mErrorPage;
 };
 
@@ -100,21 +100,13 @@ class Config
 	public:
 		Config();
 
-		enum e_keys
-		{
-			SERVER = 0,
-			EMPTYLINE = 1,
-			COMMENT = 2,
-			ERROR = 3
-		};
-
 		//Config parsing related function to be added
 		void					parse(const string& file = DEFAULT_FILE);
 		void					printMembers() const;
 
 		const vector<Server>&	getServer() const;	
 
-		void					addServer(Server Server);
+		void					addServer(Server& Server);
 		
 
 	private:

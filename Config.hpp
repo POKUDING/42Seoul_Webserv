@@ -44,6 +44,8 @@ class Location
 		void					setPhp(const string& mPhp);
 		void					setReturn(const string& mReturn);
 
+		void					printMembers() const;
+
 	private:
 		string			mKey;
 		vector<string>	mLimitExcept;
@@ -80,6 +82,8 @@ class Server
 		void						setListen(const string& mListen);
 		void						setClientMaxBodySize(const string& mClientMaxBodySize);
 
+		void						printMembers() const;
+
 	private:
 		vector<Location>	mLocation;
 		// map<string, string>	mErrorPage;
@@ -106,7 +110,7 @@ class Config
 
 		//Config parsing related function to be added
 		void					parse(const string& file = DEFAULT_FILE);
-		void					printMembers();
+		void					printMembers() const;
 
 		const vector<Server>&	getServer() const;	
 

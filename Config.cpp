@@ -1,7 +1,7 @@
 #include "Config.hpp"
 
 //Location ===============================
-Location::Location(const string& mKey): mKey(mKey), mAutoIndex(false) {}
+Location::Location(const string& mKey): mKey(mKey), mAutoIndex(false) { }
 
 void	Location::setValue(const vector<string>& temp)
 {
@@ -42,8 +42,6 @@ void					Location::parse(ifstream& f_dataRead)
 
 		if (line.length() == 0)
 			continue;
-
-		cout << "LOCATION: " << line << endl;
 
 		// if (!(line.length() - 1 == line.find(';')) && line.find('}') != string::npos)
 		// 	throw runtime_error("Error: Invalid location: ';'");
@@ -102,19 +100,33 @@ void					Location::setPy(const string& mPy) { this->mPy = mPy; }
 void					Location::setPhp(const string& mPhp) { this->mPhp = mPhp; }
 void					Location::setReturn(const string& mReturn) { this->mReturn = mReturn; }
 
+void					Location::printMembers() const
+{
+	cout << "		LimitExcept: \n";
+	for (size_t k = 0; k < this->getLimitExcept().size(); ++k)
+		cout << "\t\t\t" << k << ": " << this->getLimitExcept()[k] << "\n";
+	cout << "		Root: " << this->getRoot() << "\n";
+	cout << "		FastcgiPass: " << this->getFastcgiPass() << "\n";
+	cout << "		Index: " << this->getIndex() << "\n";
+	cout << "		AutoIndex: " << this->getAutoIndex() << "\n";
+	cout << "		Sh: " << this->getSh() << "\n";
+	cout << "		Py: " << this->getPy() << "\n";
+	cout << "		Php: " << this->getPhp() << "\n";
+	cout << "		Sh: " << this->getReturn() << "\n\n";
+}
+
 //Server ===============================
-Server::Server() {}
+Server::Server() { }
 
 void	Server::setValue(const vector<string>& temp)
 {
 	if (temp[0] == "error_page" && temp.size() > 2) {
 		for (size_t i = 1; i < temp.size() - 1; i++) {
 			this->addErrorPage(temp[i], temp[temp.size() - 1]);
-			return ;
 		}
 		return ;
 	} else if (temp[0] == "server_name") {
-		for (size_t i = 1; i < temp.size() - 1; i++) { //-1 뻬야하지 않나요?
+		for (size_t i = 1; i < temp.size(); i++) {
 			this->addServerName(temp[i]);
 		}
 		return ;
@@ -143,13 +155,10 @@ void					Server::parse(ifstream& f_dataRead)
 			
 		//split here
 		vector<string> temp = WebsrvUtil::splitString(line);
-		
-		cout << "SERVER: " << line << endl;
 
 		if (temp.size() == 0 || temp[0][0] == '#')
 			continue;
 		if (temp[0][0] == '}' && temp.size() == 1) {
-			cout << "end of server }" << endl;
 			return ;//end parsing
 		} else if (temp.size() < 2) {
 			throw runtime_error("Error: Invalid server: key - value");
@@ -184,7 +193,6 @@ void						Server::setListen(const string& mListen)
 	//1~65535 port available
 
 	//int check
-	cout<< mListen << endl;
 	if (mListen.size() > 5)
 		throw runtime_error("Error: invalid listen port");
 	for(size_t i = 0; i < mListen.size(); i++)
@@ -218,6 +226,22 @@ void						Server::setClientMaxBodySize(const string& mClientMaxBodySize)
 
 }
 
+void						Server::printMembers() const
+{
+	cout << "	ErrorPage: \n";
+	printMap(this->getErrorPage());
+	cout << "	ServerName: \n";
+	for (size_t j = 0; j < this->getServerName().size(); ++j)
+		cout << "\t\t" << j << ": " << this->getServerName()[j] << "\n";
+	cout << "	Root: " << this->getRoot() << "\n";
+	cout << "	Listen: " << this->getListen() << "\n";
+	cout << "	ClientMaxBodySize: " << this->getClientMaxBodySize() << "\n";
+	for (size_t j = 0; j < this->getLocation().size(); ++j)
+	{
+		cout << "	Location [" << this->getLocation()[j].getKey() << "] --------------\n";
+		this->getLocation()[j].printMembers();
+	}
+}
 
 //Config ===============================
 Config::Config() { }
@@ -238,8 +262,6 @@ void					Config::parse(const string& file)
 		if (line.length() == 0)
 			continue;
 		
-		cout << "CONFIG: " << line << endl;
-		
 		//split here
 		vector<string> temp = WebsrvUtil::splitString(line);
 		
@@ -247,10 +269,7 @@ void					Config::parse(const string& file)
 			continue;
 		} else if (temp[0] == "server" && temp[1] == "{" && temp.size() == 2) {
 			Server server;
-			server.parse(f_dataRead);
-			cout << &this->mServer << endl;
-
-			
+			server.parse(f_dataRead);			
 			this->mServer.push_back(server);
 		} else {
 			cout << line << endl;
@@ -263,34 +282,14 @@ void					Config::parse(const string& file)
 	f_dataRead.close();
 }
 
-void	Config::printMembers()
+void	Config::printMembers() const
 {
+	cout <<"\n\n========= printMembers() =========\n" <<endl;
+
 	for (size_t i = 0; i < mServer.size(); ++i)
 	{
-		cout << "Server " << i << ": \n";
-		cout << "ErrorPage: \n";
-		printMap(mServer[i].getErrorPage());
-		cout << "ServerName: \n";
-		for (size_t j = 0; j < mServer[i].getServerName().size(); ++j)
-			cout << j << ": " << mServer[i].getServerName()[j] << "\n";
-		cout << "Root: " << mServer[i].getRoot() << "\n";
-		cout << "Listen: " << mServer[i].getListen() << "\n";
-		cout << "ClientMaxBodySize: " << mServer[i].getClientMaxBodySize() << "\n";
-		for (size_t j = 0; j < mServer[i].getLocation().size(); ++j)
-		{
-			cout << "\tLocation " << mServer[i].getLocation()[j].getKey() << ": \n";
-			cout << "\tLimitExcept: \n";
-			for (size_t k = 0; k < mServer[i].getLocation()[j].getLimitExcept().size(); ++k)
-				cout << "\t" << k << ": " << mServer[i].getLocation()[j].getLimitExcept()[k] << "\n";
-			cout << "\tRoot: " << mServer[i].getLocation()[j].getRoot() << "\n";
-			cout << "\tFastcgiPass: " << mServer[i].getLocation()[j].getFastcgiPass() << "\n";
-			cout << "\tIndex: " << mServer[i].getLocation()[j].getIndex() << "\n";
-			cout << "\tAutoIndex: " << mServer[i].getLocation()[j].getAutoIndex() << "\n";
-			cout << "\tSh: " << mServer[i].getLocation()[j].getSh() << "\n";
-			cout << "\tPy: " << mServer[i].getLocation()[j].getPy() << "\n";
-			cout << "\tPhp: " << mServer[i].getLocation()[j].getPhp() << "\n";
-			cout << "\tSh: " << mServer[i].getLocation()[j].getReturn() << "\n\n";
-		} 
+		cout << "Server [" << i << "] --------------\n";
+		mServer[i].printMembers();
 	}
 }
 

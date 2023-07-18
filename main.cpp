@@ -18,13 +18,12 @@ int	main(int argc, char* argv[], char** env)
 
 		argv[1] ? Config.parse(argv[1]) : Config.parse();
 
-		//print all
 		
 	} catch (const exception& e) {
 		cout << e.what() << endl;
 		exit(EXIT_FAILURE);
 	}
-	cout <<"\n\nsucess\n" <<endl;
+	
 	Config.printMembers();
 	
 

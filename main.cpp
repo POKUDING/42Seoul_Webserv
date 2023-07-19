@@ -1,7 +1,6 @@
 #include <iostream>
-#include "ErrorHandle.hpp"
-#include "Config.hpp"
-#include "Websrv.hpp"
+#include "./includes/config/Config.hpp"
+#include "./includes/SpiderMen.hpp"
 
 void ft_leak()
 {
@@ -27,7 +26,7 @@ int	main(int argc, char* argv[], char** env)
 		argv[1] ? config.parse(argv[1]) : config.parse();
 		// Config.printMembers();
 
-		Websrv websrv(config);
+		SpiderMen websrv(config);
 		
 	} catch (const exception& e) {
 		cout << e.what() << endl;
@@ -41,7 +40,13 @@ int	main(int argc, char* argv[], char** env)
 		//while
 			//kqueue 등록 (new client)
 			//del client (연결 끊기)
-			//get request
+			//request 받음
+				//Request Class (ac) 생성
+					// request 상속 -> Get Class 생성
+					// request 상속 -> Post Class 생성
+					// request 상속 -> Delete Class 생성
+				//Client Class 생성
+
 				//parsing
 				//cgi 처리
 				//

@@ -8,4 +8,11 @@
 #define BACKLOG 15
 #define MAX_EVENT 2048
 
+namespace nSocket {
+	enum eType {
+		SERVER = 0,
+		CLIENT = 1
+	};
+}
+
 #endif //BASIC_HPP

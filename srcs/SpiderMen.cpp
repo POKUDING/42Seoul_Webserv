@@ -9,7 +9,7 @@ SpiderMen::SpiderMen(const Config& config) : mKq(0)
 
 SpiderMen::~SpiderMen()
 {
-	for (size_t i = 0; i < mServerSockets.size(); ++i)
+	for (size_t i = 0, end = mServerSockets.size(); i < end; ++i)
 		close(mServerSockets[i].getFd());
 
 	if (mKq)
@@ -17,28 +17,12 @@ SpiderMen::~SpiderMen()
 }
 
 // getter
-vector<ASocket>& SpiderMen::getServerSockets()
-{
-	return mServerSockets;
-}
-
-vector<Client>&	SpiderMen::getClients()
-{
-	return mClients;
-}
+vector<ASocket>& SpiderMen::getServerSockets() { return mServerSockets; }
+vector<Client>&	SpiderMen::getClients() { return mClients; }
 
 // member functions
-
-void	SpiderMen::addServerSockets(ASocket& sock)
-{
-	mServerSockets.push_back(sock);
-}
-
-
-void	SpiderMen::addClients(Client& client)
-{
-	mClients.push_back(client);
-}
+void	SpiderMen::addServerSockets(ASocket& sock) { mServerSockets.push_back(sock); }
+void	SpiderMen::addClients(Client& client) { mClients.push_back(client); }
 
 void	SpiderMen::initSocket(const map<int,vector<Server> >& servers)
 {
@@ -54,13 +38,11 @@ void	SpiderMen::initSocket(const map<int,vector<Server> >& servers)
 		throw runtime_error("Error: kqueue create failed.");
 	for (map<int,vector<Server> >::const_iterator it = servers.cbegin(); it != servers.cend(); ++it)
 	{
-		//(socket 상속) server socket 생성
-		//server socket 확인용 map은 필요없어지는가요? 그런가요
-		
 		fd_tmp = socket(AF_INET, SOCK_STREAM, 0);
 		if (fd_tmp == -1)
 			throw runtime_error("Error: socket open failed.");
-
+		
+		//소켓 옵션 reuse로 세팅
 		int optval = 1;
 		setsockopt(fd_tmp, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
 
@@ -71,6 +53,7 @@ void	SpiderMen::initSocket(const map<int,vector<Server> >& servers)
 			throw runtime_error("Error: socket listen failed.");
 		if (fcntl(fd_tmp, F_SETFL, O_NONBLOCK) == -1)			//소켓 논블록처리
 			throw runtime_error("Error: socket nonblock failed.");
+
 		ASocket	sock(nSocket::SERVER, fd_tmp, it->first, &(it->second));
 		addServerSockets(sock);
 
@@ -139,9 +122,8 @@ void	SpiderMen::run()
 			}
 			
 
-			// 1) event가 server socket 인 경우 (new_client 등록 요청)
-			// if (events[i].udata.type == SERVER)
 			ASocket* sock_ptr = reinterpret_cast<ASocket *>(events[i].udata);
+			// 1) event가 server socket 인 경우 (new_client 등록 요청)
 			if (sock_ptr->getType() == nSocket::SERVER)
 				this->handleServer(sock_ptr);
 			else if (sock_ptr->getType() == nSocket::CLIENT)
@@ -206,7 +188,7 @@ void	SpiderMen::handleServer(ASocket* sock)
 	int					fd_tmp;
 
 	// 새로운 연결 요청 수락
-	cout<< "connet" << endl;
+	cout << "connet" << endl;
 	socklen_t client_len = sizeof(client_addr);
 	fd_tmp = accept(sock->getFd(), reinterpret_cast<struct sockaddr*>(&client_addr), &client_len);
 	Client client_tmp(nSocket::CLIENT, fd_tmp, sock->getPortNumber(), sock->getServer());
@@ -225,50 +207,28 @@ void	SpiderMen::handleClient(struct kevent* event, Client* client)
 	size_t	buffer_size;
 
 	if (event->filter == EVFILT_READ) {
-		buffer_size = event->data + 10;
-		cout << "event->data: " << event->data << endl;
-		cout << "event->flags: " << event->flags << endl;
-		cout << "event->fflsgs: " << event->fflags << endl;
+		buffer_size = event->data;
+		
 		char buffer[buffer_size];
 		memset(buffer, 0, buffer_size);
 		ssize_t s = recv(client->getFd(), buffer, buffer_size, 0);
 
-		// while (s > 0) 
-		// {
-		// 	cout << "================= s: " << s << endl;
-		// 	write(1, buffer, s);
-		// 	s = recv(client->getFd(), buffer, buffer_size, 0);
-		// }
-		// cout << "eof" << endl;
-		// event->flags = EV_DELETE;
-		// kevent(mKq, event, 1, NULL, 0, NULL);
-		// if (s < 0) {
-		// 	cout << "NOT NOW=======================================" <<  endl;
-		// } else if (s == 0) {
-		// 	cout << "EOF or connect failed" << endl;
-
-		// }
-		cout << "buffer_size: " << buffer_size << "s: " << s << endl;
-		write(1, buffer, buffer_size);
-		if (event->flags & EV_EOF)
-		{
-			cout << "FLAG: eof ==> flag switch" << endl;
-			event->flags = EV_ADD | EV_ENABLE;
+		if (s < 1) {
+			if (s == 0)
+			{
+				// client->example();
+				cout << "Client socket [" << client->getFd() << "] closed" << endl;
+			}
+			else
+				cout << "Error: Client socket [" << client->getFd() << "] recv failed" << endl;
+			close(client->getFd());	//연결 끊끊
+			event->flags = EV_DELETE;
 			kevent(mKq, event, 1, NULL, 0, NULL);
-			cout << "event->flags: " << event->flags << endl;
-			// exit(1);
-		} else if (event->flags & EV_OOBAND) {
-			cout << "FLAG: ooband" << endl;
-			exit(1);
+			return ;
 		}
-		// close(client->getFd());	//일단 끊끊
-		// event->flags = EV_DELETE;
-		// kevent(mKq, event, 1, NULL, 0, NULL);
-		// exit(EXIT_SUCCESS);
+		client->addBuffer(buffer, s);
+
 	} else {
 		cout << "Handle Client: not read => " << event->filter << endl;
 	}
 }
-
-// 1번. 한번 요청을 보냈을때 제대로 받는다. 요청의 마지막 줄을 어떻게 판별하지?
-// 2번. 

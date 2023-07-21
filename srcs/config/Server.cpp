@@ -84,7 +84,7 @@ void						Server::setListen(const string& mListen)
 		throw runtime_error("Error: too big listen port");
 	for(size_t i = 0; i < mListen.size(); i++)
 	{
-		cout << mListen << endl;
+	// 	cout << mListen << endl;
 		if (!isdigit(mListen[i]))
 			throw runtime_error("Error: invalid listen port");
 	}

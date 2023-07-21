@@ -1,6 +1,6 @@
 #include <iostream>
-#include "./includes/config/Config.hpp"
-#include "./includes/SpiderMen.hpp"
+#include "../includes/config/Config.hpp"
+#include "../includes/SpiderMen.hpp"
 
 void ft_leak()
 {
@@ -27,7 +27,8 @@ int	main(int argc, char* argv[], char** env)
 		// Config.printMembers();
 
 		SpiderMen websrv(config);
-		
+
+		websrv.run();
 	} catch (const exception& e) {
 		cout << e.what() << endl;
 		exit(EXIT_FAILURE);

@@ -21,12 +21,15 @@ CONFIG_DIR			:=	config
 REQUEST_DIR			:=	request
 SOCKET_DIR			:=	socket
 UTIL_DIR			:=	util
+BUILD_DIR			:=	build
+OBJ_DIR				:=	objs
+DEP_DIR				:=	deps
 
 # ---------------------------------------------------------------------------- #
 #   Define the source files                                                    #
 # ---------------------------------------------------------------------------- #
 
-SRCS				:=	main.cpp
+SRCS				:=	$(addprefix $(SRC_DIR)/, main.cpp)
 SRCS				+=	$(addprefix $(SRC_DIR)/, SpiderMen.cpp)
 SRCS				+=	$(addprefix $(SRC_DIR)/$(CONFIG_DIR)/, Config.cpp Location.cpp Server.cpp)
 SRCS				+=	$(addprefix $(SRC_DIR)/$(REQUEST_DIR)/, ARequest.cpp RDelete.cpp RGet.cpp RPost.cpp)
@@ -35,27 +38,34 @@ SRCS				+=	$(addprefix $(SRC_DIR)/$(UTIL_DIR)/, SpiderMenUtil.cpp)
 OBJS				:=	$(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/$(OBJ_DIR)/%.o, $(SRCS))
 DEPS				:=	$(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/$(DEP_DIR)/%.d, $(SRCS))
 
+# ---------------------------------------------------------------------------- #
+#   Define the rules                                                           #
+# ---------------------------------------------------------------------------- #
+
 all : $(NAME)
 
 $(NAME) : $(OBJS)
-	@$(CPP) $(CPPFLAGS) $(LDFLAGS) $(OBJS) -o $@
-	@printf "\n[$(NAME)] Linking S"
+	@$(CPP) $(CPPFLAGS) $^ -o $@
+	@printf "\n[$(NAME)] Linking Success\n"
 
-%.o:	%.cpp
-	$(CPP) $(CPPFLAGS) -c $< -o $@
+$(BUILD_DIR)/$(OBJ_DIR)%.o : $(SRC_DIR)/%.cpp | dir_guard
+	@$(CPP) $(CPPFLAGS) $(DEPFLAGS) -c $< -o $@
 
 clean:
-	rm -rf $(OBJS)
+	@$(RM) -rf $(BUILD_DIR)
 
 fclean:	clean
-	rm -rf $(NAME)
+	@$(RM) -rf $(NAME)
 
-re:
-	make fclean
-	make all -j 8
+re : fclean
+	@$(MAKE)
 
 dir_guard :
-	@mkdir -p $(addprefix $(BUILD_DIR)/$(OBJ_DIR)/, $(SET_WINDOW_DIR) \
-	$(CHECK_WINDOW_DIR) $(INIT_CUB3D_DIR) $(RUN_CUB3D_DIR) $(UTILS_DIR))
+	@mkdir -p $(addprefix $(BUILD_DIR)/$(OBJ_DIR)/, $(SRC_DIR) \
+	$(CONFIG_DIR) $(REQUEST_DIR) $(SOCKET_DIR) $(UTIL_DIR))
+	@mkdir -p $(addprefix $(BUILD_DIR)/$(DEP_DIR)/, $(SRC_DIR) \
+	$(CONFIG_DIR) $(REQUEST_DIR) $(SOCKET_DIR) $(UTIL_DIR))
 
-.PHONY: clean fclean re all dir_guard
+.PHONY: all clean fclean re dir_guard
+
+-include $(DEPS)

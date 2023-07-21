@@ -35,7 +35,7 @@ void					Config::parse(const string& file)
 				mServer.insert(pair<int, vector<Server> >(server.getListen(), servec_tmp));
 			}
 		} else {
-			cout << line << endl;
+			cout << "Wrong line: " << line << endl;
 			throw runtime_error("Error: config wrong arguments.");
 			// f_dataRead.close();
 			exit(EXIT_FAILURE);

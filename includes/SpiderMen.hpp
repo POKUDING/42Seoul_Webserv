@@ -32,7 +32,7 @@ class SpiderMen
 		void				addClients(Client& client);
 		void				initSocket(const map<int,vector<Server> >& servers);
 		void				handleServer(ASocket* sock);
-		void				hanleClient(Client* client);
+		void				handleClient(struct kevent* event, Client* client);
 		// void				initKque(x);
 		// SpiderMen(void);
 		// SpiderMen(const SpiderMen& src);

@@ -7,10 +7,17 @@
 class RPost: public ARequest
 {
 	public:
-		RPost(/* args */);
-		~RPost();
+		RPost(string mRoot, map<string, string> header_key_val);
+		virtual ~RPost();
+
+		virtual	const string&	createResponse();
+
+		const string&	getBody() const;
+		void			setBody(string mBody);
+
 	private:
-		/* data */
+		string	mBody;
+		// virtual void	parse(map<string, string> header_key_val);
 };
 
 #endif //RPOST_HPP

@@ -33,6 +33,7 @@ class SpiderMen
 		void				initSocket(const map<int,vector<Server> >& servers);
 		void				handleServer(ASocket* sock);
 		void				handleClient(struct kevent* event, Client* client);
+		void				readSocket(struct kevent* event, Client* client);
 		// void				initKque(x);
 		// SpiderMen(void);
 		// SpiderMen(const SpiderMen& src);

@@ -3,6 +3,9 @@
 #define ASOCKET_HPP
 
 #include "../config/Server.hpp"
+#include "../basic.hpp"
+
+using namespace std;
 
 class ASocket
 {
@@ -25,7 +28,6 @@ class ASocket
 		const int		mFd;
 		const int		mPortNumber;
 		const vector<Server>*	mServer;
-
 };
 
 #endif // ASOCKET_HPP

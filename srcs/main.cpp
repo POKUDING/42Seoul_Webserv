@@ -12,28 +12,27 @@ int	main(int argc, char* argv[], char** env)
 	(void)env;
 	
 	// atexit(ft_leak);
-
 	if (argc > 2) {
 		throw runtime_error("Error: too many arguments.");
 		exit(EXIT_FAILURE);
 	}
 
-	//Config() => parsing start
 	Config config;
-
 	try {
 		//config parse => Config에 저장
-		argv[1] ? config.parse(argv[1]) : config.parse();
+		if (argc == 2)
+			config.parse(argv[1]);
+		else
+			config.parse();
 		// Config.printMembers();
 
 		SpiderMen websrv(config);
-
 		websrv.run();
 	} catch (const exception& e) {
-		cout << e.what() << endl;
+		cout << "this is main catch: " << e.what() << endl;
 		exit(EXIT_FAILURE);
 	}
-	
+
 	//webserv Class 생성
 		//socket ~ bind ~ listen
 			//what is BACKLOG
@@ -51,9 +50,5 @@ int	main(int argc, char* argv[], char** env)
 				//parsing
 				//cgi 처리
 				//
-	
-
-
-		
 	return EXIT_SUCCESS;
 }

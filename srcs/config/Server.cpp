@@ -75,26 +75,28 @@ void						Server::setRoot(const string& mRoot) { this->mRoot = mRoot; }
 
 void						Server::setListen(const string& mListen)
 {
-	int	tmp;
+	int	portNumber;
 	///need to modify str -> int
 	//1~65535 port available
 
 	//int check
 	if (mListen.size() > 5)
 		throw runtime_error("Error: too big listen port");
-	for(size_t i = 0; i < mListen.size(); i++)
+	for(size_t i = 0; i < mListen.size(); ++i)
 	{
 	// 	cout << mListen << endl;
-		if (!isdigit(mListen[i]))
+		if (isdigit(mListen[i]) == false)
 			throw runtime_error("Error: invalid listen port");
 	}
-	tmp = atoi(mListen.c_str());
-	if (tmp < 1 || tmp > MAX_PORT_SIZE)
+	portNumber = atoi(mListen.c_str());
+	if (portNumber < 1 || portNumber > MAX_PORT_SIZE)
 		throw runtime_error("Error: invlid listen port");
-	this->mListen = tmp;
+	// if (!(1 <= portNumber && portNumber <= MAX_PORT_SIZE))
+	// 	throw runtime_error("Error: invlid listen port");
 
-
+	this->mListen = portNumber;
 }
+
 void						Server::setClientMaxBodySize(const string& mClientMaxBodySize)
 {
 	int	tmp;

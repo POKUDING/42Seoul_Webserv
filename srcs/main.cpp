@@ -17,25 +17,22 @@ int	main(int argc, char* argv[], char** env)
 		exit(EXIT_FAILURE);
 	}
 
-	//Config() => parsing start
 	Config config;
-
 	try {
 		//config parse => Config에 저장
 		if (argc == 2)
 			config.parse(argv[1]);
 		else
 			config.parse();
-		// argv[1] ? config.parse(argv[1]) : config.parse();
 		// Config.printMembers();
 
 		SpiderMen websrv(config);
-
 		websrv.run();
 	} catch (const exception& e) {
-		cout << "this is catch: " << e.what() << endl;
+		cout << "this is main catch: " << e.what() << endl;
 		exit(EXIT_FAILURE);
 	}
+
 	//webserv Class 생성
 		//socket ~ bind ~ listen
 			//what is BACKLOG

@@ -7,10 +7,13 @@
 class RDelete: public ARequest
 {
 	public:
-		RDelete(/* args */);
-		~RDelete();
+		RDelete(string mRoot, map<string, string> header_key_val);
+		virtual ~RDelete();
+
+		virtual	const string&	createResponse();
+
 	private:
-		/* data */
+		// virtual void	parse(map<string, string> header_key_val);
 };
 
 #endif //RDELETE_HPP

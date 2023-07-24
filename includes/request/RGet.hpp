@@ -12,8 +12,6 @@ class RGet : public ARequest
 
 		virtual	const string&	createResponse();
 		
-	private:
-		// virtual void	parse(map<string, string> header_key_val);
 };
 
 #endif //RGET_HPP

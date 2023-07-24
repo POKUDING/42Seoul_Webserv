@@ -3,39 +3,36 @@
 RDelete::RDelete(string mRoot, map<string, string> header_key_val)
 			: ARequest(mRoot, nMethod::DELETE, header_key_val)
 {
-	// parse(header_key_val);
+	if (mBasics.content_length || mBasics.transfer_encoding.size()) {
+		throw runtime_error("Bad request:: DELETE cannot have body");
+	}
 }
 
 RDelete::~RDelete() { }
 
-// void	RDelete::parse(map<string, string> header_key_val)
-// {
-
-// }
-
 const string&	RDelete::createResponse()
 {
+	if (mResponse.code == 400) {
+		create400Response();
+	} else if (mResponse.code == 500) {
+		create500Response();
+	} else { //if DELETE done
 	
-	stringstream	to_str;
+		//1st line: STATUS
+		mMSG.append(HTTP_STATUS);	//"HTTP/1.1 200 OK\r\n"
 
-	//1st line: STATUS
-	mMSG.append(HTTP_VERSION);	//"HTTP/1.1 " (띄어쓰기 포함!)
-	to_str << getResponse().code;
-	to_str >> mMSG;
-	mMSG.append(" ");
-	mMSG.append(getResponse().status);
-	mMSG.append("\r\n");
+		//HEADER============================================
+		mMSG.append("204 No Content\r\n");
+		Time::stamp(timeStamp);
+		mMSG.append(timeStamp);	//Date: Tue, 20 Jul 2023 12:34:56 GMT
+		mMSG.append(SPIDER_SERVER);	//Server: SpiderMen/1.0.0
 
-	//HEADER
-	Time::stamp(timeStamp);
-	mMSG.append(timeStamp);	//Date: Tue, 20 Jul 2023 12:34:56 GMT
-	mMSG.append(SPIDER_SERVER);	//Server: SpiderMen/1.0.0 (MAC OS)
-	mMSG.append(CONTENT_TYPE);	//Content-Type: text/html; charset=UTF-8
-	mMSG.append("Content-Length: ");
-	to_str << getResponse().content_length;
-	to_str >> mMSG;
+		if (this->getBasics().connection == nSocket::KEEP_ALIVE)
+			mMSG.append("Connection: Keep-Alive\r\n");
+			
+		mMSG.append("\r\n");
 
-	//BODY
-
+		//BODY 없음
+	}
 	return mMSG;
 }

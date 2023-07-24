@@ -9,14 +9,27 @@
 #define MAX_EVENT 2048
 #define PACKET_SIZE 1460
 
-#define HTTP_VERSION "HTTP/1.1 "
-#define SPIDER_SERVER "Server: SpiderMen/1.0.0 (MAC OS)\r\n"
+#define HTTP_STATUS "HTTP/1.1 200 OK\r\n"
+#define SPIDER_SERVER "Server: SpiderMen/1.0.0\r\n"
 #define CONTENT_TYPE "Content-Type: text/html; charset=UTF-8\r\n"
+
+// #define OK "OK"
+// #define BAD_REQUEST "Bad Request"
+// #define SERVER_ERROR "Internal Server Error"
+
+#define TIMEOUT_SEC 10
+
+#define CHUNKED -1
 
 namespace nSocket {
 	enum eType {
 		SERVER = 0,
 		CLIENT = 1
+	};
+
+	enum eConnection {
+		CLOSE = 0,
+		KEEP_ALIVE = 1
 	};
 }
 
@@ -25,6 +38,20 @@ namespace nMethod {
 		GET = 0,
 		POST = 1,
 		DELETE = 2
+	};
+}
+
+namespace nStatus {
+	enum eClient {
+		WAITING = 0,		//(writing done), connected & waiting
+		READING_HEADER = 1,	//request start, reading header
+		READING_BODY = 2,	//header done, reading body
+		PROCESSING = 3,		//body done(request recv done), processing
+		SENDING = 4			//writing
+	};
+	enum eServer {
+		FAIL_FD = 0,
+		FAIL_ADD_EVENT = 1
 	};
 }
 

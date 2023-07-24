@@ -30,6 +30,7 @@ class SpiderMen
 		map<int, Client>&	getClients();
 		void				addServerSockets(ASocket& sock);
 		void				addClients(int fd, Client& client);
+		void				deleteClientKQ(int fd);
 		void				deleteClient(int fd);
 		void				initSocket(const map<int,vector<Server> >& servers);
 		void				handleServer(ASocket* sock);
@@ -42,6 +43,3 @@ class SpiderMen
 };
 
 #endif //WEBSRV_HPP
-
-// 0x7fb810406678
-// 0x7fb810406678

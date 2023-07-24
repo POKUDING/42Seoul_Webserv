@@ -15,6 +15,7 @@ ARequest*		Client::getRequest() const { return mRequest; }
 void			Client::setTime(const unsigned int mTime) { this->mTime = mTime; }
 void			Client::setStatus(const int mStatus) { this->mStatus = mStatus; }
 void			Client::setIdx(const int mIdx) { this->mIdx = mIdx; }
+void			Client::setBuFlag(int mBuFlag) { this->mBuFlag = mBuFlag; }
 
 void			Client::addBuffer(char *input, size_t size)
 {

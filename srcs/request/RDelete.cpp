@@ -37,7 +37,5 @@ const string&	RDelete::createResponse()
 
 	//BODY
 
-
-
 	return mMSG;
 }

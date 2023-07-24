@@ -68,6 +68,7 @@ class ARequest
 
 		string			mMSG;
 		char 			timeStamp[TIME_SIZE];
+		size_t			mSendLen;
 
 	private:
 		const string	mRoot;

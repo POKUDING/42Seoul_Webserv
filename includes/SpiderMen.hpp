@@ -22,14 +22,15 @@ class SpiderMen
 
 	private:
 		map<int,const Server&>	mFdServers;
-		vector<Client>			mClients;
-		vector<ASocket>			mServerSockets;
+		map<int, Client>		mClients;
+		deque<ASocket>			mServerSockets;
 		int						mKq;
 		
-		vector<ASocket>&	getServerSockets();
-		vector<Client>&		getClients();
+		deque<ASocket>&	getServerSockets();
+		map<int, Client>&	getClients();
 		void				addServerSockets(ASocket& sock);
-		void				addClients(Client& client);
+		void				addClients(int fd, Client& client);
+		void				deleteClient(int fd);
 		void				initSocket(const map<int,vector<Server> >& servers);
 		void				handleServer(ASocket* sock);
 		void				handleClient(struct kevent* event, Client* client);
@@ -41,3 +42,6 @@ class SpiderMen
 };
 
 #endif //WEBSRV_HPP
+
+// 0x7fb810406678
+// 0x7fb810406678

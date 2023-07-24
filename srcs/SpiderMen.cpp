@@ -11,19 +11,21 @@ SpiderMen::~SpiderMen()
 {
 	for (size_t i = 0, end = mServerSockets.size(); i < end; ++i)
 		close(mServerSockets[i].getFd());
-	for (size_t i = 0, end = mClients.size(); i < end; ++i)
-		close(mClients[i].getFd());
+	for (map<int, Client>::iterator it = mClients.begin(); it != mClients.end(); ++it)
+		close(it->first);
 	if (mKq)
 		close(mKq);
 }
 
 // getter
-vector<ASocket>& SpiderMen::getServerSockets() { return mServerSockets; }
-vector<Client>&	SpiderMen::getClients() { return mClients; }
+deque<ASocket>& SpiderMen::getServerSockets() { return mServerSockets; }
+map<int, Client>&	SpiderMen::getClients() { return mClients; }
 
 // member functions
 void	SpiderMen::addServerSockets(ASocket& sock) { mServerSockets.push_back(sock); }
-void	SpiderMen::addClients(Client& client) { mClients.push_back(client); }
+void	SpiderMen::addClients(int fd, Client& client) { mClients.insert(pair<int, Client>(fd, client)); }
+void	SpiderMen::deleteClient(int fd) { mClients.erase(fd); }
+
 
 void	SpiderMen::initSocket(const map<int,vector<Server> >& servers)
 {
@@ -111,22 +113,19 @@ void	SpiderMen::run()
 			
 			ASocket* sock_ptr = reinterpret_cast<ASocket *>(events[i].udata);
 			try {
-				if (sock_ptr->getType() == nSocket::SERVER)
-				{
-					cout << "event.filter: " << events[i].filter << "\n";
+				cout << "socket type: " << sock_ptr->getType() << " request: " << events[i].filter << endl;
+				if (sock_ptr->getType() == nSocket::SERVER) {
 					this->handleServer(sock_ptr);
-				}
-				else if (sock_ptr->getType() == nSocket::CLIENT)
+				} else if (sock_ptr->getType() == nSocket::CLIENT) {
 					this->handleClient(&events[i], reinterpret_cast<Client *>(sock_ptr));
+				}
 			} catch (const exception& e) {
 				cout << "error in HANDLER: " << e.what() << endl;
 				// exit(EXIT_FAILURE);
 			}
 		}
 	}
-	 
-
-	
+	 	
 }
 
 void	SpiderMen::handleServer(ASocket* sock)
@@ -136,47 +135,82 @@ void	SpiderMen::handleServer(ASocket* sock)
 	int					fd_tmp;
 
 	// 새로운 연결 요청 수락
-	cout << "new client connect" << endl;
 	socklen_t client_len = sizeof(client_addr);
 	fd_tmp = accept(sock->getFd(), reinterpret_cast<struct sockaddr*>(&client_addr), &client_len);
+	
 	Client client_tmp(nSocket::CLIENT, fd_tmp, sock->getPortNumber(), sock->getServer());
 	if (client_tmp.getFd() == -1)
 		throw runtime_error("Error: client accept failed");
-	
+	if (fcntl(client_tmp.getFd(), F_SETFL, O_NONBLOCK) == -1)			//소켓 논블록처리
+		throw runtime_error("Error: client socket nonblock failed.");
+
 	// 새로운 클라이언트 소켓을 kqueue에 등록
-	addClients(client_tmp);
-	EV_SET(&event_tmp, client_tmp.getFd(), EVFILT_READ, EV_ADD, 0, 0, reinterpret_cast<void *>(&(*(getClients().rbegin()))));
+	addClients(fd_tmp, client_tmp);
+	EV_SET(&event_tmp, client_tmp.getFd(), EVFILT_READ, EV_ADD, 0, 0, reinterpret_cast<void *>(&(getClients().find(fd_tmp)->second)));
 	if (kevent(mKq, &event_tmp, 1, NULL, 0, NULL) == -1)
 		throw runtime_error("Error: client kevent add error");
 }
 
 void	SpiderMen::handleClient(struct kevent* event, Client* client)
 {
-	//request 읽기 시작 => recv() 요청
-	// 						//request 읽기 완료 => recv() return 값 받아서 진행
-	// 						//request 파싱	   => request parsing
-	// 						//(parsing 결과에 따라) ARequest 객체 생성
-	// 						//				  => (객체 내에서 추가 parsing 진행?)
+	string response;
 
 	if (event->filter == EVFILT_READ) {
 		this->readSocket(event, client);
+		if (client->getBuFlag() == 2) {	//if (client request read done)
 
-		// addClients(client_tmp);
-		// EV_SET(&event_tmp, client_tmp.getFd(), EVFILT_READ, EV_ADD, 0, 0, reinterpret_cast<void *>(&(*(getClients().rbegin()))));
-		// if (kevent(mKq, &event_tmp, 1, NULL, 0, NULL) == -1)
-		// 	throw runtime_error("Error: client kevent add error");
+			//test code (request check) ===============================
+			{
+				ofstream test("test_request.txt", ios::app);
+				test << client->mHeadBuffer << client->mBodyBuffer;
+				test.close();
+				// cout << "REQUEST ==============" << endl;
+				// cout << client->mHeadBuffer << client->mBodyBuffer;
+				// cout << "============================" << endl;
+			}
+			//END OF test code ========================================
+
+			//make response to send
+			response = client->getRequest()->createResponse();
+
+			//test code (response check) ===============================
+			{
+				ofstream test("test_response.txt", ios::app);
+				test << response;
+				test.close();
+				// cout << "RESPONSE ==============" << endl;
+				// cout << response;
+				// cout << "============================" << endl;
+			}
+			//END OF test code ========================================
+
+			//event write queue add
+			event->filter = EVFILT_WRITE;
+			kevent(mKq, event, 1, NULL, 0, NULL);
+
+			//1st send 요청 => 여기서 한 번 해둬야하는지 모르겠으나 일단 추가해둠
+			client->setBuFlag(3);
+			// send(client->getFd(), response.c_str(), response.size(), 0);
+		} else if (client->getBuFlag() == 3) {
+			cout << "SEND already started" << endl;
+		}
 	} else if (event->filter == EVFILT_WRITE) {
+		size_t	sendinglen = client->getRequest()->mMSG.size() - client->getRequest()->mSendLen;
+		if (static_cast<size_t>(event->data) <= sendinglen)
+			sendinglen = event->data;
+
+		send(client->getFd(), client->getRequest()->mMSG.c_str() + client->getRequest()->mSendLen, sendinglen, 0);
+		client->getRequest()->mSendLen += sendinglen;
+		if (client->getRequest()->mSendLen >= client->getRequest()->mMSG.size()) {
+			//write done
+			event->flags = EV_DELETE;
+			kevent(mKq, event, 1, NULL, 0, NULL);
+			client->setBuFlag(0);
+			
+		}
+
 		
-		// string response = client->getRequest()->createResponse();
-		// cout << client->getFd() << "RESPOMSE------------" << response.size() << endl;
-		// cout << response << endl;
-
-		// char buffer[] = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 13\r\n\r\nHello, World!";
-
-
-		// // ofstream test("test.txt");
-		// // write(test, response)
-		// // test.close();
+		
 		// // send(client->getFd(), reinterpret_cast<void *>(&response), response.size(), 0);
 		// send(client->getFd(), buffer, sizeof(buffer), 0);
 		// cout << "EOF of send" << endl;
@@ -205,18 +239,21 @@ void	SpiderMen::readSocket(struct kevent* event, Client* client)
 			close(client->getFd());	//연결 끊끊
 			event->flags = EV_DELETE;
 			kevent(mKq, event, 1, NULL, 0, NULL);
+
+			//spidermen vector에서 client 삭제
+			deleteClient(client->getFd());
 			return ;
 		}
 		client->addBuffer(buffer, s);
 
 		// cout << "buflag : " << client->getBuFlag() <<endl;
 
-		if (client->getBuFlag() == 2) {
-			string response = client->getRequest()->createResponse();
-			send(client->getFd(), response.c_str(), response.size(), 0);
-			close(client->getFd());	//연결 끊끊
-			event->flags = EV_DELETE;
-			kevent(mKq, event, 1, NULL, 0, NULL);
-		}
+		// if (client->getBuFlag() == 2) {
+		// 	string response = client->getRequest()->createResponse();
+		// 	send(client->getFd(), response.c_str(), response.size(), 0);
+		// 	close(client->getFd());	//연결 끊끊
+		// 	event->flags = EV_DELETE;
+		// 	kevent(mKq, event, 1, NULL, 0, NULL);
+		// }
 		
 }

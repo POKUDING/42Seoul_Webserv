@@ -17,6 +17,8 @@ class RPost: public ARequest
 
 	private:
 		string	mBody;
+		string	mContentEncoding;
+		size_t	mContetnLength;
 		// virtual void	parse(map<string, string> header_key_val);
 };
 

@@ -4,6 +4,8 @@ RPost::RPost(string mRoot, map<string, string> header_key_val)
 			: ARequest(mRoot, nMethod::POST, header_key_val)
 {
 	// parse(header_key_val);
+	mContentEncoding = header_key_val["Content-encoding"];
+	mContetnLength = atoi(header_key_val["Content-Length"].c_str());
 }
 
 RPost::~RPost() { }
@@ -37,6 +39,8 @@ const string&	RPost::createResponse()
 	// to_str << getResponse().content_length;
 	// to_str >> response;
 
+	//이거 없어서 클라가 연결 끊는건 아닌가하여 넣어봄 re:오..! 굿!!
+	mMSG.append("Connection: Keep-Alive\r\n");
 
 	mMSG.append("\r\n");		//end of head
 	//BODY	//hello.html
@@ -48,7 +52,7 @@ const string&	RPost::createResponse()
 	mMSG.append("    <title>Hello</title>\r\n");
 	mMSG.append("</head>\r\n");
 	mMSG.append("<body>\r\n");
-	mMSG.append("    <h1>Hello, world!</h1>\r\n");
+	mMSG.append("    <h1>Hello, POSTd!</h1>\r\n");
 	mMSG.append("</body>\r\n");
 	mMSG.append("</html>\r\n");
 	mMSG.append("\r\n");		//end of body

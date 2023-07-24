@@ -40,6 +40,7 @@ public:
 	void			setStatus(const int mStatus);
 	void			setIdx(const int mIdx);
 	void			setMethod(const int method);
+	void			setBuFlag(int mBuFlag);
 	void			addBuffer(char *input, size_t size);
 
 	int				createRequest(const string& header);
@@ -49,7 +50,6 @@ public:
 
 	string			mHeadBuffer;
 	string			mBodyBuffer;
-	int				mBuFlag;
 
 private:
 	void			parseHeader(void);
@@ -57,6 +57,7 @@ private:
 	unsigned int	mTime;
 	int				mStatus;	//recv, operate, send, cgi
 	int				mIdx;
+	int				mBuFlag;
 	
 };
 

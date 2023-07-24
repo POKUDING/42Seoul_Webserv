@@ -39,7 +39,7 @@ const string&	RPost::createResponse()
 		// mMSG.append("Content-Type: ");	//png 등의 경우 별도의 content-type필요
 
 
-		mMSG.append("Content-Length: 13");
+		mMSG.append("Content-Length: 13\r\n");
 		// stringstream	to_str;
 		// to_str << getResponse().content_length;
 		// to_str >> mMSG;

@@ -32,34 +32,37 @@ public:
 	virtual ~Client();
 
 	int				getStatus() const;
-	int				getIdx() const;
-	// int				getBuFlag() const;
 	ARequest*		getRequest() const;
+	string&			getResponseMSG();
+	string&			getHeadBuffer();
+	string&			getBodyBuffer();
+	int				getResponseCode() const;
 
 	void			setStatus(int mStatus);
-	void			setIdx(const int mIdx);
-	void			setMethod(const int method);
-	// void			setBuFlag(int mBuFlag);
 	void			setRequestNull();
 	void			addBuffer(char *input, size_t size);
+	void			setResponseCode(int code);
+
+	void			clearClient();
 
 	int				createRequest(const string& header);
 	map<string,string>	createHttpKeyVal(const vector<string>&	header_line);
 	// int					checkRequest(const string& headline);
 	// void				example();
-	void			resetTimer(int mKq, struct kevent& event);
+	void			resetTimer(int mKq, struct kevent event);
 
-	string			mHeadBuffer;
-	string			mBodyBuffer;
+	void			create400Response();
+	void			create500Response();
+
 
 private:
 	// void			parseHeader(void);
 	ARequest*		mRequest;
-	unsigned int	mTime;
 	int				mStatus;	//nStatus::eClient
-	int				mIdx;
-	// int				mBuFlag;
-	
+	int				mResponseCode;
+	string			mHeadBuffer;
+	string			mBodyBuffer;
+	string			mResponseMSG;
 };
 
 #endif //CLIENT_HPP

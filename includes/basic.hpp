@@ -20,6 +20,7 @@
 #define TIMEOUT_SEC 10
 
 #define CHUNKED -1
+#define FAIL_FD 0
 
 namespace nSocket {
 	enum eType {
@@ -49,10 +50,7 @@ namespace nStatus {
 		PROCESSING = 3,		//body done(request recv done), processing
 		SENDING = 4			//writing
 	};
-	enum eServer {
-		FAIL_FD = 0,
-		FAIL_ADD_EVENT = 1
-	};
+
 }
 
 #endif //BASIC_HPP

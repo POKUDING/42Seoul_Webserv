@@ -10,7 +10,7 @@ class RDelete: public ARequest
 		RDelete(string mRoot, map<string, string> header_key_val);
 		virtual ~RDelete();
 
-		virtual	const string&	createResponse();
+		virtual	const string	createResponse();
 
 };
 

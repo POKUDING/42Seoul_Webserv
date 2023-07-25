@@ -5,6 +5,7 @@
 #include <map>
 #include <string>
 #include <sstream>
+#include <fstream>
 #include "../basic.hpp"
 #include "../util/Time.hpp"
 
@@ -65,17 +66,9 @@ class ARequest
 		const string&		getRoot() const;
 		const t_basic&		getBasics() const;
 		const t_response&	getResponse() const;
-		const string&		getMSG() const;
 
-		void				setMSG(const string& msg);
-		void				setResponse(int code, const string& status, int len);
+		virtual	const string	createResponse() = 0;
 
-		virtual	const string&	createResponse() = 0;
-		void					create400Response();
-		void					create500Response();
-
-		string			mMSG;
-		char 			timeStamp[TIME_SIZE];
 		size_t			mSendLen;
 
 	protected:

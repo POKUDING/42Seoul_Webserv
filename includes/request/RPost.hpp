@@ -10,7 +10,7 @@ class RPost: public ARequest
 		RPost(string mRoot, map<string, string> header_key_val);
 		virtual ~RPost();
 
-		virtual	const string&	createResponse();
+		virtual	const string	createResponse();
 
 		const string&	getBody() const;
 		void			setBody(string mBody);

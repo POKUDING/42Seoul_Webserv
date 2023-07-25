@@ -31,34 +31,10 @@ ARequest::ARequest(string mRoot, int mType, map<string, string> header_key_val)
 	//필요해서 초기화해줌 (struct가 자동으로 초기화되면 필요없음 근데 잘 모름ㅎ)
 	mResponse.code = 0;
 	mResponse.content_length = 0;
+	mSendLen = 0;
 }
 
 int					ARequest::getType() const { return mType; }
 const string&		ARequest::getRoot() const { return mRoot; }
 const t_basic&		ARequest::getBasics() const { return mBasics; }
 const t_response&	ARequest::getResponse() const { return mResponse; }
-const string&		ARequest::getMSG() const { return mMSG; }
-
-void				ARequest::setMSG(const string& msg) { mMSG.append(msg); }
-void				ARequest::setResponse(int code, const string& status, int len)
-{
-	mResponse.code = code;
-	mResponse.status = status;
-	mResponse.content_length = len;
-}
-
-void				ARequest::create400Response()
-{
-	mMSG.append("HTTP/1.1 400 Bad Request\r\n");
-	mMSG.append("Content-Type: text/plain\r\n");
-	mMSG.append("Content-Length: 14\r\n");
-	mMSG.append("Bad Request :(");
-}
-
-void				ARequest::create500Response()
-{
-	mMSG.append("HTTP/1.1 500 Internal Server Error\r\n");
-	mMSG.append("Content-Type: text/plain\r\n");
-	mMSG.append("Content-Length: 25\r\n");
-	mMSG.append("Internal Server Error :'(");
-}

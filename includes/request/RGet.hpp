@@ -10,7 +10,7 @@ class RGet : public ARequest
 		RGet(string mRoot, map<string, string> header_key_val);
 		virtual ~RGet();
 
-		virtual	const string&	createResponse();
+		virtual	const string	createResponse();
 		
 };
 

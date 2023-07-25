@@ -135,60 +135,54 @@ void	SpiderMen::run()
 				throw runtime_error("Error: event filter error");
 			}
 			ASocket* sock_ptr = reinterpret_cast<ASocket *>(events[i].udata);
-//server, client 별로 try문 나눠둠 => 아랫줄의 try-catch문 생략 가능
-			try {
-				// TEST_CODE : kqueue
-				cout << "socket: " << sock_ptr->getFd() << ", type: " << sock_ptr->getType() << ", request: " << events[i].filter << endl;
-		
-				if (sock_ptr->getType() == nSocket::SERVER) {
-					try {
-						if (events[i].flags == EV_ERROR) {
-							events[i].flags = EV_CLEAR;
-							if (kevent(mKq, &events[i], 1, NULL, 0, NULL) == -1)
-								throw runtime_error("flag update FAILED");
-						}
-						this->handleServer(sock_ptr);
-					} catch (int fd) {
-						//client socket 에러 (accept(), kevent())
-						cout << "Error: Server Handler: close client [" << fd << "]" << endl;
+				
+			// TEST_CODE : kqueue
+			cout << "socket: " << sock_ptr->getFd() << ", type: " << sock_ptr->getType() << ", request: " << events[i].filter << endl;
+	
+			if (sock_ptr->getType() == nSocket::SERVER) {
+				try {
+					if (events[i].flags == EV_ERROR) {
+						events[i].flags = EV_CLEAR;
+						if (kevent(mKq, &events[i], 1, NULL, 0, NULL) == -1)
+							throw runtime_error("flag update FAILED");
+					}
+					this->handleServer(sock_ptr);
+				} catch (int fd) {
+					//client socket 에러 (accept(), kevent())
+					cout << "Error: Server Handler: close client [" << fd << "]" << endl;
+					if (fd) {
+						deleteClientKQ(fd);
 						deleteClient(fd);
-					} catch (const exception& e) {
-						//정의하지 않은 다른 에러 처리를 위해 넣어둠
-						cout << "Error: Server Handler: " << e.what() << endl;
 					}
-				} else if (sock_ptr->getType() == nSocket::CLIENT) {
-					try {
-//client error의 경우 close하는 것으로 우선 진행
-						if (events[i].flags == EV_ERROR) {
-							throw runtime_error("kevent flags: EV_ERROR");
-						}
-						this->handleClient(&events[i], reinterpret_cast<Client *>(sock_ptr));
-						reinterpret_cast<Client *>(sock_ptr)->resetTimer(mKq, events[i]);
-					} catch (const exception& e) {
-						cout << "Error: Client Handler: " << e.what() << endl;
-						//400 || 500 에러일 경우 처리 (throw 전에 setResponse()로 코드 설정해줘야 함)
-						if (reinterpret_cast<Client *>(sock_ptr)->getRequest() && \
-							reinterpret_cast<Client *>(sock_ptr)->getRequest()->getResponse().code) {
-							//create response()
-							reinterpret_cast<Client *>(sock_ptr)->getRequest()->createResponse();
-							//send
-//send()여기서 어떻게 하징
-						}
-						// KQ 삭제, close(fd) 중 에러 throw가 가능해 일단 추가함...
-						try {
-							deleteClientKQ(sock_ptr->getFd());
-						} catch (const exception& e) {
-							cout << "deleteKQ Error :" << e.what() << endl;
-						}
-//ARequest삭제(client 소멸자), 서버map에서 삭제
-						deleteClient(sock_ptr->getFd());
-						cout << "======================= END of Error" << endl;
-					}
+				} catch (const exception& e) {
+					//정의하지 않은 다른 에러 처리를 위해 넣어둠: 해당 server socket새로 만들어야 할 수도 있음
+					cout << "Error: Server Handler: " << e.what() << endl;
 				}
-			} catch (const exception& e) {
-//지워도 되는 catch문
-				cout << "error in HANDLER: " << e.what() << endl;
-				// exit(EXIT_FAILURE);
+			} else if (sock_ptr->getType() == nSocket::CLIENT) {
+				try {
+//client error의 경우 close하는 것으로 우선 진행
+					if (events[i].flags == EV_ERROR) {
+						throw runtime_error("kevent flags: EV_ERROR");
+					}
+					this->handleClient(&events[i], reinterpret_cast<Client *>(sock_ptr));
+					reinterpret_cast<Client *>(sock_ptr)->resetTimer(mKq, events[i]);
+				} catch (const exception& e) {
+					cout << "Error: Client Handler: " << e.what() << ", code: " << reinterpret_cast<Client *>(sock_ptr)->getResponseCode()<< endl;
+					//400 || 500 에러일 경우 처리 (throw 전에 client.setResponseCode()로 코드 설정해줘야 함)
+					if (reinterpret_cast<Client *>(sock_ptr)->getResponseCode())
+						reinterpret_cast<Client *>(sock_ptr)->getRequest()->createResponse();
+						//send
+//send()여기서 어떻게 하징
+					// KQ 삭제, close(fd) 중 에러 throw가 가능해 일단 추가함...
+					try {
+						deleteClientKQ(sock_ptr->getFd());
+					} catch (const exception& e) {
+						cout << "deleteKQ Error :" << e.what() << endl;
+					}
+//ARequest삭제(client 소멸자), 서버map에서 삭제
+					deleteClient(sock_ptr->getFd());
+					cout << "======================= END of Error" << endl;
+				}
 			}
 		}
 	}
@@ -206,7 +200,7 @@ void	SpiderMen::handleServer(ASocket* sock)
 	Client client_tmp(nSocket::CLIENT, fd_tmp, sock->getPortNumber(), sock->getServer());
 	if (client_tmp.getFd() == -1) {
 // fd 안만들어져서 close할거 없음 => 0
-		throw nStatus::FAIL_FD;
+		throw FAIL_FD;
 		// throw runtime_error("Error: client accept failed");
 	}
 //클라이언트 소켓은 논블록처리하면 안된다는 말이 있던데 확인해봐야 합니다
@@ -218,7 +212,7 @@ void	SpiderMen::handleServer(ASocket* sock)
 	// 새로운 클라이언트 소켓을 kqueue에 등록
 	EV_SET(&event_tmp, client_tmp.getFd(), EVFILT_READ, EV_ADD, 0, 0, reinterpret_cast<void *>(&(getClients().find(fd_tmp)->second)));
 	if (kevent(mKq, &event_tmp, 1, NULL, 0, NULL) == -1) {
-		throw nStatus::FAIL_ADD_EVENT;
+		throw fd_tmp;
 		// throw runtime_error("Error: client kevent add error");
 	}
 //write이벤트 등록: 여기서 해도 되는지 확인 필요
@@ -232,7 +226,7 @@ void	SpiderMen::handleServer(ASocket* sock)
 	event_tmp.fflags = NOTE_SECONDS;
 	event_tmp.data = TIMEOUT_SEC;
 	if (kevent(mKq, &event_tmp, 1, NULL, 0, NULL) == -1) {
-		throw nStatus::FAIL_ADD_EVENT;
+		throw fd_tmp;
 		// throw runtime_error("Error: client kevent add error");
 	}
 }
@@ -242,31 +236,30 @@ void	SpiderMen::handleClient(struct kevent* event, Client* client)
 	string response;
 
 	if (event->filter == EVFILT_READ) {
+		
 		if (client->getStatus() == nStatus::WAITING) {
 			client->setStatus(nStatus::READING_HEADER);
-			this->readSocket(event, client);
 		} else if (client->getStatus() == nStatus::PROCESSING) {
-			client->getRequest()->setResponse(400, "", 0);
+			client->setResponseCode(400);
 			throw runtime_error("Error: recv() while PROCESS");
 		} else if(client->getStatus() == nStatus::SENDING) {
-			client->getRequest()->setResponse(0, "", 0);
+			client->setResponseCode(0);
 			throw runtime_error("Error: recv() while send()");
 		}
-
 		this->readSocket(event, client);
-
 		//if (client request read done)
 		if (client->getStatus() == nStatus::PROCESSING) {
 			
 			//요청에 따라 cgi 필요해ㅐㅐㅐㅐㅐㅐㅐㅐㅐㅐㅐㅐㅐㅐㅐㅐㅐㅐㅐㅐ
+			//getRequest().response 구조체 채워줌
 			
 			//make response to send
-			response = client->getRequest()->createResponse();
-
+			client->getResponseMSG() = client->getRequest()->createResponse();
+			response = client->getResponseMSG();
 			//test code (request check) ===============================
 			{
 				ofstream test("test_request.txt", ios::app);
-				test << client->mHeadBuffer << client->mBodyBuffer;
+				test << client->getHeadBuffer() << client->getBodyBuffer();
 				test.close();
 			}
 			//test code (response check) ===============================
@@ -286,26 +279,30 @@ void	SpiderMen::handleClient(struct kevent* event, Client* client)
 			client->setStatus(nStatus::SENDING);
 		}
 	} else if (event->filter == EVFILT_WRITE) {
-		size_t	sendinglen = client->getRequest()->mMSG.size() - client->getRequest()->mSendLen;
+		size_t	sendinglen = client->getResponseMSG().size() - client->getRequest()->mSendLen;
 		if (static_cast<size_t>(event->data) <= sendinglen)
 			sendinglen = event->data;
-
-		send(client->getFd(), client->getRequest()->mMSG.c_str() + client->getRequest()->mSendLen, sendinglen, 0);
+		sendinglen = send(client->getFd(), client->getResponseMSG().c_str() + client->getRequest()->mSendLen, sendinglen, 0);
 		client->getRequest()->mSendLen += sendinglen;
-		if (client->getRequest()->mSendLen >= client->getRequest()->mMSG.size()) {
+		if (client->getRequest()->mSendLen >= client->getResponseMSG().size()) {
 			//write done
 			event->flags = EV_DELETE;
 			if (kevent(mKq, event, 1, NULL, 0, NULL) == -1)
 				throw runtime_error("Error: handleClient - EVFILT update Failed - DELETE");
+			event->filter = EVFILT_READ;
+			event->flags = EV_ADD;
+			if (kevent(mKq, event, 1, NULL, 0, NULL) == -1)
+				throw runtime_error("Error: handleClient - EVFILT update Failed - DELETE");
 			client->setStatus(nStatus::WAITING);
-			delete client->getRequest();
-			//client 소멸자에서 다시 delete되지 않도록 Null로 만들어줌
-			client->setRequestNull();
 
-			cout << "EOF of send" << endl;
-			if (client->getRequest()->getBasics().connection == nSocket::CLOSE)
+			int connection = client->getRequest()->getBasics().connection;
+
+			//request delete, client 소멸자에서 다시 delete되지 않도록 Null로 만들어줌
+			client->clearClient();
+
+			cout << "EOF of send, close: " << connection << endl;
+			if (connection == nSocket::CLOSE)
 				throw runtime_error("client request connection CLOSE");
-
 		}
 	} else if (event->filter == EVFILT_TIMER) {
 		//check client's status
@@ -321,24 +318,24 @@ void	SpiderMen::handleClient(struct kevent* event, Client* client)
 			throw runtime_error("TIMER: Waiting");
 			break;
 
-		case nStatus::SENDING:
-			throw runtime_error("TIMER: Sending");
-			break;
-
 		case nStatus::READING_HEADER:
 		case nStatus::READING_BODY:
-			client->getRequest()->setResponse(400, "", 0);
+			client->setResponseCode(400);
 			throw runtime_error("TIMER: Reading");
 
 		case nStatus::PROCESSING:
-			client->getRequest()->setResponse(500, "", 0);
+			client->setResponseCode(500);;
 			throw runtime_error("TIMER: Processing");
+
+		case nStatus::SENDING:
+			throw runtime_error("TIMER: Sending");
+			break;
 
 		default:
 			break;
 		}
 	} else {
-		client->getRequest()->setResponse(0, "", 0);
+		client->setResponseCode(0);
 		throw runtime_error("Error: undefined EVFILT");
 	}
 }
@@ -351,7 +348,6 @@ void	SpiderMen::readSocket(struct kevent* event, Client* client)
 	memset(buffer, 0, buffer_size);
 	ssize_t s = recv(client->getFd(), buffer, buffer_size, 0);
 
-//throw로 에러처리하면 밖에서 닫아줌
 	if (s < 1) {
 		if (s == 0) {
 			throw runtime_error("client socket closed");

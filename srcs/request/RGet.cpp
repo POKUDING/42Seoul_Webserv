@@ -15,6 +15,7 @@ const string	RGet::createResponse()
 	string	mMSG;
 	char 	timeStamp[TIME_SIZE];
 	stringstream to_str;
+	stringstream tmp;
 	string		buffer;
 	string		body;
 
@@ -22,10 +23,8 @@ const string	RGet::createResponse()
 	ifstream	fin("./www/index.html");
 	if (fin.fail())
 		throw runtime_error("Error: GET body file read failed");
-	while (getline(fin, buffer)) {
-		body.append(buffer);
-		body.append("\r\n", 2);
-	}
+	tmp << fin.rdbuf();
+	body = tmp.str();
 	fin.close();
 
 	//1st line: STATUS
@@ -40,8 +39,10 @@ const string	RGet::createResponse()
 	// mMSG.append("Content-Type: ");	//png 등의 경우 별도의 content-type필요
 	
 	mMSG.append("Content-Length: ");
+	cout << "body size = " << body.size() << endl;
 	to_str << body.size();
 	to_str >> buffer;
+	cout << "body size  in buffer = " << buffer << endl;
 	mMSG.append(buffer);
 	mMSG.append("\r\n");
 
@@ -51,7 +52,6 @@ const string	RGet::createResponse()
 	mMSG.append("\r\n"); //end of head
 
 	//BODY 추가
-	mMSG.append(body, sizeof(body));
-
+	mMSG.append(body.c_str(), body.size());
 	return mMSG;
 }

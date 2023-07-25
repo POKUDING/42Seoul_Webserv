@@ -5,3 +5,6 @@ zzzz.cpp
 a.out
 Makefile_ref
 .DS_Store
+test.txt
+test_request.txt
+test_response.txt

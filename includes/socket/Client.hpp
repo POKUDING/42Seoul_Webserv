@@ -3,6 +3,7 @@
 #define CLIENT_HPP
 
 #include <sstream>
+#include <sys/event.h>
 #include "../request/ARequest.hpp"
 #include "../request/RGet.hpp"
 #include "../request/RPost.hpp"
@@ -30,34 +31,38 @@ public:
 	Client(bool mType, int mFd, int mPort, const vector<Server>* mServer);
 	virtual ~Client();
 
-	unsigned int	getTime() const;
 	int				getStatus() const;
-	int				getIdx() const;
-	int				getBuFlag() const;
 	ARequest*		getRequest() const;
+	string&			getResponseMSG();
+	string&			getHeadBuffer();
+	string&			getBodyBuffer();
+	int				getResponseCode() const;
 
-	void			setTime(const unsigned int mTime);
-	void			setStatus(const int mStatus);
-	void			setIdx(const int mIdx);
-	void			setMethod(const int method);
+	void			setStatus(int mStatus);
+	void			setRequestNull();
 	void			addBuffer(char *input, size_t size);
+	void			setResponseCode(int code);
+
+	void			clearClient();
 
 	int				createRequest(const string& header);
 	map<string,string>	createHttpKeyVal(const vector<string>&	header_line);
 	// int					checkRequest(const string& headline);
-	void				example();
+	// void				example();
+	void			resetTimer(int mKq, struct kevent event);
 
-	string			mHeadBuffer;
-	string			mBodyBuffer;
-	int				mBuFlag;
+	void			create400Response();
+	void			create500Response();
+
 
 private:
-	void			parseHeader(void);
+	// void			parseHeader(void);
 	ARequest*		mRequest;
-	unsigned int	mTime;
-	int				mStatus;	//recv, operate, send, cgi
-	int				mIdx;
-	
+	int				mStatus;	//nStatus::eClient
+	int				mResponseCode;
+	string			mHeadBuffer;
+	string			mBodyBuffer;
+	string			mResponseMSG;
 };
 
 #endif //CLIENT_HPP

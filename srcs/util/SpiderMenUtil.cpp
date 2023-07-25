@@ -43,20 +43,15 @@ vector<string>	SpiderMenUtil::splitString(string str, string del)
 	size_t	pos = 0;
 	size_t	before = 0;
 	vector<string>	rtn;
-			// int i = 0;
 	while (1)
 	{
 		pos = str.find(del.c_str(), before);
 		if (pos != string::npos) {
 			rtn.push_back(str.substr(before, pos - before));
 
-			// cout << "i: " << ++i << " before: " << before << " pos: " << pos - before <<"\n";
-			// cout << str.substr(before, pos - before) << endl;
-
 		} else {
-			if (str.size() != before) {
+			if (str.size() != before)
 				rtn.push_back(str.substr(before, str.size() - before));
-			}
 			break ;
 		}
 		before = pos + del.size();

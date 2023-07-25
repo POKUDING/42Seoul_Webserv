@@ -1,107 +1,90 @@
 #include "../../includes/socket/Client.hpp"
 
 Client::Client(bool mType, int mFd, int mPort, const vector<Server>* mServer)
-			: ASocket(mType, mFd, mPort, mServer), mBuFlag(0) { }
+			: ASocket(mType, mFd, mPort, mServer), mRequest(NULL), mStatus(0) ,mResponseCode(0) { }
 
-Client::~Client() { }
+Client::~Client()
+{
+	if (mRequest)
+		delete mRequest;
+}
 
 
-unsigned int	Client::getTime() const { return mTime; }
 int				Client::getStatus() const { return mStatus; }
-int				Client::getIdx() const { return mIdx; }
-int				Client::getBuFlag() const { return mBuFlag; }
 ARequest*		Client::getRequest() const { return mRequest; }
+string&			Client::getResponseMSG() { return mResponseMSG; }
+string&			Client::getHeadBuffer() { return mHeadBuffer; }
+string&			Client::getBodyBuffer() { return mBodyBuffer; }
+int				Client::getResponseCode() const { return mResponseCode; }
 
-void			Client::setTime(const unsigned int mTime) { this->mTime = mTime; }
-void			Client::setStatus(const int mStatus) { this->mStatus = mStatus; }
-void			Client::setIdx(const int mIdx) { this->mIdx = mIdx; }
-
+void			Client::setStatus(int mStatus) { this->mStatus = mStatus; }
+void			Client::setRequestNull() { this->mRequest = NULL; }
+void			Client::setResponseCode(int code) { mResponseCode = code; }
 void			Client::addBuffer(char *input, size_t size)
 {
 	size_t pos = 0;
-	if (this->mBuFlag == 0)	{
-		this->mHeadBuffer.append(input, size);
+
+	if (mStatus == nStatus::READING_HEADER)	{
+		mHeadBuffer.append(input, size);
 		pos = mHeadBuffer.find("\r\n\r\n");
-		if (pos != string::npos)
-		{
-			mBodyBuffer.append(&mHeadBuffer[pos + 4], mHeadBuffer.size() - pos + 4);
+		if (pos != string::npos) {
+			mBodyBuffer.append(&mHeadBuffer[pos + 4], mHeadBuffer.size() - (pos + 4));
 			mHeadBuffer = mHeadBuffer.substr(0, pos);
-			this->mBuFlag = 1;
-			//parse start
-			if (createRequest(mHeadBuffer) != nMethod::POST)
-				this->mBuFlag = 2;
+			mStatus = nStatus::READING_BODY;
+			//header parse start
+			createRequest(mHeadBuffer);
+
+			switch (mRequest->getType())
+			{
+			case nMethod::GET:
+			case nMethod::DELETE:
+				if (mBodyBuffer.size() > 8) {
+					setResponseCode(400);
+					throw runtime_error("Error: Request: GET/DELETE cannot have body");
+				}
+				mStatus = nStatus::PROCESSING;
+				break;
+			
+			case nMethod::POST:
+				if (mRequest->getBasics().content_length == static_cast<size_t>(CHUNKED)) {
+					break ;
+				} else if (mBodyBuffer.size() == mRequest->getBasics().content_length) {
+					// if (mBodyBuffer.find("\r\n\r\n", mRequest->getBasics().content_length - 4) == string::npos) {
+					// 	setResponseCode(400);
+					// 	throw runtime_error("Error: Request: POST body > end not \\r\\n\\r\\n");
+					// }
+					mStatus = nStatus::PROCESSING;
+				} else if (mBodyBuffer.size() > mRequest->getBasics().content_length) {
+					setResponseCode(400);
+					throw runtime_error("Error: Request: POST body > content-length");
+				}
+				break;
+
+			default:
+				break;
+			}
+
 		}
-	} else if (this->mBuFlag == 1) {
-		//recv body
-		// content-length == 실제 body : OK
-		// content-length < 실제 body : Bad Request or 무시 (or content-length까지만 읽기)
-		// content-length > 실제 body : 무조건 FAIL
-
-		// if !content-length, 실제 body 있을 경우: Bad Request
-
+	} else if (this->mStatus == nStatus::READING_BODY) {
+		// POST && chunked거나 더 받아올 content-length가 있을 경우에만 해당 블록 들어옴
 		
-		//1) content-length
-		// check cur+recv length vs content-length
-		// if not okay => error
-
-		//2) chunked data 
-		// check size(parsing)
-		// if size != recv size => error
-		// add body only
-
-		this->mBodyBuffer.append(input, size);
-
-		this->mBuFlag = 2;
-		
-		//check if body readDone (content-length or EOF)
-		// if (done) {
-		// 	this->mBuFlag = 2;
-		// }
-
-	} else {
-		throw runtime_error("wrong http request");
-	}
-}
-
-void	Client::parseHeader(void)
-{
-	stringstream	stream;
-	string			word;
-	// char			tmp;
-
-	// for (size_t i = 0, end = mHeadBuffer.size(); i < end; ++i) {
-			//1st line
-			//1) method
-			//2) ' ' -------- flush
-			//3) root
-			//4) ' ' -------- flush
-			//5) http version
-			//6) \r
-			//7) \n -------- flush
-
-	// }
-	for (size_t i = 0, end = mHeadBuffer.size(); i < end; ++i) {
-		if (mHeadBuffer[i] == ' ' || mHeadBuffer[i] == '\n') {
-			//stream check, then flush stream
-			stream >> word;
-
-
-			//2nd line(header) start: 순서는 상관없이 들어오는지 확인 필요(아마 상관 없을듯)
-
-			//while (! /r/n)
-			// “: “ find
-			//	1) npos => error
-			//	2) sth && value값 있는 지 확인 (길이)
-				//		2-0) key 중복 체크
-				// 		2-1) ok => save
-				// 		2-2) not okay => error
-
-
-
-			stream.clear();		//stream flush 이거 맞나요?
+		if (mRequest->getBasics().content_length == static_cast<size_t>(CHUNKED)) {
+			// CHUNKED DATA
+			// check size(parsing): size in hex
+			// if size != recv size => error
+			// add body only
 		} else {
-			stream << mHeadBuffer[i];
+			this->mBodyBuffer.append(input, size);
+			if (mBodyBuffer.size() > mRequest->getBasics().content_length) {
+				setResponseCode(400);
+				throw runtime_error("Bad request:: body size not equal content length");
+			} else if (mBodyBuffer.size() == mRequest->getBasics().content_length) {
+				mStatus = nStatus::PROCESSING;
+			}
 		}
+	} else {
+		setResponseCode(400);
+		throw runtime_error("Error: addBuffer(): recv() while processing");
 	}
 }
 
@@ -115,16 +98,20 @@ int	Client::createRequest(const string& header)
 	header_key_val = createHttpKeyVal(header_line);
 	element_headline = SpiderMenUtil::splitString(header_line[0]);
 
-	if (count(header_line[0].begin(), header_line[0].end(), ' ') != 2 || element_headline.size() != 3 || element_headline[2] != "HTTP/1.1")
+	if (count(header_line[0].begin(), header_line[0].end(), ' ') != 2 || element_headline.size() != 3 || element_headline[2] != "HTTP/1.1") {
+		setResponseCode(400);
 		throw runtime_error("Error: invalid http head line");
-	if (element_headline[0] == "GET") 
+	}
+	if (element_headline[0] == "GET")
 		this->mRequest = new RGet(element_headline[1], header_key_val);
 	else if (element_headline[0] == "POST")
 		this->mRequest = new RPost(element_headline[1], header_key_val);
 	else if (element_headline[0] == "DELETE")
 		this->mRequest = new RDelete(element_headline[1], header_key_val);
-	else
+	else {
+		setResponseCode(400);
 		throw runtime_error("Error: invalid http method");
+	}
 	return mRequest->getType();
 }
 
@@ -136,23 +123,116 @@ map<string,string>	Client::createHttpKeyVal(const vector<string>& header_line)
 	for (size_t i = 1, end = header_line.size(); i < end; ++i)
 	{
 		pos = header_line[i].find(": ");
-		if (pos == string::npos)
+		if (pos == string::npos) {
+			setResponseCode(400);
 			throw runtime_error("Error: invalid http" + header_line[i]);
+		}
 		
-		// rtn.insert(header_line[i].substr(0, pos),header_line[i].substr(pos + 2, header_line[i].size() - pos + 2));
-		// => 수정) map key중복 체크
 		if (rtn[header_line[i].substr(0, pos)] == "")
 			rtn[header_line[i].substr(0, pos)] = header_line[i].substr(pos + 2, header_line[i].size() - pos + 2);
-		else
+		else {
 			throw runtime_error("Error: invalid http duplicated key");
+		}
 	}
 	return rtn;
 }
 
-// int	Client::checkRequest(const string& headline)
-// {
-// }
+void			Client::resetTimer(int mKq, struct kevent event)
+{
+	event.filter = EVFILT_TIMER;
+	event.fflags = NOTE_SECONDS;
+	event.data = TIMEOUT_SEC;
+	event.flags = EV_ADD;
+	if (kevent(mKq, &event, 1, NULL, 0, NULL) == -1)
+		throw runtime_error("Error: resetTimer Failed");
+}
 
+void			Client::create400Response()
+{
+	char 	timeStamp[TIME_SIZE];
+	stringstream to_str;
+	string		buffer;
+	string		body;
+
+	//요청받은 파일 크기 계산 및 BODY용 stream 처리 (default:index.htmp)
+	ifstream	fin("./www/errors/40x.html");
+	if (fin.fail())
+		throw runtime_error("Error: 400 response msg failed");
+	while (getline(fin, buffer)) {
+		body.append(buffer);
+		body.append("\r\n", 2);
+	}
+	fin.close();
+
+	//1st line: STATUS
+	mResponseMSG.append("HTTP/1.1 400 Bad Request\r\n");
+	
+	//HEADER============================================
+	Time::stamp(timeStamp);
+	mResponseMSG.append(timeStamp);		//Date: Tue, 20 Jul 2023 12:34:56 GMT\r\n
+	mResponseMSG.append(SPIDER_SERVER);	//Server: SpiderMen/1.0.0\r\n
+	mResponseMSG.append(CONTENT_TYPE);	//Content-Type: text/html; charset=UTF-8\r\n
+	
+	mResponseMSG.append("Content-Length: ");
+	to_str << body.size();
+	to_str >> buffer;
+	mResponseMSG.append(buffer);
+	mResponseMSG.append("\r\n");
+
+	mResponseMSG.append("\r\n"); //end of head
+
+	//BODY 추가
+	mResponseMSG.append(body, sizeof(body));
+}
+
+void			Client::create500Response()
+{	
+	char 	timeStamp[TIME_SIZE];
+	stringstream to_str;
+	string		buffer;
+	string		body;
+
+	//요청받은 파일 크기 계산 및 BODY용 stream 처리 (default:index.htmp)
+	ifstream	fin("./www/errors/50x.html");
+	if (fin.fail())
+		throw runtime_error("Error: 500 response msg failed");
+	while (getline(fin, buffer)) {
+		body.append(buffer);
+		body.append("\r\n", 2);
+	}
+	fin.close();
+
+	//1st line: STATUS
+	mResponseMSG.append("HTTP/1.1 500 Internal Server Error\r\n");
+	
+	//HEADER============================================
+	Time::stamp(timeStamp);
+	mResponseMSG.append(timeStamp);		//Date: Tue, 20 Jul 2023 12:34:56 GMT\r\n
+	mResponseMSG.append(SPIDER_SERVER);	//Server: SpiderMen/1.0.0\r\n
+	mResponseMSG.append(CONTENT_TYPE);	//Content-Type: text/html; charset=UTF-8\r\n
+	
+	mResponseMSG.append("Content-Length: ");
+	to_str << body.size();
+	to_str >> buffer;
+	mResponseMSG.append(buffer);
+	mResponseMSG.append("\r\n");
+
+	mResponseMSG.append("\r\n"); //end of head
+
+	//BODY 추가
+	mResponseMSG.append(body, sizeof(body));
+}
+
+void			Client::clearClient()
+{
+	delete mRequest;
+	mRequest = NULL;
+	mStatus = nStatus::WAITING;
+	mResponseCode = 0;
+	mHeadBuffer.clear();
+	mBodyBuffer.clear();
+	mResponseMSG.clear();
+}
 
 // void	Client::example()
 // {

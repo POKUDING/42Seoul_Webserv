@@ -5,6 +5,7 @@
 #include <map>
 #include <string>
 #include <sstream>
+#include <fstream>
 #include "../basic.hpp"
 #include "../util/Time.hpp"
 
@@ -13,17 +14,21 @@ using namespace std;
 typedef struct	s_basic 
 {
 	//must for METHOD
-	string	host;
-	string	connection;
-	string	user_agent;
-	string	accept;
-	string	accept_encoding;
-	string	accept_language;
+	string	host;//Host: 
+	int		connection; // default: keep-alive
+	string	user_agent;	//우선 없으면 bad request로 처리
+	// string	accept;		//크롬이면 기본으로 다 되니까 필요없을듯?
+	// string	accept_encoding;	//필요 없을듯?
+	// string	accept_language;	//필요 없을듯?
 	
 	//must for POST
-	string content_length;//Content-Length;
-	string content_type;//Content-Type;
-	string transfer_encoding;//Transfer-encoding; << chunked 여부가 이 태그로 옵니당
+	size_t	content_length;//Content-Length:
+	string	content_type;//Content-Type:	// if (multipart/form-data) => boundary 데이터 필요
+	string	boundary;	//(in Content-Type) body 부분 구분자
+	string	transfer_encoding;//Transfer-encoding << chunked 여부가 이 태그로 옵니당
+	//하기 두개는 Body에서 확인 가능함
+	string	content_disposition;	//(in boundary) Content-Disposition: 
+	string	filename;					//(in Content-Disposition) 저장할 filename(확장자명까지)
 	//must for GET
 
 	//must for DELETE
@@ -38,9 +43,10 @@ typedef struct	s_response
 	//content-type	===> Content-Type: text/html; charset=UTF-8
 
 	//must for METHOD (date는 바로 추출해서 넣어주자)
-	int		code;		//200
-	string	status;		//OK
+	int		code;		//200, 400, 500
+	string	status;		//OK, Bad Request, Internal Server Error
 	int		content_length;	//Content-Length:
+	string	content_type;//	===> Content-Type: text/html; charset=UTF-8  // image/png
 	
 	//must for POST
 	
@@ -60,22 +66,18 @@ class ARequest
 		const string&		getRoot() const;
 		const t_basic&		getBasics() const;
 		const t_response&	getResponse() const;
-		const string&		getMSG() const;
 
-		void				setMSG(const string& msg);
+		virtual	const string	createResponse() = 0;
 
-		virtual	const string&	createResponse() = 0;
+		size_t			mSendLen;
 
-		string			mMSG;
-		char 			timeStamp[TIME_SIZE];
-
-	private:
+	protected:
 		const string	mRoot;
 		const int		mType;
 		t_basic			mBasics;
 		t_response		mResponse;
 
-		// virtual	void	parse(map<string, string> header_key_val) = 0;
+		
 };
 
 #endif //AREQUEST_HPP

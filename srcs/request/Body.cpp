@@ -43,7 +43,7 @@ size_t	Body::parseChunkLen(string& ChunkBuf)
 	char 	*end_ptr;
 	size_t	len;
 
-	len = strtod(ChunkBuf.c_str(), &end_ptr);
+	len = strtol(ChunkBuf.c_str(), &end_ptr, 16);
 	if (end_ptr[0] != '/r' || end_ptr[1] != '/n')
 		return 0;
 	if (len == 0)

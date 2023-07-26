@@ -1,13 +1,13 @@
 #include "../../includes/request/RGet.hpp"
 
 RGet::RGet(string mRoot, map<string, string> header_key_val)
-			: ARequest(mRoot, nMethod::GET, header_key_val)
+			: ARequest(mRoot, GET, header_key_val)
 {
 	if (mBasics.content_length || mBasics.transfer_encoding.size()) {
 		throw runtime_error("Bad request:: GET cannot have body");
 	}
 }
-			
+
 RGet::~RGet() { }
 
 const string	RGet::createResponse()
@@ -39,14 +39,14 @@ const string	RGet::createResponse()
 	// mMSG.append("Content-Type: ");	//png 등의 경우 별도의 content-type필요
 	
 	mMSG.append("Content-Length: ");
-	cout << "body size = " << body.size() << endl;
+	// cout << "body size = " << body.size() << endl;
 	to_str << body.size();
 	to_str >> buffer;
-	cout << "body size  in buffer = " << buffer << endl;
+	// cout << "body size  in buffer = " << buffer << endl;
 	mMSG.append(buffer);
 	mMSG.append("\r\n");
 
-	if (this->getBasics().connection == nSocket::KEEP_ALIVE)
+	if (this->getBasics().connection == KEEP_ALIVE)
 		mMSG.append("Connection: Keep-Alive\r\n");
 
 	mMSG.append("\r\n"); //end of head

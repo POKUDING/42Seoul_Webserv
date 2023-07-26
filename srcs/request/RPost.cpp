@@ -1,7 +1,7 @@
 #include "../../includes/request/RPost.hpp"
 
 RPost::RPost(string mRoot, map<string, string> header_key_val)
-			: ARequest(mRoot, nMethod::POST, header_key_val)
+			: ARequest(mRoot, POST, header_key_val)
 {
 	if (mBasics.content_length) {
 		size_t	pos;
@@ -37,11 +37,8 @@ const string	RPost::createResponse()
 
 
 	mMSG.append("Content-Length: 13\r\n");
-	// stringstream	to_str;
-	// to_str << getResponse().content_length;
-	// to_str >> mMSG;
 
-	if (this->getBasics().connection == nSocket::KEEP_ALIVE)
+	if (this->getBasics().connection == KEEP_ALIVE)
 		mMSG.append("Connection: Keep-Alive\r\n");
 		
 	mMSG.append("\r\n");		//end of head

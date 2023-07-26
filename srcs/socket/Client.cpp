@@ -1,7 +1,7 @@
 #include "../../includes/socket/Client.hpp"
 
 Client::Client(bool mType, int mFd, int mPort, const vector<Server>* mServer)
-			: ASocket(mType, mFd, mPort, mServer), mRequest(NULL), mStatus(0) ,mResponseCode(0) { }
+			: Socket(mType, mFd, mPort, mServer), mRequest(NULL), mStatus(0) ,mResponseCode(0), mCGI(0) { }
 
 Client::~Client()
 {
@@ -9,43 +9,48 @@ Client::~Client()
 		delete mRequest;
 }
 
-
 int				Client::getStatus() const { return mStatus; }
 ARequest*		Client::getRequest() const { return mRequest; }
 string&			Client::getResponseMSG() { return mResponseMSG; }
 string&			Client::getHeadBuffer() { return mHeadBuffer; }
 string&			Client::getBodyBuffer() { return mBodyBuffer; }
 int				Client::getResponseCode() const { return mResponseCode; }
+pid_t			Client::getCGI() const { return mCGI; }
 
 void			Client::setStatus(int mStatus) { this->mStatus = mStatus; }
 void			Client::setRequestNull() { this->mRequest = NULL; }
 void			Client::setResponseCode(int code) { mResponseCode = code; }
+void			Client::setCGI(pid_t mCGI) { this->mCGI = mCGI; }
 void			Client::addBuffer(char *input, size_t size)
 {
 	size_t pos = 0;
 
-	if (mStatus == nStatus::READING_HEADER)	{
+	if (mStatus == READING_HEADER)	{
 		mHeadBuffer.append(input, size);
 		pos = mHeadBuffer.find("\r\n\r\n");
 		if (pos != string::npos) {
 			mBodyBuffer.append(&mHeadBuffer[pos + 4], mHeadBuffer.size() - (pos + 4));
 			mHeadBuffer = mHeadBuffer.substr(0, pos);
-			mStatus = nStatus::READING_BODY;
+			mStatus = READING_BODY;
 			//header parse start
-			createRequest(mHeadBuffer);
+			int check = createRequest(mHeadBuffer);
+			if (check == WRONG) {
+				//EV_DELETE, EVFILT_READ
+				return ;
+			} 
 
 			switch (mRequest->getType())
 			{
-			case nMethod::GET:
-			case nMethod::DELETE:
+			case GET:
+			case DELETE:
 				if (mBodyBuffer.size() > 8) {
 					setResponseCode(400);
 					throw runtime_error("Error: Request: GET/DELETE cannot have body");
 				}
-				mStatus = nStatus::PROCESSING;
+				mStatus = PROCESSING;
 				break;
 			
-			case nMethod::POST:
+			case POST:
 				if (mRequest->getBasics().content_length == static_cast<size_t>(CHUNKED)) {
 					break ;
 				} else if (mBodyBuffer.size() == mRequest->getBasics().content_length) {
@@ -53,7 +58,7 @@ void			Client::addBuffer(char *input, size_t size)
 					// 	setResponseCode(400);
 					// 	throw runtime_error("Error: Request: POST body > end not \\r\\n\\r\\n");
 					// }
-					mStatus = nStatus::PROCESSING;
+					mStatus = PROCESSING;
 				} else if (mBodyBuffer.size() > mRequest->getBasics().content_length) {
 					setResponseCode(400);
 					throw runtime_error("Error: Request: POST body > content-length");
@@ -65,7 +70,7 @@ void			Client::addBuffer(char *input, size_t size)
 			}
 
 		}
-	} else if (this->mStatus == nStatus::READING_BODY) {
+	} else if (this->mStatus == READING_BODY) {
 		// POST && chunked거나 더 받아올 content-length가 있을 경우에만 해당 블록 들어옴
 		
 		if (mRequest->getBasics().content_length == static_cast<size_t>(CHUNKED)) {
@@ -79,7 +84,7 @@ void			Client::addBuffer(char *input, size_t size)
 				setResponseCode(400);
 				throw runtime_error("Bad request:: body size not equal content length");
 			} else if (mBodyBuffer.size() == mRequest->getBasics().content_length) {
-				mStatus = nStatus::PROCESSING;
+				mStatus = PROCESSING;
 			}
 		}
 	} else {
@@ -109,6 +114,7 @@ int	Client::createRequest(const string& header)
 	else if (element_headline[0] == "DELETE")
 		this->mRequest = new RDelete(element_headline[1], header_key_val);
 	else {
+		//fake request를 만들어서 EOF처리가 가능하게 하자
 		setResponseCode(400);
 		throw runtime_error("Error: invalid http method");
 	}
@@ -147,26 +153,38 @@ void			Client::resetTimer(int mKq, struct kevent event)
 		throw runtime_error("Error: resetTimer Failed");
 }
 
-void			Client::create400Response()
+void			Client::createErrorResponse()
 {
-	char 	timeStamp[TIME_SIZE];
-	stringstream to_str;
-	string		buffer;
-	string		body;
+	char			timeStamp[TIME_SIZE];
+	stringstream	to_str;
+	stringstream	tmp;
+	string			buffer;
+	string			body;
 
-	//요청받은 파일 크기 계산 및 BODY용 stream 처리 (default:index.htmp)
-	ifstream	fin("./www/errors/40x.html");
-	if (fin.fail())
-		throw runtime_error("Error: 400 response msg failed");
-	while (getline(fin, buffer)) {
-		body.append(buffer);
-		body.append("\r\n", 2);
+	if (this->mStatus == 400) {
+
+		mResponseMSG.append("HTTP/1.1 400 Bad Request\r\n");
+
+		ifstream	fin("./www/errors/40x.html");
+		if (fin.fail())
+			throw runtime_error("Error: 400 response msg failed");
+		tmp << fin.rdbuf();
+		body = tmp.str();
+		fin.close();
+
+	} else if (this->mStatus == 500) {
+
+		mResponseMSG.append("HTTP/1.1 500 Internal Server Error\r\n");
+		
+		ifstream	fin("./www/errors/50x.html");
+		if (fin.fail())
+			throw runtime_error("Error: 500 response msg failed");
+		tmp << fin.rdbuf();
+		body = tmp.str();
+		fin.close();
+
 	}
-	fin.close();
 
-	//1st line: STATUS
-	mResponseMSG.append("HTTP/1.1 400 Bad Request\r\n");
-	
 	//HEADER============================================
 	Time::stamp(timeStamp);
 	mResponseMSG.append(timeStamp);		//Date: Tue, 20 Jul 2023 12:34:56 GMT\r\n
@@ -182,52 +200,14 @@ void			Client::create400Response()
 	mResponseMSG.append("\r\n"); //end of head
 
 	//BODY 추가
-	mResponseMSG.append(body, sizeof(body));
-}
-
-void			Client::create500Response()
-{	
-	char 	timeStamp[TIME_SIZE];
-	stringstream to_str;
-	string		buffer;
-	string		body;
-
-	//요청받은 파일 크기 계산 및 BODY용 stream 처리 (default:index.htmp)
-	ifstream	fin("./www/errors/50x.html");
-	if (fin.fail())
-		throw runtime_error("Error: 500 response msg failed");
-	while (getline(fin, buffer)) {
-		body.append(buffer);
-		body.append("\r\n", 2);
-	}
-	fin.close();
-
-	//1st line: STATUS
-	mResponseMSG.append("HTTP/1.1 500 Internal Server Error\r\n");
-	
-	//HEADER============================================
-	Time::stamp(timeStamp);
-	mResponseMSG.append(timeStamp);		//Date: Tue, 20 Jul 2023 12:34:56 GMT\r\n
-	mResponseMSG.append(SPIDER_SERVER);	//Server: SpiderMen/1.0.0\r\n
-	mResponseMSG.append(CONTENT_TYPE);	//Content-Type: text/html; charset=UTF-8\r\n
-	
-	mResponseMSG.append("Content-Length: ");
-	to_str << body.size();
-	to_str >> buffer;
-	mResponseMSG.append(buffer);
-	mResponseMSG.append("\r\n");
-
-	mResponseMSG.append("\r\n"); //end of head
-
-	//BODY 추가
-	mResponseMSG.append(body, sizeof(body));
+	mResponseMSG.append(body.c_str(), body.size());
 }
 
 void			Client::clearClient()
 {
 	delete mRequest;
 	mRequest = NULL;
-	mStatus = nStatus::WAITING;
+	mStatus = WAITING;
 	mResponseCode = 0;
 	mHeadBuffer.clear();
 	mBodyBuffer.clear();

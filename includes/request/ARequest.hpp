@@ -35,26 +35,26 @@ typedef struct	s_basic
 
 } t_basic;
 
-typedef struct	s_response
-{
-	//same everytime => define으로 관리하자 -> basic.hpp에 저장해둠
-	//http version	===> HTTP/1.1
-	//server		===> Server: SpiderMen/1.0.0 (Linux)
-	//content-type	===> Content-Type: text/html; charset=UTF-8
+// typedef struct	s_response
+// {
+// 	//same everytime => define으로 관리하자 -> basic.hpp에 저장해둠
+// 	//http version	===> HTTP/1.1
+// 	//server		===> Server: SpiderMen/1.0.0 (Linux)
+// 	//content-type	===> Content-Type: text/html; charset=UTF-8
 
-	//must for METHOD (date는 바로 추출해서 넣어주자)
-	int		code;		//200, 400, 500
-	string	status;		//OK, Bad Request, Internal Server Error
-	int		content_length;	//Content-Length:
-	string	content_type;//	===> Content-Type: text/html; charset=UTF-8  // image/png
+// 	//must for METHOD (date는 바로 추출해서 넣어주자)
+// 	int		code;		//200, 400, 500
+// 	string	status;		//OK, Bad Request, Internal Server Error
+// 	int		content_length;	//Content-Length:
+// 	string	content_type;//	===> Content-Type: text/html; charset=UTF-8  // image/png
 	
-	//must for POST
+// 	//must for POST
 	
-	//must for GET
+// 	//must for GET
 
-	//must for DELETE
+// 	//must for DELETE
 	
-} t_response;
+// } t_response;
 
 class ARequest
 {
@@ -65,7 +65,7 @@ class ARequest
 		int					getType() const;
 		const string&		getRoot() const;
 		const t_basic&		getBasics() const;
-		const t_response&	getResponse() const;
+		// const t_response&	getResponse() const;
 
 		virtual	const string	createResponse() = 0;
 
@@ -75,7 +75,7 @@ class ARequest
 		const string	mRoot;
 		const int		mType;
 		t_basic			mBasics;
-		t_response		mResponse;
+		// t_response		mResponse;
 
 		
 };

@@ -1,33 +1,12 @@
 #include "../../includes/config/Server.hpp"
 
+// constructor
+
 Server::Server(): mRoot("/"), mListen(80), mClientMaxBodySize(MAX_BODY_SIZE) { }
 
-void	Server::setValue(const vector<string>& temp)
-{
-	if (temp[0] == "error_page" && temp.size() > 2) {
-		for (size_t i = 1; i < temp.size() - 1; i++) {
-			this->addErrorPage(temp[i], temp[temp.size() - 1]);
-		}
-		return ;
-	} else if (temp[0] == "server_name") {
-		for (size_t i = 1; i < temp.size(); i++) {
-			this->addServerName(temp[i]);
-		}
-		return ;
-	} else if (temp.size() != 2) {
-		throw runtime_error("Error: Invalid server1");
-	}
-	if (temp[0] == "root") {
-		this->setRoot(temp[1]);
-	} else if (temp[0] == "listen") {
-		this->setListen(temp[1]);
-	} else if (temp[0] == "client_max_body_size") {
-		this->setClientMaxBodySize(temp[1]);
-	} else {
-		throw runtime_error("Error: Invalid server: wrong key");
-	}
-}
+// member functions
 
+// public
 
 void					Server::parse(ifstream& f_dataRead)
 {
@@ -38,16 +17,15 @@ void					Server::parse(ifstream& f_dataRead)
 			continue;
 			
 		//split here
-		vector<string> temp = SpiderMenUtil::splitString(line);
-
-		if (temp.size() == 0 || temp[0][0] == '#')
+		vector<string> splitedLine = SpiderMenUtil::splitString(line);
+		if (splitedLine.size() == 0 || splitedLine[0][0] == '#')
 			continue;
-		if (temp[0][0] == '}' && temp.size() == 1) {
+		if (splitedLine[0][0] == '}' && splitedLine.size() == 1) {
 			return ;//end parsing
-		} else if (temp.size() < 2) {
+		} else if (splitedLine.size() < 2) {
 			throw runtime_error("Error: Invalid server: key - value");
-		} else if (temp[0] == "location" && temp[2] == "{" && temp.size() == 3) {
-			Location location(temp[1]);
+		} else if (splitedLine[0] == "location" && splitedLine[2] == "{" && splitedLine.size() == 3) {
+			Location location(splitedLine[1]);
 			location.parse(f_dataRead);
 			this->addLocation(location);
 		} else {
@@ -55,29 +33,54 @@ void					Server::parse(ifstream& f_dataRead)
 				throw runtime_error("Error: Invalid location: ';'");
 				
 			line = line.substr(0, line.length() - 1);
-			temp = SpiderMenUtil::splitString(line);
-			setValue(temp);
+			splitedLine = SpiderMenUtil::splitString(line);
+			setValue(splitedLine);
 		}
 	}
 }
 
+void	Server::setValue(const vector<string>& splitedLine)
+{
+	if (splitedLine[0] == "error_page" && splitedLine.size() > 2) {
+		for (size_t i = 1; i < splitedLine.size() - 1; i++) {
+			this->addErrorPage(splitedLine[i], splitedLine[splitedLine.size() - 1]);
+		}
+		return ;
+	} else if (splitedLine[0] == "server_name") {
+		for (size_t i = 1; i < splitedLine.size(); i++) {
+			this->addServerName(splitedLine[i]);
+		}
+		return ;
+	} else if (splitedLine.size() != 2) {
+		throw runtime_error("Error: Invalid server1");
+	}
+	if (splitedLine[0] == "root") {
+		this->setRoot(splitedLine[1]);
+	} else if (splitedLine[0] == "listen") {
+		this->setListen(splitedLine[1]);
+	} else if (splitedLine[0] == "client_max_body_size") {
+		this->setClientMaxBodySize(splitedLine[1]);
+	} else {
+		throw runtime_error("Error: Invalid server: wrong key");
+	}
+}
+
+// getters and setters
+
 const vector<Location>&		Server::getLocation() const { return this->mLocation; }
-const map<string, string>&	Server::getErrorPage() const { return this->mErrorPage; }
 const vector<string>&		Server::getServerName() const { return this->mServerName; }
+const map<string, string>&	Server::getErrorPage() const { return this->mErrorPage; }
 const string&				Server::getRoot() const { return this->mRoot; }
 int							Server::getListen() const { return this->mListen; }
 int							Server::getClientMaxBodySize() const { return this->mClientMaxBodySize; }
 
 void						Server::addLocation(const Location& mLocation) { this->mLocation.push_back(mLocation); }
-void						Server::addErrorPage(const string& code, const string& page) { this->mErrorPage.insert(pair<string, string>(code, page)); }
 void						Server::addServerName(const string& mServerName) { this->mServerName.push_back(mServerName); }
+void						Server::addErrorPage(const string& code, const string& page) { this->mErrorPage.insert(pair<string, string>(code, page)); }
 void						Server::setRoot(const string& mRoot) { this->mRoot = mRoot; }
-
 void						Server::setListen(const string& mListen)
 {
 	int	portNumber;
-	///need to modify str -> int
-	//1~65535 port available
 
 	//int check
 	if (mListen.size() > 5)
@@ -96,7 +99,6 @@ void						Server::setListen(const string& mListen)
 
 	this->mListen = portNumber;
 }
-
 void						Server::setClientMaxBodySize(const string& mClientMaxBodySize)
 {
 	int	tmp;
@@ -113,8 +115,9 @@ void						Server::setClientMaxBodySize(const string& mClientMaxBodySize)
 	if (tmp < 1 || tmp > MAX_BODY_SIZE)
 		throw runtime_error("Error: invalid maxbodysize: not in range");
 	this->mClientMaxBodySize = tmp;
-
 }
+
+// print
 
 void						Server::printMembers() const
 {

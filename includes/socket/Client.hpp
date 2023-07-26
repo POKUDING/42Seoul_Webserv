@@ -8,7 +8,7 @@
 #include "../request/RGet.hpp"
 #include "../request/RPost.hpp"
 #include "../request/RDelete.hpp"
-#include "./ASocket.hpp"
+#include "./Socket.hpp"
 
 //REQUEST STRUCT
 	// method
@@ -25,7 +25,7 @@
 
 
 
-class Client : public ASocket
+class Client : public Socket
 {
 public:
 	Client(bool mType, int mFd, int mPort, const vector<Server>* mServer);
@@ -37,11 +37,13 @@ public:
 	string&			getHeadBuffer();
 	string&			getBodyBuffer();
 	int				getResponseCode() const;
+	pid_t			getCGI() const;
 
 	void			setStatus(int mStatus);
 	void			setRequestNull();
 	void			addBuffer(char *input, size_t size);
 	void			setResponseCode(int code);
+	void			setCGI(pid_t mCGI);
 
 	void			clearClient();
 
@@ -51,18 +53,17 @@ public:
 	// void				example();
 	void			resetTimer(int mKq, struct kevent event);
 
-	void			create400Response();
-	void			create500Response();
-
+	void			createErrorResponse();
 
 private:
 	// void			parseHeader(void);
 	ARequest*		mRequest;
-	int				mStatus;	//nStatus::eClient
+	int				mStatus;	//eClient
 	int				mResponseCode;
 	string			mHeadBuffer;
 	string			mBodyBuffer;
 	string			mResponseMSG;
+	pid_t			mCGI;
 };
 
 #endif //CLIENT_HPP

@@ -15,25 +15,18 @@
 
 using namespace std;
 
-
 class Config
 {
 	public:
 		Config();
+		Config(string fileName);
 
-		//Config parsing related function to be added
-		void					parse(const string& file = DEFAULT_FILE);
-		// void					printMembers() const;
-
+		void								parse(const string& file = DEFAULT_FILE);
 		const map< int, vector<Server> >&	getServer() const;
-
-		// void					addServer(Server& Server);
-		
+		// void					printMembers() const;
 
 	private:
 		map< int, vector<Server> >	mServer;
 };
-
-
 
 #endif //CONFIG_HPP

@@ -19,11 +19,10 @@ int	main(int argc, char* argv[], char** env)
 
 	Config config;
 	try {
-		//config parse => Config에 저장
 		if (argc == 2)
-			config.parse(argv[1]);
+			Config config(argv[1]);
 		else
-			config.parse();
+			Config config;
 		// Config.printMembers();
 
 		SpiderMen websrv(config);

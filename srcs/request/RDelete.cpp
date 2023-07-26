@@ -1,7 +1,7 @@
 #include "../../includes/request/RDelete.hpp"
 
 RDelete::RDelete(string mRoot, map<string, string> header_key_val)
-			: ARequest(mRoot, nMethod::DELETE, header_key_val)
+			: ARequest(mRoot, DELETE, header_key_val)
 {
 	if (mBasics.content_length || mBasics.transfer_encoding.size()) {
 		throw runtime_error("Bad request:: DELETE cannot have body");
@@ -24,7 +24,7 @@ const string	RDelete::createResponse()
 	mMSG.append(timeStamp);	//Date: Tue, 20 Jul 2023 12:34:56 GMT
 	mMSG.append(SPIDER_SERVER);	//Server: SpiderMen/1.0.0
 
-	if (this->getBasics().connection == nSocket::KEEP_ALIVE)
+	if (this->getBasics().connection == KEEP_ALIVE)
 		mMSG.append("Connection: Keep-Alive\r\n");
 		
 	mMSG.append("\r\n");

@@ -17,9 +17,9 @@ ARequest::ARequest(string mRoot, int mType, map<string, string> header_key_val)
 		throw runtime_error("Bad request:: no must header");
 	//method 필수요소 확인: connection
 	if (header_key_val["Connection"] == "keep-alive") {
-		mBasics.connection = nSocket::KEEP_ALIVE;
+		mBasics.connection = KEEP_ALIVE;
 	} else if (header_key_val["Connection"] == "close") {
-		mBasics.connection = nSocket::CLOSE;
+		mBasics.connection = CLOSE;
 	} else {
 		throw runtime_error("Bad request:: connection");
 	}
@@ -29,12 +29,12 @@ ARequest::ARequest(string mRoot, int mType, map<string, string> header_key_val)
 	}
 
 	//필요해서 초기화해줌 (struct가 자동으로 초기화되면 필요없음 근데 잘 모름ㅎ)
-	mResponse.code = 0;
-	mResponse.content_length = 0;
+	// mResponse.code = 0;
+	// mResponse.content_length = 0;
 	mSendLen = 0;
 }
 
 int					ARequest::getType() const { return mType; }
 const string&		ARequest::getRoot() const { return mRoot; }
 const t_basic&		ARequest::getBasics() const { return mBasics; }
-const t_response&	ARequest::getResponse() const { return mResponse; }
+// const t_response&	ARequest::getResponse() const { return mResponse; }

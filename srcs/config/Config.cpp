@@ -1,8 +1,15 @@
 #include "../../includes/config/Config.hpp"
 
-Config::Config() { }
+// constructors
 
-void					Config::parse(const string& file)
+Config::Config() { parse(); }
+Config::Config(string fileName) { parse(fileName); }
+
+// member functions
+
+// public
+
+void	Config::parse(const string& file)
 {
 	//file open
 	ifstream f_dataRead(file.c_str(), ios_base::in);
@@ -17,11 +24,11 @@ void					Config::parse(const string& file)
 			continue;
 		
 		//split here
-		vector<string> temp = SpiderMenUtil::splitString(line);
+		vector<string> splitedLine = SpiderMenUtil::splitString(line);
 		
-		if (temp.size() == 0 || temp[0][0] == '#')
+		if (splitedLine.size() == 0 || splitedLine[0][0] == '#')
 			continue;
-		if (temp.size() == 2 && temp[0] == "server" && temp[1] == "{") {
+		if (splitedLine.size() == 2 && splitedLine[0] == "server" && splitedLine[1] == "{") {
 			Server server;
 
 			server.parse(f_dataRead);
@@ -29,29 +36,18 @@ void					Config::parse(const string& file)
 
 			if (it == mServer.end())
 			{
-				vector<Server> servec_tmp;
-				servec_tmp.push_back(server);
-				mServer.insert(pair<int, vector<Server> >(server.getListen(), servec_tmp));				
+				vector<Server> tempServer;
+				tempServer.push_back(server);
+				mServer.insert(pair<int, vector<Server> >(server.getListen(), tempServer));				
 			}
 			else
 				it->second.push_back(server);
-
-			// if (it != mServer.end())
-			// 	it->second.push_back(server);
-			// else
-			// {
-			// 	vector<Server> servec_tmp;
-			// 	servec_tmp.push_back(server);
-			// 	mServer.insert(pair<int, vector<Server> >(server.getListen(), servec_tmp));
-			// }
 		} else {
-			cout << "Wrong line: " << line << endl;
+			// cout << "Wrong line: " << line << endl;
 			throw runtime_error("Error: config wrong arguments.");
-			// f_dataRead.close();
 			exit(EXIT_FAILURE);
 		}
 	}
-	// close
 	f_dataRead.close();
 }
 
@@ -69,7 +65,4 @@ void					Config::parse(const string& file)
 // 	}
 // }
 
-
 const map< int, vector<Server> >&	Config::getServer() const { return this->mServer; }
-
-// void					Config::addServer(Server& Server) { this->mServer.push_back(Server); }

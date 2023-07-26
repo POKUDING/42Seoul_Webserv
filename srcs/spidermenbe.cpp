@@ -24,7 +24,7 @@ void	SpiderMen::run()
 
 	while (1) {
 		memset(events, 0, sizeof(events));
-		eventNum = kevent(mKq, NULL, 0, events, MAX_EVENT, NULL); //이벤트 듣기
+		eventNum = mkevent(mKq, NULL, 0, events, MAX_EVENT, NULL); //이벤트 듣기
 		if (eventNum == -1) {
 			//에러 발생하면 해당 건만 error log 등으로 별도 처리,
 			//웹서버는 그대로 진행되어야 함 (혹은 재시작?)
@@ -84,8 +84,8 @@ void	SpiderMen::run()
 				} catch (const exception& e) {
 					cout << "Error: Client Handler: " << e.what() << ", code: " << reinterpret_cast<Client *>(sock_ptr)->getResponseCode()<< endl;
 					//400 || 500 에러일 경우 처리 (throw 전에 client.setResponseCode()로 코드 설정해줘야 함)
-					// if (reinterpret_cast<Client *>(sock_ptr)->getResponseCode())
-						// reinterpret_cast<Client *>(sock_ptr)->createErrorResponse();
+					if (reinterpret_cast<Client *>(sock_ptr)->getResponseCode())
+						reinterpret_cast<Client *>(sock_ptr)->createErrorResponse();
 						// reinterpret_cast<Client *>(sock_ptr)->getRequest()->createResponse();
 						//send
 //send()여기서 어떻게 하징
@@ -229,51 +229,84 @@ void	SpiderMen::handleServer(Socket* sock)
 	}
 }
 
-// static void		testcode()
-// {
-// 	//make response to send
-// 	client->getResponseMSG() = client->getRequest()->createResponse();
+static void		testcode()
+{
+	//make response to send
+	client->getResponseMSG() = client->getRequest()->createResponse();
 
-// 	//test code (request check) ===============================
-// 	{
-// 		ofstream test("test_request.txt", ios::app);
-// 		test << client->getHeadBuffer() << client->getBodyBuffer();
-// 		test.close();
-// 	}
-// 	//test code (response check) ===============================
-// 	{
-// 		ofstream test("test_response.txt", ios::app);
-// 		test << client->getResponseMSG();
-// 		test.close();
-// 	}
-// 	//END OF test code ========================================
-// }
+	//test code (request check) ===============================
+	{
+		ofstream test("test_request.txt", ios::app);
+		test << client->getHeadBuffer() << client->getBodyBuffer();
+		test.close();
+	}
+	//test code (response check) ===============================
+	{
+		ofstream test("test_response.txt", ios::app);
+		test << client->getResponseMSG();
+		test.close();
+	}
+	//END OF test code ========================================
+}
 
 void	SpiderMen::handleClient(struct kevent* event, Client* client)
 {
 
 	if (event->filter == EVFILT_READ) {
-		client->readSocket(event);
+		
+		if (client->getStatus() == WAITING) {
+			client->setStatus(READING_HEADER);
+		} else if (client->getStatus() == PROCESSING) {
+			client->setResponseCode(400);
+			throw runtime_error("Error: recv() while PROCESS");
+		} else if(client->getStatus() == SENDING) {
+			client->setResponseCode(0);
+			throw runtime_error("Error: recv() while send()");
+		}
+		client->readSocket(event, client);
+		//if (client request read done)
+		if (client->getStatus() == PROCESSING) {
+			
+			//요청에 따라 cgi 필요해ㅐㅐㅐㅐㅐㅐㅐㅐㅐㅐㅐㅐㅐㅐㅐㅐㅐㅐㅐㅐ
+			client->setCGI(fork());
+			if (client->getCGI() == 0) {
+				//childProcess
+			}
+			//getRequest().response 구조체 채워줌
+			testcode();
+			//event write queue add
+			// setEvent(event, mState)??? 모듈화??? 굳이??? 가독성???
+			event->filter = EVFILT_WRITE;
+			if (kevent(mKq, event, 1, NULL, 0, NULL) == -1)
+				throw runtime_error("Error: handleClient - EVFILT update Failed - write");
+			client->setStatus(SENDING);
+		}
 	} else if (event->filter == EVFILT_WRITE) {
-		// size_t	sendinglen = client->getResponseMSG().size() - client->getRequest()->mSendLen;
-		// if (static_cast<size_t>(event->data) <= sendinglen)
-		// 	sendinglen = event->data;
-		// sendinglen = send(client->getFd(), client->getResponseMSG().c_str() + client->getRequest()->mSendLen, sendinglen, 0);
-		// client->getRequest()->mSendLen += sendinglen;
-		// if (client->getRequest()->mSendLen >= client->getResponseMSG().size()) {
-		// 	//write done
-		// 	event->flags = EV_DELETE;
-		// 	if (kevent(mKq, event, 1, NULL, 0, NULL) == -1)
-		// 		throw runtime_error("Error: handleClient - EVFILT update Failed - DELETE");
-		// 	int connection = client->getRequest()->getBasics().connection;
+		size_t	sendinglen = client->getResponseMSG().size() - client->getRequest()->mSendLen;
+		if (static_cast<size_t>(event->data) <= sendinglen)
+			sendinglen = event->data;
+		sendinglen = send(client->getFd(), client->getResponseMSG().c_str() + client->getRequest()->mSendLen, sendinglen, 0);
+		client->getRequest()->mSendLen += sendinglen;
+		if (client->getRequest()->mSendLen >= client->getResponseMSG().size()) {
+			//write done
+			event->flags = EV_DELETE;
+			if (kevent(mKq, event, 1, NULL, 0, NULL) == -1)
+				throw runtime_error("Error: handleClient - EVFILT update Failed - DELETE");
+			event->filter = EVFILT_READ;
+			event->flags = EV_ADD;
+			if (kevent(mKq, event, 1, NULL, 0, NULL) == -1)
+				throw runtime_error("Error: handleClient - EVFILT update Failed - DELETE");
+			client->setStatus(WAITING);
 
-		// 	//request delete, client 소멸자에서 다시 delete되지 않도록 Null로 만들어줌
-		// 	client->clearClient();
+			int connection = client->getRequest()->getBasics().connection;
 
-		// 	cout << "EOF of send, close: " << connection << endl;
-		// 	if (connection == CLOSE)
-		// 		throw runtime_error("client request connection CLOSE");
-		// }
+			//request delete, client 소멸자에서 다시 delete되지 않도록 Null로 만들어줌
+			client->clearClient();
+
+			cout << "EOF of send, close: " << connection << endl;
+			if (connection == CLOSE)
+				throw runtime_error("client request connection CLOSE");
+		}
 	} else if (event->filter == EVFILT_TIMER) {
 		//check client's status
 			// connected & waiting						=> close()
@@ -282,31 +315,51 @@ void	SpiderMen::handleClient(struct kevent* event, Client* client)
 			// client request read done / processing	=> 500
 			// send()									=> close()
 
-		// switch (client->getStatus())
-		// {
-		// case WAITING:
-		// 	throw runtime_error("TIMER: Waiting");
-		// 	break;
+		switch (client->getStatus())
+		{
+		case WAITING:
+			throw runtime_error("TIMER: Waiting");
+			break;
 
-		// case READING_HEADER:
-		// case READING_BODY:
-		// 	client->setResponseCode(400);
-		// 	throw runtime_error("TIMER: Reading");
+		case READING_HEADER:
+		case READING_BODY:
+			client->setResponseCode(400);
+			throw runtime_error("TIMER: Reading");
 
-		// case PROCESSING:
-		// 	client->setResponseCode(500);;
-		// 	throw runtime_error("TIMER: Processing");
+		case PROCESSING:
+			client->setResponseCode(500);;
+			throw runtime_error("TIMER: Processing");
 
-		// case SENDING:
-		// 	throw runtime_error("TIMER: Sending");
-		// 	break;
+		case SENDING:
+			throw runtime_error("TIMER: Sending");
+			break;
 
-		// default:
-		// 	break;
-		// }
+		default:
+			break;
+		}
 	} else {
 		client->setResponseCode(0);
 		throw runtime_error("Error: undefined EVFILT");
 	}
 }
 
+//readSocket은 Client에 있는게 더 맞는 거 같아요 (옮겨도 파라미터 이슈 없는지 확인은 안해봄)
+void	SpiderMen::readSocket(struct kevent* event, Client* client)
+{
+	size_t	buffer_size = event->data;	
+	char	buffer[buffer_size];
+	memset(buffer, 0, buffer_size);
+	ssize_t s = recv(client->getFd(), buffer, buffer_size, 0);
+
+	if (s < 1) {
+		if (s == 0) {
+			throw runtime_error("client socket closed");
+			// cout << "Client socket [" << client->getFd() << "] closed" << endl;
+		} else {
+			throw runtime_error("Error: client socket recv failed");
+			// cout << "Error: Client socket [" << client->getFd() << "] recv failed" << endl;
+		}
+	}
+	if (client->addBuffer(buffer, s))
+		client->addRequests(client->createRequest(mHeader));
+}

@@ -29,4 +29,4 @@ class Config
 		map< int, vector<Server> >	mServer;
 };
 
-#endif //CONFIG_HPP
+#endif // CONFIG_HPP

@@ -8,6 +8,7 @@
 #include <fstream>
 #include "../basic.hpp"
 #include "../util/Time.hpp"
+#include "../socket/Body.hpp"
 
 using namespace std;
 
@@ -61,6 +62,7 @@ class ARequest
 	public:
 		virtual	~ARequest();
 		ARequest(string mRoot, int mType, map<string, string> header_key_val);
+		ARequest(int mType);
 
 		int					getType() const;
 		const string&		getRoot() const;
@@ -71,6 +73,7 @@ class ARequest
 
 		size_t			mSendLen;
 
+		Body			mBody;
 	protected:
 		const string	mRoot;
 		const int		mType;

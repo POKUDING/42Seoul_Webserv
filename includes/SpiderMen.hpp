@@ -25,11 +25,7 @@ class SpiderMen
 		map<int, Client>		mClients;
 		deque<Socket>			mServerSockets;
 		int						mKq;
-		
-		deque<Socket>&	getServerSockets();
-		map<int, Client>&	getClients();
-		void				addServerSockets(Socket& sock);
-		void				addClients(int fd, Client& client);
+
 		void				deleteClientKQ(int fd);
 		void				deleteClient(int fd);
 		void				initSocket(const map<int,vector<Server> >& servers);
@@ -42,4 +38,4 @@ class SpiderMen
 		// SpiderMen& operator=(SpiderMen const& rhs);
 };
 
-#endif //WEBSRV_HPP
+#endif //SPIDERMEN_HPP

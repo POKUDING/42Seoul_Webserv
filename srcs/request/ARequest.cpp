@@ -34,6 +34,8 @@ ARequest::ARequest(string mRoot, int mType, map<string, string> header_key_val)
 	mSendLen = 0;
 }
 
+ARequest::ARequest(int mType) : mRoot(""), mType(mType) {} 
+
 int					ARequest::getType() const { return mType; }
 const string&		ARequest::getRoot() const { return mRoot; }
 const t_basic&		ARequest::getBasics() const { return mBasics; }

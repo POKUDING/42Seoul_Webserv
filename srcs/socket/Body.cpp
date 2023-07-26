@@ -1,19 +1,25 @@
-#include "../../includes/request/Body.hpp"
+#include "../../includes/socket/Body.hpp"
 
-int	Body::addBody(char* input, size_t size)
+Body::Body() :  mReadEnd(false), mChunked(false), mContentLen(0), mChunkLen(0) {}
+Body::~Body() {}
+
+bool	Body::getReadEnd() { return mReadEnd; }
+string& Body::getBody() { return mBody; }
+
+int	Body::addBody(string& inputbuffer)
 {
 	if (mChunked)
-		return (addChunkBody(input, size));
+		return (addChunkBody(inputbuffer));
 	else
-		return (addLenBody(input, size));
+		return (addLenBody(inputbuffer));
 }
 
-int	Body::addChunkBody(char* input, size_t size)
+int	Body::addChunkBody(string& inputbuff)
 {
-	char*	cur_ptr;
 	string	input_tmp;
 
-	mChunkBuf.append(input, size);
+	mChunkBuf.append(inputbuff.c_str(), inputbuff.size());
+	inputbuff.clear();
 	if (mChunkLen == 0)
 		mChunkLen = parseChunkLen(mChunkBuf);
 	while (mChunkLen)
@@ -44,19 +50,20 @@ size_t	Body::parseChunkLen(string& ChunkBuf)
 	size_t	len;
 
 	len = strtol(ChunkBuf.c_str(), &end_ptr, 16);
-	if (end_ptr[0] != '/r' || end_ptr[1] != '/n')
+	if (end_ptr[0] != '\r' || end_ptr[1] != '\n')
 		return 0;
 	if (len == 0)
 		mReadEnd = true;
-	ChunkBuf = ChunkBuf.substr(ChunkBuf.find("/r/n") + 2);
+	ChunkBuf = ChunkBuf.substr(ChunkBuf.find("\r\n") + 2);
 	return len;
 }
 
-int	Body::addLenBody(char* input, size_t size)
+int	Body::addLenBody(string& inputbuffer)
 {
-	if (mBody.size() + size > mContentLen)
+	if (mBody.size() + inputbuffer.size() > mContentLen)
 		throw runtime_error("Error: invlaid len body format");
-	mBody.append(input, size);
+	mBody.append(inputbuffer.c_str(), inputbuffer.size());
+	inputbuffer.clear();
 	if (mBody.size() == mContentLen)
 	{
 		mReadEnd = true;

@@ -35,15 +35,20 @@ enum eMethod {
 	GET = 0,
 	POST = 1,
 	DELETE = 2,
-	WRONG = 3
+	BAD = 3
 };
 
-enum eClient {
+enum eReadStatus {
 	WAITING = 0,		//(writing done), connected & waiting
 	READING_HEADER = 1,	//request start, reading header
 	READING_BODY = 2,	//header done, reading body
-	PROCESSING = 3,		//body done(request recv done), processing
-	SENDING = 4			//writing
+	ERROR = 3			//something wrong, no more reading
+};
+
+enum eRequestStatus {
+	EMPTY = 0,	//no requests
+	PROCESSING = 1,		//cgi working
+	SENDING = 2			//writing
 };
 
 #endif //BASIC_HPP

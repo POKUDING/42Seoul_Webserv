@@ -10,22 +10,22 @@ class Body
 {
 	public:
 		Body(void);
-		Body(const Body& src);
-		virtual ~Body(void);
-		Body& operator=(Body const& rhs);
-		int		addBody(char *input, size_t size);
-		int		addChunkBody(char *input, size_t size);
-		int		addLenBody(char *input, size_t size);
-		void	cutInput();
+		virtual ~Body();
+
+		bool	getReadEnd();
+		string& getBody();
+
+		int		addBody(string& inputbuffer);
+		int		addChunkBody(string& inputbuffer);
+		int		addLenBody(string& inputbuffer);
 		size_t	parseChunkLen(string& ChunkBuf);
 	private:
-		bool	mChunked;
 		bool	mReadEnd;
+		bool	mChunked;
 		size_t	mContentLen;
 		size_t	mChunkLen;
 		string	mChunkBuf;
 		string	mBody;
-
 };
 
 #endif

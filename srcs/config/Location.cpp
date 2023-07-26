@@ -1,40 +1,12 @@
 #include "../../includes/config/Location.hpp"
 
+// constructor
+
 Location::Location(const string& mKey): mKey(mKey), mAutoIndex(false) { }
 
-void	Location::setValue(const vector<string>& temp)
-{
-	if (temp[0] == "limit_except") {
-		for (size_t i = 1; i < temp.size(); i++) {
-			this->addLimitExcept(temp[i]);
-		}
-		return ;
-	} else if (temp.size() != 2) {
-		throw runtime_error("Error: Invalid location: too many values");
-	}
+// member functions
 
-	if (temp[0] == "root") {
-		this->setRoot(temp[1]);
-	} else if (temp[0] == "fastcgi_pass") {
-		this->setFastcgiPass(temp[1]);
-	} else if (temp[0] == "index") {
-		this->setIndex(temp[1]);
-	} else if (temp[0] == "autoindex") {
-		this->setAutoIndex(temp[1]);
-	} else if (temp[0] == ".sh") {
-		this->setSh(temp[1]);
-	} else if (temp[0] == ".py") {
-		this->setPy(temp[1]);
-	} else if (temp[0] == ".php") {
-		this->setPhp(temp[1]);
-	} else if (temp[0] == "return") {
-		this->setReturn(temp[1]);
-	} else {
-		throw runtime_error("Error: Invalid location: no such key");
-	}
-}
-
-void					Location::parse(ifstream& f_dataRead)
+void	Location::parse(ifstream& f_dataRead)
 {
 	string line;
     while (getline(f_dataRead, line)){
@@ -42,30 +14,60 @@ void					Location::parse(ifstream& f_dataRead)
 		if (line.length() == 0)
 			continue;
 
-		// if (!(line.length() - 1 == line.find(';')) && line.find('}') != string::npos)
-		// 	throw runtime_error("Error: Invalid location: ';'");
-		// line = line.substr(0, line.length() - 1);
-		//split here
-		vector<string> temp = SpiderMenUtil::splitString(line);
-		if (temp.size() == 0 || temp[0][0] == '#')
+		vector<string> splitedLine = SpiderMenUtil::splitString(line);
+		if (splitedLine.size() == 0 || splitedLine[0][0] == '#')
 			continue;
-		if (temp[0][0] == '}' && temp.size() == 1) {
+		if (splitedLine[0][0] == '}' && splitedLine.size() == 1) {
 			//limit_except 가 없을 경우 get, post, delete 추가
 
 
 			return ;//end parsing
-		} else if (temp.size() < 2) {
+		} else if (splitedLine.size() < 2) {
 			throw runtime_error("Error: Invalid location: too less value");
 		} else {
 			if (!(line.length() - 1 == line.find(';')))
 				throw runtime_error("Error: Invalid location: ';'");
 			
 			line = line.substr(0, line.length() - 1);
-			temp = SpiderMenUtil::splitString(line);
-			setValue(temp);
+			splitedLine = SpiderMenUtil::splitString(line);
+			setValue(splitedLine);
 		}
 	}
 }
+
+void	Location::setValue(const vector<string>& splitedLine)
+{
+	if (splitedLine[0] == "limit_except") {
+		for (size_t i = 1; i < splitedLine.size(); i++) {
+			this->addLimitExcept(splitedLine[i]);
+		}
+		return ;
+	} else if (splitedLine.size() != 2) {
+		throw runtime_error("Error: Invalid location: too many values");
+	}
+
+	if (splitedLine[0] == "root") {
+		this->setRoot(splitedLine[1]);
+	} else if (splitedLine[0] == "fastcgi_pass") {
+		this->setFastcgiPass(splitedLine[1]);
+	} else if (splitedLine[0] == "index") {
+		this->setIndex(splitedLine[1]);
+	} else if (splitedLine[0] == "autoindex") {
+		this->setAutoIndex(splitedLine[1]);
+	} else if (splitedLine[0] == ".sh") {
+		this->setSh(splitedLine[1]);
+	} else if (splitedLine[0] == ".py") {
+		this->setPy(splitedLine[1]);
+	} else if (splitedLine[0] == ".php") {
+		this->setPhp(splitedLine[1]);
+	} else if (splitedLine[0] == "return") {
+		this->setReturn(splitedLine[1]);
+	} else {
+		throw runtime_error("Error: Invalid location: no such key");
+	}
+}
+
+// getters and setters
 
 const string&			Location::getKey() const { return this->mKey; }
 const string&			Location::getRoot() const { return this->mRoot; }
@@ -102,7 +104,9 @@ void					Location::setPy(const string& mPy) { this->mPy = mPy; }
 void					Location::setPhp(const string& mPhp) { this->mPhp = mPhp; }
 void					Location::setReturn(const string& mReturn) { this->mReturn = mReturn; }
 
-void					Location::printMembers() const
+// print
+
+void	Location::printMembers() const
 {
 	cout << "		LimitExcept: \n";
 	for (size_t k = 0; k < this->getLimitExcept().size(); ++k)

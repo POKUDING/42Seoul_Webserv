@@ -8,7 +8,7 @@ Server::Server(): mRoot("/"), mListen(80), mClientMaxBodySize(MAX_BODY_SIZE) { }
 
 // public
 
-void					Server::parse(ifstream& f_dataRead)
+void	Server::parse(ifstream& f_dataRead)
 {
 	string line;
     while (getline(f_dataRead, line)) {

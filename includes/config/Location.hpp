@@ -30,8 +30,8 @@ class Location
 		const string&			getPhp() const;
 		const string&			getReturn() const;
 
-		void					addLimitExcept(const string& mLimitExcept);
 		void					setRoot(const string& mRoot);
+		void					addLimitExcept(const string& mLimitExcept);
 		void					setFastcgiPass(const string& mFastcgiPass);
 		void					setIndex(const string& mIndex);
 		void					setAutoIndex(const string& mAutoIndex);
@@ -56,4 +56,4 @@ class Location
 };
 
 
-#endif //LOCATION_HPP
+#endif // LOCATION_HPP

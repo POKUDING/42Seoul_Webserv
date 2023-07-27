@@ -1,10 +1,15 @@
 #include "../../includes/socket/Head.hpp"
 
-Head::Head() {}
+// constructor and destructor
 
+Head::Head() {}
 Head::~Head() {}
 
-string& Head::getHeadBuffer() { return mHeadBuffer; }
+// member functions
+
+// pubilc
+
+void	Head::clear() { mHeadBuffer.clear(); }
 
 int	Head::addHead(string& inputBuff)
 {	
@@ -18,3 +23,7 @@ int	Head::addHead(string& inputBuff)
 		mHeadBuffer.append(inputBuff.c_str(), inputBuff.size());
 	return 0;
 }
+
+// getters and setters
+
+string& Head::getHeadBuffer() { return mHeadBuffer; }

@@ -1,7 +1,9 @@
 #include "../../includes/request/RPost.hpp"
 
-RPost::RPost(string mRoot, map<string, string> header_key_val)
-			: ARequest(mRoot, POST, header_key_val)
+// constructor and destructor
+
+RPost::RPost(string mRoot, map<string, string> header_key_val, vector<Server>* servers)
+			: ARequest(mRoot, GET, header_key_val, servers)
 {
 	if (mBasics.content_length) {
 		size_t	pos;
@@ -15,9 +17,21 @@ RPost::RPost(string mRoot, map<string, string> header_key_val)
 	} else {
 		throw runtime_error("Bad request:: Post:: no content-length");
 	}
+
+	//dir or file 체크
+	if (mIsFile)
+		throw runtime_error("Bad request:: Post:: not valid directory");
+	//method 사용가능한지 확인
+	if (find(mLocation.getLimitExcept().begin(), mLocation.getLimitExcept().end(), "POST") == \
+			mLocation.getLimitExcept().end())
+		throw runtime_error("Bad request:: Post:: method not available");
 }
 
 RPost::~RPost() { }
+
+// member functions
+
+// public
 
 const string	RPost::createResponse()
 {
@@ -49,6 +63,8 @@ const string	RPost::createResponse()
 
 	return mMSG;
 }
+
+// getters and setters
 
 const string&	RPost::getBody() const { return mBody; }
 void			RPost::setBody(string mBody) { this->mBody = mBody; }

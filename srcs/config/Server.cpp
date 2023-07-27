@@ -129,7 +129,7 @@ void						Server::printMembers() const
 	cout << "	Root: " << this->getRoot() << "\n";
 	cout << "	Listen: " << this->getListen() << "\n";
 	cout << "	ClientMaxBodySize: " << this->getClientMaxBodySize() << "\n";
-	for (size_t j = 0; j < this->getLocation().size(); ++j)
+	for (size_t j = 0, end = this->getLocation().size(); j < end; ++j)
 	{
 		cout << "	Location [" << this->getLocation()[j].getKey() << "] --------------\n";
 		this->getLocation()[j].printMembers();

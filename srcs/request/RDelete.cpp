@@ -1,14 +1,40 @@
 #include "../../includes/request/RDelete.hpp"
 
-RDelete::RDelete(string mRoot, map<string, string> header_key_val)
-			: ARequest(mRoot, DELETE, header_key_val)
+// constructor and destructor
+
+RDelete::RDelete(string mRoot, map<string, string> header_key_val, vector<Server>* servers)
+			: ARequest(mRoot, GET, header_key_val, servers)
 {
-	if (mBasics.content_length || mBasics.transfer_encoding.size()) {
+	if (mBasics.content_length || mBasics.transfer_encoding.size())
 		throw runtime_error("Bad request:: DELETE cannot have body");
-	}
+
+	//dir or file 체크
+	if (!mIsFile)
+		throw runtime_error("Bad request:: DELETE:: cannot delete directory");
+	//method 사용가능한지 확인
+	if (find(mLocation.getLimitExcept().begin(), mLocation.getLimitExcept().end(), "DELETE") == \
+			mLocation.getLimitExcept().end())
+		throw runtime_error("Bad request:: DELETE:: method not available");
 }
 
 RDelete::~RDelete() { }
+
+// member functions
+
+// public
+
+pid_t			RDelete::operate()
+{
+	setPipe();	//pipe 생성 (ARequest에 있음)
+
+	pid_t id = fork();
+	if (id == 0) {
+		//Delete 가능한 location만 들어옴.
+		char* const argv[2] = {const_cast<char * const>(mRoot.c_str()), NULL};
+		execve("/bin/rm", argv, env);
+	}
+	return id;
+}
 
 const string	RDelete::createResponse()
 {

@@ -51,4 +51,4 @@ enum eRequestStatus {
 	SENDING = 2			//writing
 };
 
-#endif //BASIC_HPP
+#endif // BASIC_HPP

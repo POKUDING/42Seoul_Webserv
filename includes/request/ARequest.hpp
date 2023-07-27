@@ -6,9 +6,15 @@
 #include <string>
 #include <sstream>
 #include <fstream>
+#include <unistd.h>
+#include "../config/Server.hpp"
 #include "../basic.hpp"
 #include "../util/Time.hpp"
 #include "../socket/Body.hpp"
+#include "./RBad.hpp"
+
+extern	char** env;
+class	RBad;
 
 using namespace std;
 
@@ -36,51 +42,38 @@ typedef struct	s_basic
 
 } t_basic;
 
-// typedef struct	s_response
-// {
-// 	//same everytime => define으로 관리하자 -> basic.hpp에 저장해둠
-// 	//http version	===> HTTP/1.1
-// 	//server		===> Server: SpiderMen/1.0.0 (Linux)
-// 	//content-type	===> Content-Type: text/html; charset=UTF-8
-
-// 	//must for METHOD (date는 바로 추출해서 넣어주자)
-// 	int		code;		//200, 400, 500
-// 	string	status;		//OK, Bad Request, Internal Server Error
-// 	int		content_length;	//Content-Length:
-// 	string	content_type;//	===> Content-Type: text/html; charset=UTF-8  // image/png
-	
-// 	//must for POST
-	
-// 	//must for GET
-
-// 	//must for DELETE
-	
-// } t_response;
-
 class ARequest
 {
 	public:
-		virtual	~ARequest();
-		ARequest(string mRoot, int mType, map<string, string> header_key_val);
+		ARequest(string mRoot, int mType, map<string, string> header_key_val, vector<Server>* servers);
 		ARequest(int mType);
+		virtual	~ARequest();
+
+		virtual pid_t			operate() = 0;
+		virtual	const string	createResponse() = 0;
+
+		void				findLocation(Server& server);
+		void				findRootLocation(Server& server, string root);
+		int					findExtentionLocation(Server& server);
+		Server	 			findServer(vector<Server>* servers);
+		void				setPipe();
+		void				createErrorRequest(int code);
+
 
 		int					getType() const;
 		const string&		getRoot() const;
 		const t_basic&		getBasics() const;
-		// const t_response&	getResponse() const;
-
-		virtual	const string	createResponse() = 0;
 
 		size_t			mSendLen;
-
 		Body			mBody;
 	protected:
-		const string	mRoot;
-		const int		mType;
+		bool			mIsFile;
+		string			mRoot;
+		int				mType;
+		Server			mServer;
+		Location		mLocation;
 		t_basic			mBasics;
-		// t_response		mResponse;
-
-		
+		int				mPipe[2];
 };
 
-#endif //AREQUEST_HPP
+#endif // AREQUEST_HPP

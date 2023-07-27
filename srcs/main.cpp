@@ -2,14 +2,16 @@
 #include "../includes/config/Config.hpp"
 #include "../includes/SpiderMen.hpp"
 
+char **env;
+
 void ft_leak()
 {
 	system("leaks webserv");
 }
 
-int	main(int argc, char* argv[], char** env)
+int	main(int argc, char* argv[], char** envp)
 {
-	(void)env;
+	env = envp;
 	
 	// atexit(ft_leak);
 	if (argc > 2) {
@@ -17,12 +19,12 @@ int	main(int argc, char* argv[], char** env)
 		exit(EXIT_FAILURE);
 	}
 
-	Config config;
 	try {
+		Config config;
 		if (argc == 2)
-			Config config(argv[1]);
+			config.parse(argv[1]);
 		else
-			Config config;
+			config.parse();
 		// Config.printMembers();
 
 		SpiderMen spiderMen(config);

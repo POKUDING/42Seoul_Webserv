@@ -1,6 +1,6 @@
 #include "../../includes/kqueue/KQueue.hpp"
 
-// constructor
+// constructor and destructor
 
 KQueue::KQueue()
 {
@@ -9,17 +9,22 @@ KQueue::KQueue()
 		throw runtime_error("Error: kqueue create failed.");
 }
 
+KQueue::~KQueue() { close(mKq); }
+
 // member functions
 
 // public
 
-int		KQueue::getEventNum()
+int	KQueue::getEventNum()
 {
-	// if (kevent(mKq, &mChangeList[0], mChageList.size(), NULL, 0, NULL) == -1)
-	// 	throw runtime_error("Error: kevent change failed");
-	// mChangeList.clear();
+	memset(mEvents, 0, sizeof(MAX_EVENT));
+	if (kevent(mKq, &mChangeList[0], mChangeList.size(), NULL, 0, NULL) == -1)
+		throw runtime_error("Error: kevent change failed");
+	mChangeList.clear();
 	return kevent(mKq, NULL, 0, mEvents, MAX_EVENT, NULL);
+
 }
+
 void	KQueue::setNextEvent(int RequestStatus, int fd, void* udata)
 {
 	struct kevent event;
@@ -28,58 +33,69 @@ void	KQueue::setNextEvent(int RequestStatus, int fd, void* udata)
 		EV_SET(&event, fd, EVFILT_WRITE, EV_ENABLE | EV_CLEAR, 0, 0, udata);
 	else // PROCESSING || EMPTY
 		EV_SET(&event, fd, EVFILT_WRITE, EV_DISABLE | EV_CLEAR, 0, 0, udata);
-	if (kevent(mKq, &event, 1, NULL, 0, NULL) == -1)
-	// mChangeList.push_back(event);
-		throw fd;
+	// if (kevent(mKq, &event, 1, NULL, 0, NULL) == -1)
 		// throw runtime_error("Error: setNextEvent error");
+	mChangeList.push_back(event);
 }
 
-void	KQueue::addServerSocket(int fd, void* udata) // SpiderMen::initSocket
+void	KQueue::addServerSocketFd(int fd, void* udata) // SpiderMen::initSocket
 {
 	struct kevent event;
 
 	EV_SET(&event, fd, EVFILT_READ, EV_ADD, 0, 0, udata);
-	if (kevent(mKq, &event, 1, NULL, 0, NULL) == -1)
-		throw runtime_error("Error: kevent add failed");
-	// mChangeList.push_back(event);
+	mChangeList.push_back(event);
+	// if (kevent(mKq, &event, 1, NULL, 0, NULL) == -1)
+	// 	throw runtime_error("Error: kevent add failed");
 }
 
-void	KQueue::addClientSocket(int fd, void* udata)
+void	KQueue::addClientSocketFd(int fd, void* udata)
 {
 	struct kevent event;
 
-	// read이벤트 등록
 	EV_SET(&event, fd, EVFILT_READ, EV_ADD, 0, 0, udata);
-	if (kevent(mKq, &event, 1, NULL, 0, NULL) == -1)
-	// mChangeList.push_back(event);
-		throw fd;
+	mChangeList.push_back(event);
+	// if (kevent(mKq, &event, 1, NULL, 0, NULL) == -1)
 		// throw runtime_error("Error: addClientSocket error");
-	// mChangeList.push_back(event);
-	//timer이벤트 등록
-	EV_SET(&event, fd, EVFILT_TIMER, EV_ADD, NOTE_SECONDS, TIMEOUT_SEC, udata);
-	if (kevent(mKq, &event, 1, NULL, 0, NULL) == -1)
-	// mChangeList.push_back(event);
-		throw fd;
+	EV_SET(&event, fd, EVFILT_TIMER, EV_ADD | EV_ONESHOT, NOTE_SECONDS, TIMEOUT_SEC, udata);
+	mChangeList.push_back(event);
+	// if (kevent(mKq, &event, 1, NULL, 0, NULL) == -1)
 		// throw runtime_error("Error: addClientSocket error");
-	// write이벤트 등록 및 disable
 	EV_SET(&event, fd, EVFILT_WRITE, EV_ADD | EV_DISABLE, 0, 0, udata);
-	if (kevent(mKq, &event, 1, NULL, 0, NULL) == -1)
-	// mChangeList.push_back(event);
-		throw fd;
+	mChangeList.push_back(event);
+	// if (kevent(mKq, &event, 1, NULL, 0, NULL) == -1)
 	// throw runtime_error("Error: addClientSocket error");
 }
 
-void	KQueue::deleteClientSocket(int fd)
+void	KQueue::addProcessPid(pid_t pid, void* udata)
+{
+	struct kevent event;
+	EV_SET(&event, pid, EVFILT_PROC, EV_ADD, 0, 0, udata);
+	mChangeList.push_back(event);
+	// if (kevent(mKq, &event, 1, NULL, 0, NULL) == -1)
+	// throw runtime_error("Error: addClientSocket error");
+}
+
+void	KQueue::deleteClientSocketFd(int fd)
 {
 	struct kevent	event;
 
+
+	close(fd); // close() -> 이벤트 자동 삭제라는 정보가 있음
 	EV_SET(&event, fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);
-	if (kevent(mKq, &event, 1, NULL, 0, NULL) == -1)
-		throw runtime_error("Error: FAILED - deleteClientKQ - read");
+	mChangeList.push_back(event);
+	// if (kevent(mKq, &event, 1, NULL, 0, NULL) == -1)
+		// throw runtime_error("Error: FAILED - deleteClientKQ - read");
 	event.filter = EVFILT_TIMER;
-	if (kevent(mKq, &event, 1, NULL, 0, NULL) == -1)
-		throw runtime_error("Error: FAILED - deleteClientKQ - timer");
+	mChangeList.push_back(event);
+	// if (kevent(mKq, &event, 1, NULL, 0, NULL) == -1)
+		// throw runtime_error("Error: FAILED - deleteClientKQ - timer");
 	event.filter = EVFILT_WRITE;
-	if (kevent(mKq, &event, 1, NULL, 0, NULL) == -1)
-		throw runtime_error("Error: FAILED - deleteClientKQ - write");
+	mChangeList.push_back(event);
+	// if (kevent(mKq, &event, 1, NULL, 0, NULL) == -1)
+		// throw runtime_error("Error: FAILED - deleteClientKQ - write");
 }
+
+// getters
+
+int						KQueue::getKq() { return mKq; }
+const struct kevent*	KQueue::getEvents() { return mEvents; }

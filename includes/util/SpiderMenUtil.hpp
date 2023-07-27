@@ -14,6 +14,7 @@ class SpiderMenUtil
 	public:
 		static vector<string>	splitString(string str, string del);
 		static vector<string>	splitString(string str);
+
 	private:
 		// SpiderMenUtil();
 		// SpiderMenUtil(SpiderMenUtil& src);
@@ -21,4 +22,4 @@ class SpiderMenUtil
 		// ~SpiderMenUtil();
 };
 
-#endif
+#endif // SPIDERMENUTIL_HPP

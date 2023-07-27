@@ -1,6 +1,6 @@
 #pragma once
-#ifndef Socket_HPP
-#define Socket_HPP
+#ifndef SOCKET_HPP
+#define SOCKET_HPP
 
 #include "../config/Server.hpp"
 #include "../basic.hpp"
@@ -11,10 +11,7 @@ class Socket
 {
 	public:
 		Socket(bool mType, int mFd, int mPortNumber, const vector<Server>* mServer);
-		// Socket(void);
-		// Socket(const Socket& src);
 		virtual ~Socket(void);
-		// Socket& operator=(Socket const& rhs);
 
 		bool					getType() const;
 		int						getFd() const;
@@ -24,10 +21,10 @@ class Socket
 		// void			setServer(const vector<Server>* server);
 
 	protected:
-		const bool		mType;
-		const int		mFd;
-		const int		mPortNumber;
+		const bool				mType;
+		const int				mFd;
+		const int				mPortNumber;
 		const vector<Server>*	mServer;
 };
 
-#endif // Socket_HPP
+#endif // SOCKET_HPP

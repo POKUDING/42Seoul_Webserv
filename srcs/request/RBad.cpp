@@ -1,10 +1,15 @@
 #include "../../includes/request/RBad.hpp"
 
-RBad::RBad(int code): ARequest(BAD) { createErrorResponse(code); }
+// constructor and destructor
 
+RBad::RBad(int code): ARequest(BAD) { createErrorResponse(code); }
 RBad::~RBad() { }
 
+// memeber functions
 
+// public
+
+pid_t			RBad::operate() { return 0; }
 const string	RBad::createResponse() { return mMSG; }
 
 void			RBad::createErrorResponse(int code)

@@ -19,8 +19,10 @@ void	Location::parse(ifstream& f_dataRead)
 			continue;
 		if (splitedLine[0][0] == '}' && splitedLine.size() == 1) {
 			//limit_except 가 없을 경우 get, post, delete 추가
-
-
+			if (getLimitExcept().size() == 0)
+				mLimitExcept.push_back("GET");
+				mLimitExcept.push_back("POST");
+				mLimitExcept.push_back("DELETE");
 			return ;//end parsing
 		} else if (splitedLine.size() < 2) {
 			throw runtime_error("Error: Invalid location: too less value");

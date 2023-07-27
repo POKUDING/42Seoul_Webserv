@@ -1,8 +1,8 @@
 #include "../../includes/request/ARequest.hpp"
 
-ARequest::~ARequest() { }
+// constructors and destructor
 
-ARequest::ARequest(string mRoot, int mType, map<string, string> header_key_val)
+ARequest::ARequest(string mRoot, int mType, map<string, string> header_key_val, vector<Server>* servers)
 			: mRoot(mRoot), mType(mType)
 {
 	mBasics.host = header_key_val["Host"];
@@ -28,13 +28,96 @@ ARequest::ARequest(string mRoot, int mType, map<string, string> header_key_val)
 		throw runtime_error("Bad request:: content-length");
 	}
 
-	//필요해서 초기화해줌 (struct가 자동으로 초기화되면 필요없음 근데 잘 모름ㅎ)
-	// mResponse.code = 0;
-	// mResponse.content_length = 0;
+	//초기화
+	mServer = findServer(servers);
+	findLocation(mServer);
 	mSendLen = 0;
+
+	//요청한 file/dir을 실제 location/server block root 주소에 따라 변경
+	string subDir = mRoot.substr(mLocation.getKey().size(), mRoot.size() - mLocation.getKey().size());
+	mRoot = mLocation.getRoot();
+	if (mRoot.size() == 0)
+		mRoot = mServer.getRoot() + mLocation.getKey();
+	mRoot += subDir;
+	//존재 확인
+	if (access(mRoot.c_str(), F_OK) < 0)
+		runtime_error("Error: requested dir/file not available.");
+
 }
 
-ARequest::ARequest(int mType) : mRoot(""), mType(mType) {} 
+ARequest::ARequest(int mType) : mRoot(""), mType(mType) {}
+ARequest::~ARequest() { }
+
+// member functions
+
+// public
+
+Server	ARequest::findServer(vector<Server>* servers)
+{
+	for (int server_idx = 0,server_end = servers->size(); server_idx < server_end; ++server_idx)
+	{
+		for (int name_idx = 0, name_end = (*servers)[server_idx].getServerName().size(); name_idx < name_end; ++name_idx)
+			if (mBasics.host == (*servers)[server_idx].getServerName()[name_idx])
+				return (*servers)[server_idx];
+	}
+	return (*servers)[0];
+}
+
+void	ARequest::findRootLocation(Server& server, string root)
+{
+	size_t		find_len = 0;
+
+	for(int loc_idx = 0, end = server.getLocation().size(); loc_idx < end; ++loc_idx)
+	{
+		if (root.substr(0, server.getLocation()[loc_idx].getKey().size()) == server.getLocation()[loc_idx].getKey() && \
+			server.getLocation()[loc_idx].getKey().size() > find_len);
+			mLocation = server.getLocation()[loc_idx];
+	}
+	if (find_len == 0)
+		findRootLocation(server, "/");
+	mIsFile = false;
+}
+
+int	ARequest::findExtentionLocation(Server& server)
+{
+	string extention;
+
+	size_t	pos = mRoot.rfind('.');
+	if (pos == string::npos || mRoot.find('/', pos) != string::npos || pos == mRoot.size())
+		return 1;
+	mIsFile = true;
+	extention = mRoot.substr(pos);
+	extention += '$';
+	for(int loc_idx = 0, end = server.getLocation().size(); loc_idx < end; ++loc_idx)
+	{
+		if (extention == server.getLocation()[loc_idx].getKey()) {
+			mLocation = server.getLocation()[loc_idx];
+			return 0;
+		}
+	}
+	return 1;
+}
+
+void	ARequest::findLocation(Server& server)
+{
+	if (findExtentionLocation(server))
+		findRootLocation(server, mRoot);
+}
+
+void	ARequest::setPipe()
+{
+	if (pipe(mPipe) < 0)
+		throw runtime_error("Error: pipe create failed");
+}
+
+void	ARequest::createErrorRequest(int code)
+{
+	ARequest* toDelete = this;
+	this = new RBad(code);
+	delete toDelete;
+}
+
+// getters
 
 int					ARequest::getType() const { return mType; }
 const string&		ARequest::getRoot() const { return mRoot; }

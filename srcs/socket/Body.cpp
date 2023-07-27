@@ -1,10 +1,13 @@
 #include "../../includes/socket/Body.hpp"
 
+// constructor and destructor
+
 Body::Body() :  mReadEnd(false), mChunked(false), mContentLen(0), mChunkLen(0) {}
 Body::~Body() {}
 
-bool	Body::getReadEnd() { return mReadEnd; }
-string& Body::getBody() { return mBody; }
+// memeber functions
+
+// public
 
 int	Body::addBody(string& inputbuffer)
 {
@@ -71,3 +74,8 @@ int	Body::addLenBody(string& inputbuffer)
 	}
 	return 0;
 }
+
+// getters and setters
+
+bool	Body::getReadEnd() { return mReadEnd; }
+string& Body::getBody() { return mBody; }

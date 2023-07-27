@@ -14,6 +14,7 @@ using namespace std;
 class Location
 {
 	public:
+		Location();
 		Location(const string& mKey);
 
 		void					parse(ifstream& f_dataRead);

@@ -10,6 +10,7 @@
 #include <netinet/in.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include "../kqueue/KQueue.hpp"
 #include "../request/ARequest.hpp"
 #include "../request/RBad.hpp"
 #include "../request/RGet.hpp"
@@ -34,47 +35,53 @@
 
 class Client : public Socket
 {
-public:
-	Client(bool mType, int mFd, int mPort, const vector<Server>* mServer);
-	virtual ~Client();
+	public:
+		Client(bool mType, int mFd, int mPort, const vector<Server>* mServer, KQueue& mKq);
+		virtual ~Client();
 
-	int					getReadStatus() const;
-	queue<ARequest*>	getRequests() const;
-	string&				getResponseMSG();
-	string&				getHeadBuffer();
-	string&				getInputBuffer();
-	int					getResponseCode() const;
-	pid_t				getCGI() const;
+		void				readSocket(struct kevent* event);
+		void				addRequests(ARequest* request);
+		int					addBuffer(char *input, size_t size);
+		void				clearClient();
 
-	void				setReadStatus(int mStatus);
-	// void				setRequestNull();
-	void				setResponseCode(int code);
-	void				setCGI(pid_t mCGI);
+		ARequest*			createRequest(Head& head);
+		map<string,string>	createHttpKeyVal(const vector<string>&	header_line);
 
+		void				writeSocket(struct kevent& event);
+		void				sendResponseMSG(struct kevent& event);
 
-	void				readSocket(struct kevent* event);
-	void				addRequests(ARequest* request);
-	int					addBuffer(char *input, size_t size);
-	void				clearClient();
+		void				operateRequest(ARequest* request);
 
-	ARequest*			createRequest(Head& head);
-	map<string,string>	createHttpKeyVal(const vector<string>&	header_line);
-	// int					checkRequest(const string& headline);
-	// void				example();
-	void				resetTimer(int mKq, struct kevent event);
+		// int					checkRequest(const string& headline);
+		// void				example();
+		void				resetTimer(int mKq, struct kevent event);
 
-	void				createErrorResponse();
+		void				createErrorResponse();
 
-private:
-	// void			parseHeader(void);
-	queue<ARequest*>	mRequests;
-	int					mReadStatus;	//eClient
-	int					mRequestStatus;
-	int					mResponseCode;
-	string				mInputBuffer;
-	string				mResponseMSG;
-	pid_t				mCGI;
-	Head				mHeader;
+		int					getReadStatus() const;
+		queue<ARequest*>	getRequests() const;
+		string&				getResponseMSG();
+		string&				getHeadBuffer();
+		string&				getInputBuffer();
+		int					getResponseCode() const;
+		pid_t				getCGI() const;
+
+		void				setReadStatus(int mStatus);
+		// void				setRequestNull();
+		void				setResponseCode(int code);
+		void				setCGI(pid_t mCGI);
+
+	private:
+		// void			parseHeader(void);
+		queue<ARequest*>	mRequests;
+		int					mReadStatus;	//eClient
+		int					mRequestStatus;
+		int					mResponseCode;
+		string				mInputBuffer;
+		string				mResponseMSG;
+		pid_t				mCGI;
+		Head				mHeader;
+		KQueue&				mKq;
 };
 
 #endif //CLIENT_HPP

@@ -3,7 +3,9 @@
 #define KQueue_HPP
 
 #include <sys/event.h>
+#include <unistd.h>
 #include <vector>
+
 
 #include "../basic.hpp"
 #include "../config/Server.hpp"
@@ -14,18 +16,22 @@ class KQueue
 {
 	public:
 		KQueue();
-		// virtual ~KQueue();
+		virtual ~KQueue();
 
-		int		getEventNum();
-		void	setNextEvent(int RequestStatus, int fd, void* udata);
-		void	addServerSocket(int fd, void* udata);
-		void	addClientSocket(int fd, void* udata);
-		void	deleteClientSocket(int fd);
+		int				getEventNum();
+		void			setNextEvent(int RequestStatus, int fd, void* udata);
+		void			addServerSocketFd(int fd, void* udata);
+		void			addClientSocketFd(int fd, void* udata);
+		void			addProcessPid(pid_t pid, void* udata);
+		void			deleteClientSocketFd(int fd);
+
+		int				getKq();
+		struct kevent*	getEvents();
 
 	private:
-		int				mKq;
+		int						mKq;
 		vector<struct kevent>	mChangeList;
-		struct kevent	mEvents[MAX_EVENT];
+		struct kevent			mEvents[MAX_EVENT];
 };
 
 #endif // KQUEUE_HPP

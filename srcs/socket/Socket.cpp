@@ -8,9 +8,11 @@ Socket::~Socket(void) { }
 
 // member functions
 
-bool	Socket::getType() const { return mType; }
-int		Socket::getFd() const { return mFd; }
-int		Socket::getPortNumber() const { return mPortNumber; }
+// getters
+
+bool					Socket::getType() const { return mType; }
+int						Socket::getFd() const { return mFd; }
+int						Socket::getPortNumber() const { return mPortNumber; }
 const vector<Server>*	Socket::getServer() const { return mServer; }
 
 // void	Socket::setServer(const vector<Server>* server) const { mServer = server; }

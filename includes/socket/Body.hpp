@@ -9,16 +9,17 @@ using namespace std;
 class Body
 {
 	public:
-		Body(void);
+		Body();
 		virtual ~Body();
-
-		bool	getReadEnd();
-		string& getBody();
 
 		int		addBody(string& inputbuffer);
 		int		addChunkBody(string& inputbuffer);
 		int		addLenBody(string& inputbuffer);
 		size_t	parseChunkLen(string& ChunkBuf);
+
+		bool	getReadEnd();
+		string& getBody();
+
 	private:
 		bool	mReadEnd;
 		bool	mChunked;
@@ -28,4 +29,4 @@ class Body
 		string	mBody;
 };
 
-#endif
+#endif // BODY_HPP

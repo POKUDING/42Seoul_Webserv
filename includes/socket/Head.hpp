@@ -7,15 +7,16 @@ using namespace std;
 
 class Head
 {
-public:
-	Head();
-	~Head();
+	public:
+		Head();
+		~Head();
 
-	string&	getHeadBuffer();
-	int		addHead(string& inputBuff);
-private:
-	string	mHeadBuffer;
+		void	clear();
+		int		addHead(string& inputBuff);
+		
+		string&	getHeadBuffer();
+	private:
+		string	mHeadBuffer;
 };
 
-
-#endif
+#endif // HEAD_HPP

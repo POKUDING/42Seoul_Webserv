@@ -2,7 +2,7 @@
 
 // constructors
 
-Config::Config() { parse(); }
+Config::Config() { }
 Config::Config(string fileName) { parse(fileName); }
 
 // member functions
@@ -49,6 +49,29 @@ void	Config::parse(const string& file)
 		}
 	}
 	f_dataRead.close();
+
+	// '/' location 있는지 확인, dir있는지 확인
+	for (map<int, vector<Server> >::iterator it = mServer.begin(); it != mServer.end(); ++it) {
+		for (size_t i = 0, end = (it->second).size(); i < end; ++i) {
+			size_t j = 0, jend = (it->second[i]).getLocation().size(), root = 0;
+			for ( ; j < jend; ++j) {
+				string key = (it->second[i]).getLocation()[j].getKey();
+				if (key.back() = '/') {
+					//location root확인
+					//없으면 server root + key 값으로 확인
+					string location = (it->second[i]).getLocation()[j].getRoot();
+					if (location.size() == 0)
+						location = (it->second[i]).getRoot() + key;
+					if (access(location.c_str(), F_OK) < 0)
+						runtime_error("Error: location block doesn't exist.");
+				}
+				if (key == "/")
+					root = 1;
+			}
+			if (!root)
+				throw runtime_error("Error: no '/' location in config.");
+		}
+	}
 }
 
 // void	Config::printMembers() const

@@ -11,10 +11,11 @@ class RBad: public ARequest
 		RBad(int code);
 		virtual ~RBad();
 
+		virtual pid_t			operate();
 		void					createErrorResponse(int code);
 		virtual	const string	createResponse();
 	private:
 		string	mMSG;
 };
 
-#endif //RBAD_HPP
+#endif // RBAD_HPP

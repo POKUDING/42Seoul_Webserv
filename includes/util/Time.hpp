@@ -18,10 +18,11 @@ class Time
         Time& operator=(Time const& rhs);
         Time();
         ~Time();
+
     public:
         // static const string& stamp();
         static void stamp(char *timeStamp);
         // char timeStamp[TIME_SIZE];
 };
 
-#endif//TIME_HPP
+#endif // TIME_HPP

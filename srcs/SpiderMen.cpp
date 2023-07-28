@@ -26,9 +26,21 @@ void	SpiderMen::run()
 		for (int i = 0; i < eventNum; ++i) {
 			if (mKq.getEvents()[i].ident == 0)
 				break;
-			if (mKq.getEvents()[i].filter == EV_ERROR)
-				throw runtime_error("Error: event filter error"); // try-catch 필요
-			Socket* sock_ptr = reinterpret_cast<Socket *>(mKq.getEvents()[i].udata);			
+			if (mKq.getEvents()[i].filter == EVFILT_TIMER) {
+				cout << "TIMER" << endl;
+			} else if (mKq.getEvents()[i].filter == EVFILT_PROC) {
+				cout << "proces" << endl;
+			}
+			Socket* sock_ptr = reinterpret_cast<Socket *>(mKq.getEvents()[i].udata);
+
+			// if (sock_ptr->getType() == CLIENT && mClients.find(mKq.getEvents()[i].ident) == mClients.end()) {
+			// 	cout << "Asdf: " << mKq.getEvents()[i].ident<< endl;
+			// 	EV_SET(&mKq.getEvents()[i], mKq.getEvents()[i].ident, EVFILT_TIMER, EV_DELETE | EV_DISABLE, 0, 0, 0);
+			// 	if (kevent(mKq.getKq(), &mKq.getEvents()[i], 1, NULL, 0, NULL) == -1)
+			// 		throw runtime_error("Error: FAILED - deleteClientKQ - read");
+			// 	// continue;
+			// }
+
 			// TEST_CODE : kqueue
 			cout << "socket: " << sock_ptr->getFd() << ", type: " << sock_ptr->getType() << ", request: " << mKq.getEvents()[i].filter << endl;
 			if (sock_ptr->getType() == SERVER) {
@@ -85,29 +97,41 @@ void	SpiderMen::run()
 
 void	SpiderMen::deleteClientKQ(int fd)
 {
-//KQ에서 삭제 (kqueue에 EV_DELETE 추가)
-	if (mClients.find(fd) != mClients.end())
-		mKq.deleteClientSocketFd(fd);
+	struct kevent	event;
+	
+	if (mClients.find(fd) != mClients.end()) {
+		cout << "delete events"  << endl;
+        EV_SET(&event, fd, EVFILT_TIMER, EV_DELETE | EV_DISABLE | EV_ONESHOT, 0, 0, 0);
+		if (kevent(mKq.getKq(), &event, 1, NULL, 0, NULL) == -1)
+			throw runtime_error("Error: FAILED - deleteClientKQ - read");
+		event.filter = EVFILT_READ;
+		if (kevent(mKq.getKq(), &event, 1, NULL, 0, NULL) == -1)
+			throw runtime_error("Error: FAILED - deleteClientKQ - timer");
+		// if (mClients[fd].getStatus() == SENDING) {
+		event.filter = EVFILT_WRITE;
+		if (kevent(mKq.getKq(), &event, 1, NULL, 0, NULL) == -1)
+			throw runtime_error("Error: FAILED - deleteClientKQ - write");
+	}
 }
 
 void	SpiderMen::deleteClient(int fd)
 {
-	//spidermen:map에서 client삭제
-	//client 객체도 삭제되고, 소멸자에서 delete ARequest가 불릴것으로 예상되나... 확인해봐야합니다
-	mClients.erase(fd);
+	if (mClients.find(fd) != mClients.end()) {
+		close(fd);
+		mClients.erase(fd);
+	}
 }
 
 void	SpiderMen::initServerSockets(const map<int,vector<Server> >& servers)
 {
 	struct sockaddr_in	server_addr;
-	struct kevent		event;
 	int					fd;
 
 	memset(&server_addr, 0, sizeof(server_addr));
 	server_addr.sin_family = AF_INET;					//IPv4 인터넷 프로토콜
 	server_addr.sin_addr.s_addr = htonl(INADDR_ANY);	//호스트 주소 자동할당옵션
 	for (map<int,vector<Server> >::const_iterator it = servers.cbegin(); it != servers.cend(); ++it) {
-		fd = socket(AF_INET, SOCK	_STREAM, 0);
+		fd = socket(AF_INET, SOCK_STREAM, 0);
 		if (fd == -1)
 			throw runtime_error("Error: socket open failed.");
 		//소켓 옵션 reuse로 세팅
@@ -120,7 +144,7 @@ void	SpiderMen::initServerSockets(const map<int,vector<Server> >& servers)
 			throw runtime_error("Error: socket listen failed.");
 		if (fcntl(fd, F_SETFL, O_NONBLOCK) == -1)			//소켓 논블록처리
 			throw runtime_error("Error: socket nonblock failed.");
-		Socket	sock(SERVER, fd, it->first, &(it->second));
+		Socket	sock(SERVER, fd, it->first, const_cast<vector<Server>*>(&(it->second)), mKq);
 		mServerSockets.push_back(sock);
 		mKq.addServerSocketFd(fd, reinterpret_cast<void *>(&(*(mServerSockets.rbegin()))));
 	}
@@ -139,7 +163,6 @@ void	SpiderMen::initServerSockets(const map<int,vector<Server> >& servers)
 
 void	SpiderMen::handleServer(Socket* sock)
 {
-	struct kevent		event_tmp;
 	struct sockaddr_in	client_addr;
 	int					fd;
 
@@ -149,7 +172,7 @@ void	SpiderMen::handleServer(Socket* sock)
 	if (fd == -1) {
 		throw FAIL_FD;
 	}
-	Client client_tmp(CLIENT, fd, sock->getPortNumber(), sock->getServer());
+	Client client_tmp(CLIENT, fd, sock->getPortNumber(), sock->getServer(), mKq);
 //클라이언트 소켓은 논블록처리하면 안된다는 말이 있던데 확인해봐야 합니다
 	// if (fcntl(client_tmp.getFd(), F_SETFL, O_NONBLOCK) == -1)			//소켓 논블록처리
 	// 	throw runtime_error("Error: client socket nonblock failed.");
@@ -158,26 +181,6 @@ void	SpiderMen::handleServer(Socket* sock)
 	mKq.addClientSocketFd(fd, reinterpret_cast<void *>(&(mClients.find(fd)->second)));
 }
 
-// static void		testcode()
-// {
-// 	//make response to send
-// 	client->getResponseMSG() = client->getRequest()->createResponse();
-
-// 	//test code (request check) ===============================
-// 	{
-// 		ofstream test("test_request.txt", ios::app);
-// 		test << client->getHeadBuffer() << client->getBodyBuffer();
-// 		test.close();
-// 	}
-// 	//test code (response check) ===============================
-// 	{
-// 		ofstream test("test_response.txt", ios::app);
-// 		test << client->getResponseMSG();
-// 		test.close();
-// 	}
-// 	//END OF test code ========================================
-// }
-
 void	SpiderMen::handleClient(struct kevent* event, Client* client)
 {
 
@@ -185,59 +188,31 @@ void	SpiderMen::handleClient(struct kevent* event, Client* client)
 		client->readSocket(event);
 	} else if (event->filter == EVFILT_WRITE) {
 		client->writeSocket(event);
-		
-		// size_t	sendinglen = client->getResponseMSG().size() - client->getRequest()->mSendLen;
-		// if (static_cast<size_t>(event->data) <= sendinglen)
-		// 	sendinglen = event->data;
-		// sendinglen = send(client->getFd(), client->getResponseMSG().c_str() + client->getRequest()->mSendLen, sendinglen, 0);
-		// client->getRequest()->mSendLen += sendinglen;
-		// if (client->getRequest()->mSendLen >= client->getResponseMSG().size()) {
-		// 	//write done
-		// 	event->flags = EV_DELETE;
-		// 	if (kevent(mKq, event, 1, NULL, 0, NULL) == -1)
-		// 		throw runtime_error("Error: handleClient - EVFILT update Failed - DELETE");
-		// 	int connection = client->getRequest()->getBasics().connection;
-
-		// 	//request delete, client 소멸자에서 다시 delete되지 않도록 Null로 만들어줌
-		// 	client->clearClient();
-
-		// 	cout << "EOF of send, close: " << connection << endl;
-		// 	if (connection == CLOSE)
-		// 		throw runtime_error("client request connection CLOSE");
-		// }
+	} else if (event->filter == EVFILT_PROC) {
+		client->handleProcess(event);
 	} else if (event->filter == EVFILT_TIMER) {
-		//check client's status
-			// connected & waiting						=> close()
-			// reading header							=> 400
-			// reading body								=> 400
-			// client request read done / processing	=> 500
-			// send()									=> close()
 
-		// switch (client->getStatus())
-		// {
-		// case WAITING:
-		// 	throw runtime_error("TIMER: Waiting");
-		// 	break;
+		switch (client->getReadStatus())
+		{
+		case EMPTY:
+			throw runtime_error("TIMER: empty");
+			break;
 
-		// case READING_HEADER:
-		// case READING_BODY:
-		// 	client->setResponseCode(400);
-		// 	throw runtime_error("TIMER: Reading");
+		case PROCESSING:
+			client->setResponseCode(500);;
+			throw runtime_error("TIMER: Processing");
 
-		// case PROCESSING:
-		// 	client->setResponseCode(500);;
-		// 	throw runtime_error("TIMER: Processing");
+		case SENDING:
+			throw runtime_error("TIMER: Sending");
+			break;
 
-		// case SENDING:
-		// 	throw runtime_error("TIMER: Sending");
-		// 	break;
-
-		// default:
-		// 	break;
-		// }
+		default:
+			break;
+		}
 	} else {
 		client->setResponseCode(0);
 		throw runtime_error("Error: undefined EVFILT");
 	}
+	mKq.setNextEvent(client->getRequestStatus(), client->getFd(), client);
 }
 

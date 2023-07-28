@@ -58,3 +58,14 @@ vector<string>	SpiderMenUtil::splitString(string str, string del)
 	}
 	return rtn;
 }
+
+string	SpiderMenUtil::itostr(int num)
+{
+	stringstream 	stream;
+	string			rtn;
+
+	stream << num;
+	stream >> rtn;
+
+	return rtn;
+}

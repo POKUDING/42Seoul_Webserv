@@ -2,8 +2,8 @@
 
 // constructor and destructor
 
-Client::Client(bool mType, int mFd, int mPort, const vector<Server>* mServer, KQueue& mKq)
-			: Socket(mType, mFd, mPort, mServer), mReadStatus(0) ,mResponseCode(0), mCGI(0), mKQueue(mKq) { }
+Client::Client(bool mType, int mFd, int mPort, vector<Server>* mServer, KQueue& mKq)
+			: Socket(mType, mFd, mPort, mServer, mKq), mReadStatus(WAITING) ,mResponseCode(0), mCGI(0) { }
 
 Client::~Client()
 {
@@ -22,21 +22,25 @@ void	Client::readSocket(struct kevent* event)
 {
 	size_t	buffer_size = event->data;
 	char	buffer[buffer_size];
+	
+	memset(buffer, 0, buffer_size);
 	ssize_t s = recv(getFd(), buffer, buffer_size, 0);
 
-	memset(buffer, 0, buffer_size);
 	if (s < 1) {
 		if (s == 0) {
 			throw runtime_error("client socket closed");
-			// cout << "Client socket [" << client->getFd() << "] closed" << endl;
 		} else {
 			throw runtime_error("Error: client socket recv failed");
-			// cout << "Error: Client socket [" << client->getFd() << "] recv failed" << endl;
 		}
 	}
 	mInputBuffer.append(buffer, s);
-	while (addBuffer(buffer, s))
+	while (addBuffer())
+	{
 		addRequests(createRequest(mHeader));
+		
+		//자투리 buffer 처리 필요
+	}
+	
 }
 
 void			Client::addRequests(ARequest* request)
@@ -46,18 +50,24 @@ void			Client::addRequests(ARequest* request)
 		mReadStatus = READING_BODY;
 	else
 		mReadStatus = WAITING;
-	if (mRequests.size() == 1)
-		requester(mRequests.front());
+	
+	if (mReadStatus == WAITING && mRequests.size() == 1) {
+		operateRequest(mRequests.front());
+	}
 }
 
-int			Client::addBuffer(char *input, size_t size)
+int			Client::addBuffer()
 {
 	if (mReadStatus <= READING_HEADER)	{
 		mReadStatus = READING_HEADER;
 		return mHeader.addHead(mInputBuffer);
 	}
-	if (mRequests.back()->mBody.addBody(mInputBuffer))
+	if (mRequests.back()->getBody().addBody(mInputBuffer))
+	{
 		mReadStatus = WAITING;
+		if (mRequests.size() == 1)
+			operateRequest(mRequests.front());
+	}
 	return 0;
 }
 
@@ -89,7 +99,7 @@ ARequest*	Client::createRequest(Head& head)
 	}
 	catch(const std::exception& e)
 	{
-		mReadStatus = CLOSE;
+		mReadStatus = ERROR;
 		std::cerr << e.what() << '\n';
 		return new RBad(400);
 	}
@@ -121,32 +131,51 @@ void			Client::operateRequest(ARequest* request)
 	{
 		mKq.addProcessPid(pid, reinterpret_cast<void*>(this));
 		mRequestStatus = PROCESSING;
+		cout << "not SENDING" << endl;
 	}
 	else
+	{
 		mRequestStatus = SENDING;
+		cout << "check SENDING\n";		
+	}
 }
 
-void			Client::writeSocket(struct kevent& event)
+void			Client::writeSocket(struct kevent* event)
 {
 	if(!mResponseMSG.size())
 		mResponseMSG = mRequests.front()->createResponse();
-	sendResponseMSG(event);
-	mRequests.pop();
-	if(!mRequests.empty())
-		operateRequest(mRequests.front());
-	else
-		mRequestStatus = EMPTY;
-
+	if (sendResponseMSG(event))
+	{
+		mRequests.pop();
+		if(!mRequests.empty())
+			operateRequest(mRequests.front());
+		else
+			mRequestStatus = EMPTY;
+	}
 }
 
-void			Client::sendResponseMSG(struct kevent& event)
+int			Client::sendResponseMSG(struct kevent* event)
 {
 		size_t	sendinglen = getResponseMSG().size() - getRequests().front()->mSendLen;
-		if (static_cast<size_t>(event.data) <= sendinglen)
-			sendinglen = event.data;
+		if (static_cast<size_t>(event->data) <= sendinglen)
+			sendinglen = event->data;
 		sendinglen = send(getFd(), getResponseMSG().c_str() + getRequests().front()->mSendLen, sendinglen, 0);
 		getRequests().front()->mSendLen += sendinglen;
+		if (getRequests().front()->mSendLen == getResponseMSG().size())
+			return 1;
+		return 0;
 }
+
+void			Client::handleProcess(struct kevent* event)
+{
+	if (event->data != 0)
+		mRequests.front()->setCode(500);
+	else
+		mRequests.front()->setCode(201);
+	mRequestStatus = SENDING;
+}
+
+
 
 void			Client::resetTimer(int mKq, struct kevent event)
 {
@@ -199,8 +228,8 @@ string&				Client::getHeadBuffer() { return mInputBuffer; }
 string&				Client::getInputBuffer() { return mInputBuffer; }
 int					Client::getResponseCode() const { return mResponseCode; }
 pid_t				Client::getCGI() const { return mCGI; }
+int					Client::getRequestStatus() const { return mRequestStatus; }
 
 void				Client::setReadStatus(int mStatus) { this->mReadStatus = mStatus; }
-// void				Client::setRequestNull() { this->mRequests = NULL; }
 void				Client::setResponseCode(int code) { mResponseCode = code; }
 void				Client::setCGI(pid_t mCGI) { this->mCGI = mCGI; }

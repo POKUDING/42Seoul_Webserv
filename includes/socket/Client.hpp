@@ -36,22 +36,23 @@
 class Client : public Socket
 {
 	public:
-		Client(bool mType, int mFd, int mPort, const vector<Server>* mServer, KQueue& mKq);
+		Client(bool mType, int mFd, int mPort, vector<Server>* mServer, KQueue& mKq);
 		virtual ~Client();
 
 		void				readSocket(struct kevent* event);
 		void				addRequests(ARequest* request);
-		int					addBuffer(char *input, size_t size);
+		int					addBuffer();
 		void				clearClient();
 
 		ARequest*			createRequest(Head& head);
 		map<string,string>	createHttpKeyVal(const vector<string>&	header_line);
 
-		void				writeSocket(struct kevent& event);
-		void				sendResponseMSG(struct kevent& event);
+		void				writeSocket(struct kevent* event);
+		int					sendResponseMSG(struct kevent* event);
 
 		void				operateRequest(ARequest* request);
 
+		void				handleProcess(struct kevent* event);
 		// int					checkRequest(const string& headline);
 		// void				example();
 		void				resetTimer(int mKq, struct kevent event);
@@ -65,6 +66,7 @@ class Client : public Socket
 		string&				getInputBuffer();
 		int					getResponseCode() const;
 		pid_t				getCGI() const;
+		int					getRequestStatus() const;
 
 		void				setReadStatus(int mStatus);
 		// void				setRequestNull();
@@ -81,7 +83,6 @@ class Client : public Socket
 		string				mResponseMSG;
 		pid_t				mCGI;
 		Head				mHeader;
-		KQueue&				mKq;
 };
 
 #endif //CLIENT_HPP

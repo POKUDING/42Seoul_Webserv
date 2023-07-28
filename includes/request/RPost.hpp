@@ -3,6 +3,7 @@
 #define RPOST_HPP
 
 #include "ARequest.hpp"
+#include "../socket/Body.hpp"
 
 class RPost: public ARequest
 {
@@ -13,11 +14,12 @@ class RPost: public ARequest
 		virtual pid_t			operate();
 		virtual	const string	createResponse();
 
-		const string&	getBody() const;
-		void			setBody(string mBody);
-
+		const Body&		getBody() const;
 	private:
-		string	mBody;
+
+		void	executeCgi();
+		void	setCgiEnv();
+		string	getRequestMethod();
 };
 
 #endif // RPOST_HPP

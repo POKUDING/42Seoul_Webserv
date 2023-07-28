@@ -13,6 +13,9 @@
 #define SPIDER_SERVER "Server: SpiderMen/1.0.0\r\n"
 #define CONTENT_TYPE "Content-Type: text/html; charset=UTF-8\r\n"
 
+#define CLOSE "close"
+#define KEEP_ALIVE "keep-alive"
+
 // #define OK "OK"
 // #define BAD_REQUEST "Bad Request"
 // #define SERVER_ERROR "Internal Server Error"
@@ -25,10 +28,6 @@
 enum eSocket {
 	SERVER = 0,
 	CLIENT = 1
-};
-enum eConnection {
-	CLOSE = 0,
-	KEEP_ALIVE = 1
 };
 
 enum eMethod {
@@ -46,7 +45,7 @@ enum eReadStatus {
 };
 
 enum eRequestStatus {
-	EMPTY = 0,	//no requests
+	EMPTY = 0,			//no requests
 	PROCESSING = 1,		//cgi working
 	SENDING = 2			//writing
 };

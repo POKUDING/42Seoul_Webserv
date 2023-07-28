@@ -3,6 +3,8 @@
 #define BODY_HPP
 
 #include <string>
+#include <iostream>
+#include "../socket/Body.hpp"
 
 using namespace std;
 
@@ -17,8 +19,11 @@ class Body
 		int		addLenBody(string& inputbuffer);
 		size_t	parseChunkLen(string& ChunkBuf);
 
+		void	setChunked(bool chunk);
+		void	setContentLen(size_t len);
+		size_t	getContentLen();
 		bool	getReadEnd();
-		string& getBody();
+		string 	getBody();
 
 	private:
 		bool	mReadEnd;

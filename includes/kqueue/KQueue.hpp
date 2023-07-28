@@ -23,7 +23,7 @@ class KQueue
 		void			addServerSocketFd(int fd, void* udata);
 		void			addClientSocketFd(int fd, void* udata);
 		void			addProcessPid(pid_t pid, void* udata);
-		void			deleteClientSocketFd(int fd);
+		// void			deleteClientSocketFd(int fd);
 
 		int				getKq();
 		struct kevent*	getEvents();

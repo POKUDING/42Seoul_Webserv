@@ -63,7 +63,7 @@ size_t	Body::parseChunkLen(string& ChunkBuf)
 
 int	Body::addLenBody(string& inputbuffer)
 {
-	if (mBody.size() + inputbuffer.size() > mContentLen)
+	if (mBody.size() + inputbuffer.size() > mContentLen + 4)
 		throw runtime_error("Error: invlaid len body format");
 	mBody.append(inputbuffer.c_str(), inputbuffer.size());
 	inputbuffer.clear();
@@ -77,5 +77,10 @@ int	Body::addLenBody(string& inputbuffer)
 
 // getters and setters
 
+
+void	Body::setContentLen(size_t len) { this->mContentLen = len; }
+void	Body::setChunked(bool chunk) { this->mChunked = chunk; }
+
+size_t	Body::getContentLen() { return mContentLen; }
 bool	Body::getReadEnd() { return mReadEnd; }
-string& Body::getBody() { return mBody; }
+string	Body::getBody() { return mBody; }

@@ -1,9 +1,8 @@
 #include "../../includes/socket/Socket.hpp"
-
 // constructors and destructor
 
-Socket::Socket(bool mType, int mFd, int mPortNumber, const vector<Server>* mServer)
-	: mType(mType), mFd(mFd), mPortNumber(mPortNumber), mServer(mServer) { }
+Socket::Socket(bool mType, int mFd, int mPortNumber, vector<Server>* mServer, KQueue& mKq)
+	: mType(mType), mFd(mFd), mPortNumber(mPortNumber), mServer(mServer), mKq(mKq) { }
 Socket::~Socket(void) { }
 
 // member functions
@@ -13,6 +12,6 @@ Socket::~Socket(void) { }
 bool					Socket::getType() const { return mType; }
 int						Socket::getFd() const { return mFd; }
 int						Socket::getPortNumber() const { return mPortNumber; }
-const vector<Server>*	Socket::getServer() const { return mServer; }
+vector<Server>*			Socket::getServer() const { return mServer; }
 
 // void	Socket::setServer(const vector<Server>* server) const { mServer = server; }

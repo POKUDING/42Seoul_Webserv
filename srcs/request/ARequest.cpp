@@ -2,8 +2,8 @@
 
 // constructors and destructor
 
-ARequest::ARequest(string mRoot, int mType, map<string, string> header_key_val, vector<Server>* servers)
-			: mRoot(mRoot), mType(mType)
+ARequest::ARequest(string root, int mType, map<string, string> header_key_val, vector<Server>* servers)
+			: mType(mType)
 {
 	mBasics.host = header_key_val["Host"];
 	mBasics.user_agent = header_key_val["User-Agent"];
@@ -29,6 +29,7 @@ ARequest::ARequest(string mRoot, int mType, map<string, string> header_key_val, 
 	}
 
 	//초기화
+	mRoot = root;
 	mServer = findServer(servers);
 	findLocation(mServer);
 	mSendLen = 0;
@@ -42,7 +43,14 @@ ARequest::ARequest(string mRoot, int mType, map<string, string> header_key_val, 
 	//존재 확인
 	if (access(mRoot.c_str(), F_OK) < 0)
 		runtime_error("Error: requested dir/file not available.");
-
+	//file vs dir
+	DIR* dir = opendir(mRoot.c_str());
+	if (dir) {
+		mIsFile = false;
+		closedir(dir);
+	} else {
+		mIsFile = true;
+	}
 }
 
 ARequest::ARequest(int mType) : mRoot(""), mType(mType) {}
@@ -51,6 +59,8 @@ ARequest::~ARequest() { }
 // member functions
 
 // public
+
+void	ARequest::setCode(int code) { this->mCode = code; }
 
 Server	ARequest::findServer(vector<Server>* servers)
 {
@@ -70,12 +80,14 @@ void	ARequest::findRootLocation(Server& server, string root)
 	for(int loc_idx = 0, end = server.getLocation().size(); loc_idx < end; ++loc_idx)
 	{
 		if (root.substr(0, server.getLocation()[loc_idx].getKey().size()) == server.getLocation()[loc_idx].getKey() && \
-			server.getLocation()[loc_idx].getKey().size() > find_len);
-			mLocation = server.getLocation()[loc_idx];
+			server.getLocation()[loc_idx].getKey().size() > find_len)
+			{
+				mLocation = server.getLocation()[loc_idx];
+				find_len = server.getLocation()[loc_idx].getKey().size();
+			}
 	}
 	if (find_len == 0)
 		findRootLocation(server, "/");
-	mIsFile = false;
 }
 
 int	ARequest::findExtentionLocation(Server& server)
@@ -85,9 +97,7 @@ int	ARequest::findExtentionLocation(Server& server)
 	size_t	pos = mRoot.rfind('.');
 	if (pos == string::npos || mRoot.find('/', pos) != string::npos || pos == mRoot.size())
 		return 1;
-	mIsFile = true;
 	extention = mRoot.substr(pos);
-	extention += '$';
 	for(int loc_idx = 0, end = server.getLocation().size(); loc_idx < end; ++loc_idx)
 	{
 		if (extention == server.getLocation()[loc_idx].getKey()) {
@@ -110,12 +120,12 @@ void	ARequest::setPipe()
 		throw runtime_error("Error: pipe create failed");
 }
 
-void	ARequest::createErrorRequest(int code)
-{
-	ARequest* toDelete = this;
-	this = new RBad(code);
-	delete toDelete;
-}
+// void	ARequest::createErrorRequest(int code)
+// {
+// 	ARequest* toDelete = this;
+// 	this = new RBad(code);
+// 	delete toDelete;
+// }
 
 // getters
 

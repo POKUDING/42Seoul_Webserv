@@ -6,15 +6,18 @@
 #include <string>
 #include <sstream>
 #include <fstream>
+#include <cstdlib>
 #include <unistd.h>
+#include <dirent.h>
 #include "../config/Server.hpp"
 #include "../basic.hpp"
 #include "../util/Time.hpp"
+#include "../util/SpiderMenUtil.hpp"
 #include "../socket/Body.hpp"
-#include "./RBad.hpp"
+// #include "./RBad.hpp"
 
 extern	char** env;
-class	RBad;
+// class	RBad;
 
 using namespace std;
 
@@ -22,7 +25,7 @@ typedef struct	s_basic
 {
 	//must for METHOD
 	string	host;//Host: 
-	int		connection; // default: keep-alive
+	string	connection; // default: keep-alive
 	string	user_agent;	//우선 없으면 bad request로 처리
 	// string	accept;		//크롬이면 기본으로 다 되니까 필요없을듯?
 	// string	accept_encoding;	//필요 없을듯?
@@ -45,7 +48,7 @@ typedef struct	s_basic
 class ARequest
 {
 	public:
-		ARequest(string mRoot, int mType, map<string, string> header_key_val, vector<Server>* servers);
+		ARequest(string Root, int mType, map<string, string> header_key_val, vector<Server>* servers);
 		ARequest(int mType);
 		virtual	~ARequest();
 
@@ -57,20 +60,23 @@ class ARequest
 		int					findExtentionLocation(Server& server);
 		Server	 			findServer(vector<Server>* servers);
 		void				setPipe();
-		void				createErrorRequest(int code);
+		// void				createErrorRequest(int code);
 
-
+		void				setCode(int code);
 		int					getType() const;
 		const string&		getRoot() const;
 		const t_basic&		getBasics() const;
+	
+		Body&				getBody() { return mBody; }
 
 		size_t			mSendLen;
-		Body			mBody;
 	protected:
 		bool			mIsFile;
+		int				mCode;
 		string			mRoot;
 		int				mType;
 		Server			mServer;
+		Body			mBody;
 		Location		mLocation;
 		t_basic			mBasics;
 		int				mPipe[2];

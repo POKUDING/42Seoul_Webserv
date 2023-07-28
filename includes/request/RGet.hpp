@@ -2,6 +2,7 @@
 #ifndef RGET_HPP
 #define RGET_HPP
 
+#include <dirent.h>
 #include "ARequest.hpp"
 
 class RGet : public ARequest
@@ -12,6 +13,8 @@ class RGet : public ARequest
 
 		virtual pid_t			operate();
 		virtual	const string	createResponse();
+	private:
+		string redirectResponse();
 };
 
 #endif // RGET_HPP

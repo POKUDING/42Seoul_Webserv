@@ -2,6 +2,7 @@
 #ifndef RDELETE_HPP
 #define RDELETE_HPP
 
+#include <cstdio>
 #include "ARequest.hpp"
 
 class RDelete: public ARequest

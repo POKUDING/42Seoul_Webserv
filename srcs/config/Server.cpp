@@ -2,7 +2,7 @@
 
 // constructor
 
-Server::Server(): mRoot("/"), mListen(80), mClientMaxBodySize(MAX_BODY_SIZE) { }
+Server::Server(): mRoot("./www/"), mListen(80), mClientMaxBodySize(MAX_BODY_SIZE) { }
 
 // member functions
 

@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon"> 
   <title>Welcome to SpiderMen</title>
   <meta charset="utf-8">
 </head>
+
 <body>
   <h1><a href="http://0.0.0.0:4242/">this is HTML Page</a></h1>
   <ol>
@@ -25,6 +27,20 @@
 		<input type="text" name="name" id="">
 		<button type="delete">submit</button>
 	</form>
+
+  <h1>User Create</h1>
+  <form action="http://0.0.0.0:4242/cgi_bin/cgi_post.py" method="POST">
+    Name: <input type="text" name="name"/><br>
+    Password: <input type="text" name="password"/><br>
+    <input type="submit" value="Create"/>
+   </form>
+  
+  <h1>User Delete</h1>
+  <form action="http://0.0.0.0:4242/cgi_bin/cgi_delete.py" method="DELETE">
+    Name: <input type="text" name="name"/><br>
+    Password: <input type="text" name="password"/><br>
+    <input type="submit" value="Delete"/>
+   </form>
 
 </body>
 </html>

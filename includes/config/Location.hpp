@@ -23,7 +23,9 @@ class Location
 		const string&			getKey() const;
 		const string&			getRoot() const;
 		const vector<string>&	getLimitExcept() const;
-		const string&			getFastcgiPass() const;
+		const string&			getRedirect() const;
+		const string&			getCgiBin() const;
+		const string&			getCgiPath() const;
 		const string&			getIndex() const;
 		bool					getAutoIndex() const;
 		const string&			getSh() const;
@@ -33,7 +35,9 @@ class Location
 
 		void					setRoot(const string& mRoot);
 		void					addLimitExcept(const string& mLimitExcept);
-		void					setFastcgiPass(const string& mFastcgiPass);
+		void					setRedirect(const string& mRedircect);
+		void					setCgiBin(const string& mCgiBin);
+		void					setCgiPath(const string& mCgiPath);
 		void					setIndex(const string& mIndex);
 		void					setAutoIndex(const string& mAutoIndex);
 		void					setSh(const string& mSh);
@@ -47,7 +51,9 @@ class Location
 		string			mKey;
 		vector<string>	mLimitExcept;
 		string			mRoot;
-		string			mFastcgiPass;
+		string			mRedirect;
+		string			mCgiBin;
+		string			mCgiPath;
 		string			mIndex;
 		bool			mAutoIndex;
 		string			mSh;

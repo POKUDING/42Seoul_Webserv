@@ -5,13 +5,14 @@
 RGet::RGet(string mRoot, map<string, string> header_key_val, vector<Server>* servers)
 			: ARequest(mRoot, GET, header_key_val, servers)
 {
+	mRequest = "GET";
 	if (mBasics.content_length || mBasics.transfer_encoding.size()) 
-		throw runtime_error("Bad request:: GET cannot have body");
+		throw 400;
 	
 	//해당 location 블록에서 method 사용가능한지 확인
 	if (find(mLocation.getLimitExcept().begin(), mLocation.getLimitExcept().end(), "GET") == \
 			mLocation.getLimitExcept().end())
-		throw runtime_error("Bad request:: Get:: method not available");	
+		throw 405;	
 }
 
 RGet::~RGet() { }
@@ -48,30 +49,42 @@ pid_t			RGet::operate()
 	if (mIsFile) {
 		
 		//.php, .py 블록이면 CGI 처리
-		if (mLocation.getKey() == ".php" || mLocation.getKey() == ".py") {
+		if (mLocation.getCgiPath().size()) {
 			
 			setPipe();	//pipe 생성 (ARequest에 있음)
 			pid_t pid = fork();
 
 			//cgi 실행 파일, 전달할 .py/php 파일 이름, NULL
-			char* const argv[3] = {const_cast<char * const>(mLocation.getCgiPath().c_str()), \
-									const_cast<char * const>(getRoot().c_str()), NULL};
 			if (pid == 0) {
-				if (mLocation.getKey() == ".php")
-					execve("/usr/bin/php", argv, env);
-				else//".py"
-					execve("/usr/local/bin/python3", argv, env);
+				extern char** environ;
+				setCgiEnv();
+				cout << "\n\n\n\n\n" <<mRequest << "\n\n\n\n" << endl;
+				char* const argv[3] = {const_cast<char * const>(mLocation.getCgiPath().c_str()), \
+										const_cast<char * const>(getRoot().c_str()), NULL};
+				for (int i = 0; i < 2; ++i)
+					cout << argv[i]<< endl;
+				cout << mLocation.getCgiBin() << endl;
+				dup2(mPipe[1],1);
+				close (mPipe[0]);
+				close (mPipe[1]);
+				if (execve(mLocation.getCgiBin().c_str(), argv, environ) < 0)
+				{
+					cerr<< "execve faile!!" << strerror(errno) << endl;
+					exit(1);
+				}
 			}
+			close(mPipe[1]);
 			return pid;
 		} 
 	}
 	return 0;
 }
 
-string	RGet::redirectResponse()
+const string	RGet::redirectResponse()
 {
 	string	mMSG;
 
+	cout << "redirect MSG !" << endl;
 	mMSG.append("HTTP/1.1 301 Moved Permanently\r\n");
 	mMSG.append("Location: ");
 	mMSG.append(mLocation.getRedirect());
@@ -82,10 +95,50 @@ string	RGet::redirectResponse()
 
 const string	RGet::createResponse()
 {
+	cout << "create Response !" << endl;
+	if (mLocation.getRedirect().size())
+		return redirectResponse();
+	else if (mLocation.getCgiPath().size())
+		return createCgiResponse();
+	else
+		return createLegacyResponse();	
+}
+
+const string	RGet::createCgiResponse()
+{
+	string 	mMSG;
+	char	timeStamp[1024];
+
+	cout << mPipeValue << endl;
+	mMSG.append("HTTP/1.1 200 OK\r\n");
+	Time::stamp(timeStamp);
+	mMSG.append(timeStamp);	
+	mMSG.append(SPIDER_SERVER);
+	if (this->getBasics().connection == KEEP_ALIVE)
+		mMSG.append("Connection: keep-alive\r\n");
+	mMSG.append("Content-Length: ");
+	if (mPipeValue.find("\r\n\r\n") != string::npos) {
+		mMSG.append(SpiderMenUtil::itostr(mPipeValue.size() - (mPipeValue.find("\r\n\r\n") + 4)).c_str());
+		mMSG.append("\r\n");
+		mMSG.append(mPipeValue);
+		mMSG.append("\r\n\r\n");
+	} else
+	{
+		mMSG.append("0");
+		cout << "mPipeValue cannot found CRLF" << endl;
+	}
+
+	return mMSG;
+}
+
+const string	RGet::createLegacyResponse()
+{
 	// if (checkCgi)
 	// 	return cgiResoponse();
 	// else
 	//	return commonResponse();
+
+	cout << "create Legacy RESPONSE!" << endl;
 
 	string		mMSG;
 	char 		timeStamp[TIME_SIZE];
@@ -126,7 +179,7 @@ const string	RGet::createResponse()
 		mMSG.append("\r\n");
 
 		if (this->getBasics().connection == KEEP_ALIVE)
-			mMSG.append("Connection: Keep-Alive\r\n");
+			mMSG.append("Connection: keep-alive\r\n");
 
 		mMSG.append("\r\n"); //end of head
 

@@ -23,8 +23,6 @@ int	Head::addHead(string& inputBuff)
 			inputBuff.clear();
 		return 1;
 	}
-	mHeadBuffer.append(inputBuff.c_str(), inputBuff.size());
-	inputBuff.clear();
 	return 0;
 }
 

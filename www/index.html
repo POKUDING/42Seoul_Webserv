@@ -1,6 +1,24 @@
 <!DOCTYPE html>
 <html>
 
+<script>
+  function sendDeleteRequest(url) {
+    fetch(url, {
+      method: 'DELETE',
+    })
+    .then(response => {
+      if (response.ok) {
+        alert('파일이 성공적으로 삭제되었습니다.');
+      } else {
+        alert('파일 삭제에 실패했습니다.');
+      }
+    })
+    .catch(error => {
+      console.error('에러 발생:', error);
+    });
+  }
+</script>
+
 <head>
   <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon"> 
   <title>Welcome to SpiderMen</title>
@@ -17,16 +35,42 @@
   <h1>File send</h1>
   <div class="choices">
 	<form action="http://0.0.0.0:4242/upload/" method="POST" enctype="multipart/form-data">
-		<input type="file" name="name" id="">
+		<input type="file" name="name" id="abc">
 		<button type="upload">submit</button>
 	</form>
 
   <h1>File delete</h1>
   <div class="choices">
-	<form action="http://0.0.0.0:4242/upload/" method="DELETE">
+
+  <!-- 삭제할 파일 a.png -->
+  <button type="button" onclick="sendDeleteRequest('http://0.0.0.0:4242/upload/a.png')">a.png 삭제</button><br>
+
+  <!-- 삭제할 파일 b.png -->
+  <button type="button" onclick="sendDeleteRequest('http://0.0.0.0:4242/upload/b.png')">b.png 삭제</button><br>
+
+  <!-- 삭제할 파일 c.png -->
+  <button type="button" onclick="sendDeleteRequest('http://0.0.0.0:4242/upload/c.png')">c.png 삭제</button><br>
+
+  <!-- <form action="http://0.0.0.0:4242/upload/" method="DELETE">
+    <input type="hidden" name="_method" value="DELETE"/>
 		<input type="text" name="name" id="">
-		<button type="delete">submit</button>
+		<button type="delete">Delete file</button>
 	</form>
+
+  <form action="http://0.0.0.0:4242/upload/b.png" method="DELETE">
+		<!-- <input type="text" name="name" id=""> -->
+    <input type="hidden" name="_method" value="DELETE"/>
+		<button type="delete">Delete b.png</button>
+	</form>
+  <form action="http://0.0.0.0:4242/upload/c.png" method="DELETE">
+		<!-- <input type="text" name="name" id=""> -->
+		<button type="delete">Delete c.png</button>
+	</form> -->
+
+  <h1>Redirect Test</h1>
+  <form action="http://0.0.0.0:4242/youtube" method="GET">
+    <input type="submit" value="YouTube"/>
+  </form>
 
   <h1>User Create</h1>
   <form action="http://0.0.0.0:4242/cgi_bin/cgi_post.py" method="POST">

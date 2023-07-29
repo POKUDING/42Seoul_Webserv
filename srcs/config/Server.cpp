@@ -69,7 +69,7 @@ void	Server::setValue(const vector<string>& splitedLine)
 
 const vector<Location>&		Server::getLocation() const { return this->mLocation; }
 const vector<string>&		Server::getServerName() const { return this->mServerName; }
-const map<string, string>&	Server::getErrorPage() const { return this->mErrorPage; }
+map<string, string>&		Server::getErrorPage() { return this->mErrorPage; }
 const string&				Server::getRoot() const { return this->mRoot; }
 int							Server::getListen() const { return this->mListen; }
 int							Server::getClientMaxBodySize() const { return this->mClientMaxBodySize; }
@@ -119,19 +119,19 @@ void						Server::setClientMaxBodySize(const string& mClientMaxBodySize)
 
 // print
 
-void						Server::printMembers() const
-{
-	cout << "	ErrorPage: \n";
-	printMap(this->getErrorPage());
-	cout << "	ServerName: \n";
-	for (size_t j = 0; j < this->getServerName().size(); ++j)
-		cout << "\t\t" << j << ": " << this->getServerName()[j] << "\n";
-	cout << "	Root: " << this->getRoot() << "\n";
-	cout << "	Listen: " << this->getListen() << "\n";
-	cout << "	ClientMaxBodySize: " << this->getClientMaxBodySize() << "\n";
-	for (size_t j = 0, end = this->getLocation().size(); j < end; ++j)
-	{
-		cout << "	Location [" << this->getLocation()[j].getKey() << "] --------------\n";
-		this->getLocation()[j].printMembers();
-	}
-}
+// void						Server::printMembers() const
+// {
+// 	cout << "	ErrorPage: \n";
+// 	printMap(this->getErrorPage());
+// 	cout << "	ServerName: \n";
+// 	for (size_t j = 0; j < this->getServerName().size(); ++j)
+// 		cout << "\t\t" << j << ": " << this->getServerName()[j] << "\n";
+// 	cout << "	Root: " << this->getRoot() << "\n";
+// 	cout << "	Listen: " << this->getListen() << "\n";
+// 	cout << "	ClientMaxBodySize: " << this->getClientMaxBodySize() << "\n";
+// 	for (size_t j = 0, end = this->getLocation().size(); j < end; ++j)
+// 	{
+// 		cout << "	Location [" << this->getLocation()[j].getKey() << "] --------------\n";
+// 		this->getLocation()[j].printMembers();
+// 	}
+// }

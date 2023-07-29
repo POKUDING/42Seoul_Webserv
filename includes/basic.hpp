@@ -10,17 +10,22 @@
 #define PACKET_SIZE 1460
 
 #define HTTP_STATUS "HTTP/1.1 200 OK\r\n"
-#define SPIDER_SERVER "Server: SpiderMen/1.0.0\r\n"
+#define STATUS_400 "HTTP/1.1 400 Bad Request\r\n"
+#define STATUS_403 "HTTP/1.1 403 Forbidden\r\n" 
+#define STATUS_404 "HTTP/1.1 404 Not Found\r\n"
+#define STATUS_405 "HTTP/1.1 405 Method Not Allowed\r\n"
+#define STATUS_500 "HTTP/1.1 500 Internal Server Error\r\n"
+#define STATUS_501 "HTTP/1.1 501 Not Implemented\r\n"
+#define STATUS_504 "HTTP/1.1 504 Gateway Time-out\r\n"
+#define STATUS_505 "HTTP/1.1 505 HTTP Version not supported\r\n"
+
+#define SPIDER_SERVER "Server: SpiderMen/1.2.3\r\n"
 #define CONTENT_TYPE "Content-Type: text/html; charset=UTF-8\r\n"
 
 #define CLOSE "close"
 #define KEEP_ALIVE "keep-alive"
 
-// #define OK "OK"
-// #define BAD_REQUEST "Bad Request"
-// #define SERVER_ERROR "Internal Server Error"
-
-#define TIMEOUT_SEC 10
+#define TIMEOUT_SEC 20
 
 #define CHUNKED -1
 #define FAIL_FD 0

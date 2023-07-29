@@ -20,7 +20,8 @@ void	SpiderMen::run()
 	int eventNum;
 
 	while (1) {
-		eventNum = mKq.getEventNum();
+			eventNum = mKq.getEventNum();
+
 		if (eventNum == -1)
 			eventNum = MAX_EVENT;
 		for (int i = 0; i < eventNum; ++i) {
@@ -42,7 +43,8 @@ void	SpiderMen::run()
 			// }
 
 			// TEST_CODE : kqueue
-			cout << "socket: " << sock_ptr->getFd() << ", type: " << sock_ptr->getType() << ", request: " << mKq.getEvents()[i].filter << endl;
+			cout << "socket: "<< mKq.getEvents()[i].ident << ", request: " << mKq.getEvents()[i].filter << ", Filter: " << mKq.getEvents()[i].filter << endl;
+			cout << "socket: " << mKq.getEvents()[i].ident << ", type: " << sock_ptr->getType() << ", request: " << mKq.getEvents()[i].filter << endl;
 			if (sock_ptr->getType() == SERVER) {
 				try {
 					if (mKq.getEvents()[i].flags == EV_ERROR) {
@@ -55,7 +57,7 @@ void	SpiderMen::run()
 					//client socket 에러 (accept(), kevent())
 					cout << "Error: Server Handler: close client [" << fd << "]" << endl;
 					if (fd) {
-						deleteClientKQ(fd);
+						// deleteClientKQ(fd);
 						deleteClient(fd);
 					}
 				} catch (const exception& e) {
@@ -69,22 +71,11 @@ void	SpiderMen::run()
 						throw runtime_error("kevent flags: EV_ERROR");
 					}
 					this->handleClient(&mKq.getEvents()[i], reinterpret_cast<Client *>(sock_ptr));
-					reinterpret_cast<Client *>(sock_ptr)->resetTimer(mKq.getKq(), mKq.getEvents()[i]);
+					// reinterpret_cast<Client *>(sock_ptr)->resetTimer(mKq.getKq(), mKq.getEvents()[i]);
 				} catch (const exception& e) {
 					cout << "Error: Client Handler: " << e.what() << ", code: " << reinterpret_cast<Client *>(sock_ptr)->getResponseCode()<< endl;
-					//400 || 500 에러일 경우 처리 (throw 전에 client.setResponseCode()로 코드 설정해줘야 함)
-					// if (reinterpret_cast<Client *>(sock_ptr)->getResponseCode())
-						// reinterpret_cast<Client *>(sock_ptr)->createErrorResponse();
-						// reinterpret_cast<Client *>(sock_ptr)->getRequest()->createResponse();
-						//send
-//send()여기서 어떻게 하징
-					// KQ 삭제, close(fd) 중 에러 throw가 가능해 일단 추가함...
-					try {
-						deleteClientKQ(sock_ptr->getFd());
-					} catch (const exception& e) {
-						cout << "deleteKQ Error :" << e.what() << endl;
-					}
-//ARequest삭제(client 소멸자), 서버map에서 삭제
+					if (reinterpret_cast<Client *>(sock_ptr)->getResponseCode() != 0)
+						handleError(reinterpret_cast<Client *>(sock_ptr));
 					deleteClient(sock_ptr->getFd());
 					cout << "======================= END of Error" << endl;
 				}
@@ -95,30 +86,33 @@ void	SpiderMen::run()
 
 // private
 
-void	SpiderMen::deleteClientKQ(int fd)
-{
-	struct kevent	event;
+// void	SpiderMen::deleteClientKQ(int fd)
+// {
+// 	struct kevent	event;
 	
-	if (mClients.find(fd) != mClients.end()) {
-		cout << "delete events"  << endl;
-        EV_SET(&event, fd, EVFILT_TIMER, EV_DELETE | EV_DISABLE | EV_ONESHOT, 0, 0, 0);
-		if (kevent(mKq.getKq(), &event, 1, NULL, 0, NULL) == -1)
-			throw runtime_error("Error: FAILED - deleteClientKQ - read");
-		event.filter = EVFILT_READ;
-		if (kevent(mKq.getKq(), &event, 1, NULL, 0, NULL) == -1)
-			throw runtime_error("Error: FAILED - deleteClientKQ - timer");
-		// if (mClients[fd].getStatus() == SENDING) {
-		event.filter = EVFILT_WRITE;
-		if (kevent(mKq.getKq(), &event, 1, NULL, 0, NULL) == -1)
-			throw runtime_error("Error: FAILED - deleteClientKQ - write");
-	}
-}
+// 	if (mClients.find(fd) != mClients.end()) {
+		
+//         EV_SET(&event, fd, EVFILT_TIMER, EV_DELETE , 0, 0, 0);
+// 		if (kevent(mKq.getKq(), &event, 1, NULL, 0, NULL) == -1)
+// 			throw runtime_error("Error: FAILED - deleteClientKQ - timer");
+// 		event.filter = EVFILT_READ;
+// 		if (kevent(mKq.getKq(), &event, 1, NULL, 0, NULL) == -1)
+// 			throw runtime_error("Error: FAILED - deleteClientKQ - read");
+// 		// if (mClients[fd].getStatus() == SENDING) {
+// 		event.filter = EVFILT_WRITE;
+// 		if (kevent(mKq.getKq(), &event, 1, NULL, 0, NULL) == -1)
+// 			throw runtime_error("Error: FAILED - deleteClientKQ - write");
+// 		cout << "CLIENT events deleted: read, timer, write"  << endl;
+// 	}
+// }
 
 void	SpiderMen::deleteClient(int fd)
 {
 	if (mClients.find(fd) != mClients.end()) {
+		mKq.deleteClientSocketFd(fd);
 		close(fd);
 		mClients.erase(fd);
+		cout << "CLIENT deleted: fd: " << fd << ", map"  << endl;
 	}
 }
 
@@ -172,6 +166,9 @@ void	SpiderMen::handleServer(Socket* sock)
 	if (fd == -1) {
 		throw FAIL_FD;
 	}
+
+	cout << "new client accepted, fd: "  << fd << endl;
+
 	Client client_tmp(CLIENT, fd, sock->getPortNumber(), sock->getServer(), mKq);
 //클라이언트 소켓은 논블록처리하면 안된다는 말이 있던데 확인해봐야 합니다
 	// if (fcntl(client_tmp.getFd(), F_SETFL, O_NONBLOCK) == -1)			//소켓 논블록처리
@@ -191,7 +188,8 @@ void	SpiderMen::handleClient(struct kevent* event, Client* client)
 	} else if (event->filter == EVFILT_PROC) {
 		client->handleProcess(event);
 	} else if (event->filter == EVFILT_TIMER) {
-
+		// if ((int)event->ident != client->getFd())
+		// 	return ; 
 		switch (client->getReadStatus())
 		{
 		case EMPTY:
@@ -199,7 +197,7 @@ void	SpiderMen::handleClient(struct kevent* event, Client* client)
 			break;
 
 		case PROCESSING:
-			client->setResponseCode(500);;
+			client->setResponseCode(500);
 			throw runtime_error("TIMER: Processing");
 
 		case SENDING:
@@ -216,3 +214,17 @@ void	SpiderMen::handleClient(struct kevent* event, Client* client)
 	mKq.setNextEvent(client->getRequestStatus(), client->getFd(), client);
 }
 
+void	SpiderMen::handleError(Client* client)
+{
+	for (size_t i = 0, end = client->getRequests().size(); i < end; ++i)
+	{
+		delete client->getRequests().front();
+		client->getRequests().front() = NULL;
+		client->getRequests().pop();
+	}
+	cout << "handleError called: " << client->getRequests().size() << endl;
+	client->getRequests().push(new RBad(client->getResponseCode()));
+	cout << "handleError called after push: " << client->getRequests().size() << endl;
+	client->setRequestStatus(SENDING);
+	mKq.setNextEvent(client->getRequestStatus(), client->getFd(), client);
+}

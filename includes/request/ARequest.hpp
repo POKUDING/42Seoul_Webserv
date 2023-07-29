@@ -60,20 +60,31 @@ class ARequest
 		int					findExtentionLocation(Server& server);
 		Server	 			findServer(vector<Server>* servers);
 		void				setPipe();
+		void				checkPipe();
 		// void				createErrorRequest(int code);
 
+		string&				getPipeValue();
 		void				setCode(int code);
+		int					getCode() const;
 		int					getType() const;
 		const string&		getRoot() const;
 		const t_basic&		getBasics() const;
+
 	
 		Body&				getBody() { return mBody; }
 
 		size_t			mSendLen;
 	protected:
+		void			setCgiEnv();
+		void			cutQuery();
+		int				checkDeleteFile();
+
 		bool			mIsFile;
 		int				mCode;
 		string			mRoot;
+		string			mQuery;
+		string			mPipeValue;
+		string			mRequest;
 		int				mType;
 		Server			mServer;
 		Body			mBody;

@@ -5,22 +5,17 @@
 RDelete::RDelete(string mRoot, map<string, string> header_key_val, vector<Server>* servers)
 			: ARequest(mRoot, DELETE, header_key_val, servers)
 {
-	if (mBasics.content_length || mBasics.transfer_encoding.size()) {
-		mCode = 400;
-		throw runtime_error("Bad request:: DELETE cannot have body");
-	}
-
+	cout << "DELETE CALL!!" << endl;
+	mRequest = "DELETE";
+	if (mBasics.content_length || mBasics.transfer_encoding.size())
+		throw 400;
 	//dir or file 체크
-	if (!mIsFile) {
-		mCode = 400;
-		throw runtime_error("Bad request:: DELETE:: cannot delete directory");
-	}
+	if (!mIsFile)
+		throw 400;
 	//method 사용가능한지 확인
 	if (find(mLocation.getLimitExcept().begin(), mLocation.getLimitExcept().end(), "DELETE") == \
-			mLocation.getLimitExcept().end()) {
-		mCode = 405;
-		throw runtime_error("Bad request:: DELETE:: method not available");
-	}
+			mLocation.getLimitExcept().end())
+		throw 405;
 }
 
 RDelete::~RDelete() { }
@@ -32,10 +27,11 @@ RDelete::~RDelete() { }
 pid_t			RDelete::operate()
 {
 	// 파일 삭제 시도
+	cout << "\n\nDELETE OPERATE!!!!\n\n" << endl;
     if (remove(getRoot().c_str()) == 0) {//success 
 		mCode = 200;
     } else {//권한 없어 실패
-		mCode = 405;
+		mCode = 403;
     }
 	return 0;
 }

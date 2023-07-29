@@ -17,33 +17,53 @@ void			RBad::createErrorResponse(int code)
 	char			timeStamp[TIME_SIZE];
 	stringstream	to_str;
 	stringstream	tmp;
+	string			filename;
 	string			buffer;
 	string			body;
 
-	if (code == 400) {
-
-		mMSG.append("HTTP/1.1 400 Bad Request\r\n");
-
-		ifstream	fin("./www/errors/40x.html");
-		if (fin.fail())
-			throw runtime_error("Error: 400 response msg failed");
-		tmp << fin.rdbuf();
-		body = tmp.str();
-		fin.close();
-
-	} else if (code == 500) {
-
-		mMSG.append("HTTP/1.1 500 Internal Server Error\r\n");
-		
-		ifstream	fin("./www/errors/50x.html");
-		if (fin.fail())
-			throw runtime_error("Error: 500 response msg failed");
-		tmp << fin.rdbuf();
-		body = tmp.str();
-		fin.close();
-
+	switch (code)
+	{
+	case 400:
+		mMSG.append(STATUS_400);
+		break;
+	case 403:
+		mMSG.append(STATUS_403);
+		break;
+	case 404:
+		mMSG.append(STATUS_404);
+		break;
+	case 405:
+		mMSG.append(STATUS_405);
+		break;
+	case 500:
+		mMSG.append(STATUS_500);
+		break;
+	case 501:
+		mMSG.append(STATUS_501);
+		break;
+	case 504:
+		mMSG.append(STATUS_504);
+		break;
+	case 505:
+		mMSG.append(STATUS_505);
+		break;
+	default:
+		mMSG.append(STATUS_500);
+		break;
 	}
 
+	if (mServer.getErrorPage()[SpiderMenUtil::itostr(code)].size())
+	{
+		filename = mServer.getRoot() + "/" +  mServer.getErrorPage()[SpiderMenUtil::itostr(code)];
+		ifstream	fin(filename);
+		if (fin.fail())
+			throw runtime_error("Error: error response msg failed");
+		tmp << fin.rdbuf();
+		body = tmp.str();
+		fin.close();
+	}
+	if (!body.size())
+		body = mMSG;
 	//HEADER============================================
 	Time::stamp(timeStamp);
 	mMSG.append(timeStamp);		//Date: Tue, 20 Jul 2023 12:34:56 GMT\r\n

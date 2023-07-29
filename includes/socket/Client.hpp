@@ -19,6 +19,7 @@
 #include "./Socket.hpp"
 #include "./Head.hpp"
 #include "./Body.hpp"
+#include "../util/Time.hpp"
 
 //REQUEST STRUCT
 	// method
@@ -60,29 +61,36 @@ class Client : public Socket
 		void				createErrorResponse();
 
 		int					getReadStatus() const;
-		queue<ARequest*>	getRequests() const;
+		queue<ARequest*>&	getRequests();
 		string&				getResponseMSG();
 		string&				getHeadBuffer();
 		string&				getInputBuffer();
 		int					getResponseCode() const;
 		pid_t				getCGI() const;
 		int					getRequestStatus() const;
+		std::time_t			getReadLast() const;
+		std::time_t			getWriteLast() const;
 
 		void				setReadStatus(int mStatus);
-		// void				setRequestNull();
 		void				setResponseCode(int code);
-		void				setCGI(pid_t mCGI);
+		void				setCGI(pid_t mPid);
+		void				setRequestStatus(int mRequestStatus);
+
+		void				setReadLast();
+		void				setWriteLast();
 
 	private:
 		// void			parseHeader(void);
 		queue<ARequest*>	mRequests;
 		int					mReadStatus;	//eClient
-		int					mRequestStatus;
+		int					mRequestStatus; 
 		int					mResponseCode;
 		string				mInputBuffer;
 		string				mResponseMSG;
-		pid_t				mCGI;
+		pid_t				mPid;
 		Head				mHeader;
+		std::time_t			mReadLast;
+		std::time_t			mWriteLast;
 };
 
 #endif //CLIENT_HPP

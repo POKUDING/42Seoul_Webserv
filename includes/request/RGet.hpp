@@ -3,7 +3,10 @@
 #define RGET_HPP
 
 #include <dirent.h>
+#include <algorithm>
 #include "ARequest.hpp"
+
+using namespace std;
 
 class RGet : public ARequest
 {
@@ -14,7 +17,9 @@ class RGet : public ARequest
 		virtual pid_t			operate();
 		virtual	const string	createResponse();
 	private:
-		string redirectResponse();
+		const string 	redirectResponse();
+		const string	createLegacyResponse();
+		const string	createCgiResponse();
 };
 
 #endif // RGET_HPP

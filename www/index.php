@@ -26,11 +26,16 @@
 		<input type="text" name="name" id="">
 		<button type="delete">submit</button>
 	</form>
+  
+  <h1>Redirect Test</h1>
+  <form action="http://0.0.0.0:4242/youtube" method="GET">
+    <input type="submit" value="YouTube"/>
+  </form>
 
   <h1>여긴 뭐게요</h1>
   <ol>
     <?php
-      echo file_get_contents("source/php.txt");
+      echo file_get_contents("./www/source/php.txt");
     ?>
   </ol>
 

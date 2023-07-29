@@ -27,13 +27,13 @@ class SpiderMen
 		deque<Socket>			mServerSockets;
 		KQueue					mKq;
 
-		void				deleteClientKQ(int fd);
+		// void				deleteClientKQ(int fd);
 		void				deleteClient(int fd);
 		void				initServerSockets(const map<int,vector<Server> >& servers);
 
 		void				handleServer(Socket* sock);
 		void				handleClient(struct kevent* event, Client* client);
-		void				readSocket(struct kevent* event, Client* client);
+		void				handleError(Client* client);
 };
 
 #endif //SPIDERMEN_HPP

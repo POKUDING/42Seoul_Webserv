@@ -18,7 +18,6 @@ class RPost: public ARequest
 	private:
 
 		void	executeCgi();
-		void	setCgiEnv();
 		string	getRequestMethod();
 };
 

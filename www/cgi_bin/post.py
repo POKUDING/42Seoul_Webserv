@@ -1,48 +1,77 @@
+#!/usr/bin/env python3
 import cgi
 import os
+import re
 import sys
-import io
 
-def save_uploaded_files(form):
-    # 파일이 업로드되는 디렉토리 설정
-    script_dir = os.path.dirname(os.path.abspath(__file__))
 
-    # Create the 'upload' directory if it doesn't exist
-    upload_dir = os.path.join(script_dir, 'upload')
-    if not os.path.exists(upload_dir):
-        os.makedirs(upload_dir)
+def parse_multipart_octet_stream():
+    content_type = os.environ.get('CONTENT_TYPE', '')
+    upload_dir = os.environ.get('DOCUMENT_ROOT', './var/www/html')
 
-    # 업로드된 파일들 저장
-    for key in form.keys():
-        field = form[key]
-        if isinstance(field, cgi.FieldStorage):
-            if field.filename:
-                file_path = os.path.join(upload_dir, os.path.basename(field.filename))
+    if 'multipart/form-data' not in content_type:
+        print("Content-Type: text/plain")
+        print()
+        print("Expected 'multipart/form-data' content type.")
+        sys.exit(1)
 
-                with open(file_path, 'wb') as f:
-                    while True:
-                        chunk = field.file.read(8192)
-                        if not chunk:
-                            break
-                        f.write(chunk)
+    content_length = int(os.environ.get('CONTENT_LENGTH', 0))
+    if content_length == 0:
+        print("Content-Type: text/plain")
+        print()
+        print("No data received.")
+        sys.exit(1)
+
+    boundary = content_type.split('boundary=')[-1].encode('utf-8')
+
+    # Read the raw POST data
+    post_data = sys.stdin.buffer.read(content_length)
+
+    # Split the data into individual parts based on the boundary
+    parts = post_data.split(b'--' + boundary)
+
+    # Create the upload_dir if it doesn't exist
+    os.makedirs(upload_dir, exist_ok=True)
+    for part in parts[1:-1]:  # Skip the first and last parts (boundary markers)
+        # Extract filename and content
+        header, content = part.split(b'\r\n\r\n', 1)
+        filename_match = re.search(r'filename="(.*?)"', header.decode(), re.DOTALL)
+        if filename_match:
+            filename = filename_match.group(1)
+            filename = os.path.basename(filename)  # Remove any path information for security
+            file_path = os.path.join(upload_dir, filename)
+
+            with open(file_path, 'wb') as f:
+                f.write(content)
+
+content = """
+<html>
+<head><title>CGI Example</title></head>
+<body>
+<h1>POST SUCCES!!</h1>
+</body>
+</html>
+"""
 
 if __name__ == "__main__":
-    # 환경변수로부터 CONTENT_LENGTH와 CONTENT_TYPE을 읽어옵니다.
-    content_length = os.environ.get('CONTENT_LENGTH', 0)
-    content_type = os.environ.get('CONTENT_TYPE', '')
 
-    # 환경변수에 설정된 값을 출력합니다.
-    print(f"CONTENT_LENGTH: {content_length}")
-    print(f"CONTENT_TYPE: {content_type}")
+    try:
+        parse_multipart_octet_stream()
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        sys.exit(1)
 
-    # 표준 입력에서 바디 데이터를 읽어옵니다.
-    body_data = sys.stdin.buffer.read(int(content_length))
 
-    # 멀티파트 데이터 파싱
-    form = cgi.FieldStorage(fp=io.BytesIO(body_data), environ={'REQUEST_METHOD': 'POST', 'CONTENT_TYPE': content_type})
+    content_length = len(content)
 
-    # 멀티파트 데이터 처리
-    save_uploaded_files(form)
+    print("HTTP/1.1 201 OK")
+    print("Content-Length:", content_length)
+    print("Connection: keep-alive")
+    
+    print("Content-Type: text/html")
+    print()  # 헤더와 본문을 구분하는 빈 줄
 
-    # 업로드된 파일들을 저장한 디렉토리에 확인
-    print("Uploaded files are saved in the 'upload' directory.")
+    print(content)
+    print()
+
+    sys.exit(0)

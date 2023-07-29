@@ -22,7 +22,7 @@ class Server
 		// getters and setters
 		const vector<Location>&		getLocation() const;
 		const vector<string>&		getServerName() const;
-		const map<string, string>&	getErrorPage() const;
+		map<string, string>&		getErrorPage();
 		const string&				getRoot() const;
 		int							getListen() const;
 		int							getClientMaxBodySize() const;
@@ -34,7 +34,7 @@ class Server
 		void						setListen(const string& mListen);
 		void						setClientMaxBodySize(const string& mClientMaxBodySize);
 
-		void						printMembers() const;
+		// void						printMembers() const;
 
 	private:
 		vector<Location>	mLocation;
@@ -45,12 +45,12 @@ class Server
 		int					mClientMaxBodySize;	
 };
 
-template<typename K, typename V>
-void printMap(map<K, V> tmap)
-{
-    for (typename map<K, V>::iterator it = tmap.begin(); it != tmap.end(); it++) {
-        cout << "{" << (*it).first << ": " << (*it).second << "}\n";
-    }
-}
+// template<typename K, typename V>
+// void printMap(map<K, V> tmap)
+// {
+//     for (typename map<K, V>::iterator it = tmap.begin(); it != tmap.end(); it++) {
+//         cout << "{" << (*it).first << ": " << (*it).second << "}\n";
+//     }
+// }
 
 #endif // SERVER_HPP

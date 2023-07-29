@@ -28,6 +28,7 @@ int	main(int argc, char* argv[], char** envp)
 		// Config.printMembers();
 
 		SpiderMen spiderMen(config);
+		cout << "\n============================\n\n\n   server start ! \n\n\n============================" << endl;
 		spiderMen.run();
 	} catch (const exception& e) {
 		cout << "this is main catch: " << e.what() << endl;

@@ -21,7 +21,8 @@ class Time
 
     public:
         // static const string& stamp();
-        static void stamp(char *timeStamp);
+        static void         stamp(char *timeStamp);
+        static std::time_t  stamp();
         // char timeStamp[TIME_SIZE];
 };
 

@@ -3,10 +3,14 @@
 // constructor and destructor
 
 Client::Client(bool mType, int mFd, int mPort, vector<Server>* mServer, KQueue& mKq)
-			: Socket(mType, mFd, mPort, mServer, mKq), mReadStatus(WAITING) ,mResponseCode(0), mCGI(0) { }
+			: Socket(mType, mFd, mPort, mServer, mKq), mReadStatus(WAITING), mRequestStatus(EMPTY),mResponseCode(0), mPid(0), mWriteLast(0)
+{
+	setReadLast();	//read 시간 초기화
+}
 
 Client::~Client()
 {
+	cout << "\n\n 소멸자자자 " << mRequests.size() << endl;
 	for (size_t i = 0, end = mRequests.size(); i < end; ++i)
 	{
 		delete mRequests.front();
@@ -36,9 +40,8 @@ void	Client::readSocket(struct kevent* event)
 	mInputBuffer.append(buffer, s);
 	while (addBuffer())
 	{
-		addRequests(createRequest(mHeader));
-		
-		//자투리 buffer 처리 필요
+		if (mHeader.getHeadBuffer().size())
+			addRequests(createRequest(mHeader));
 	}
 	
 }
@@ -58,21 +61,24 @@ void			Client::addRequests(ARequest* request)
 
 int			Client::addBuffer()
 {
+	cout << mInputBuffer << endl;
 	if (mReadStatus <= READING_HEADER)	{
 		mReadStatus = READING_HEADER;
 		return mHeader.addHead(mInputBuffer);
 	}
-	if (mRequests.back()->getBody().addBody(mInputBuffer))
+	else if (mReadStatus == READING_BODY && mRequests.back()->getBody().addBody(mInputBuffer))
 	{
 		mReadStatus = WAITING;
 		if (mRequests.size() == 1)
 			operateRequest(mRequests.front());
+		return 1;
 	}
 	return 0;
 }
 
 ARequest*	Client::createRequest(Head& head)
 {
+	cout << "\n\n\n========\n" << head.getHeadBuffer() << endl;
 	string header = head.getHeadBuffer();
 	try
 	{
@@ -84,23 +90,30 @@ ARequest*	Client::createRequest(Head& head)
 		header_key_val = createHttpKeyVal(header_line);
 		element_headline = SpiderMenUtil::splitString(header_line[0]);
 		head.clear();
-		if (count(header_line[0].begin(), header_line[0].end(), ' ') != 2 || element_headline.size() != 3 || element_headline[2] != "HTTP/1.1") {
+		if (count(header_line[0].begin(), header_line[0].end(), ' ') != 2 || element_headline.size() != 3) {
 			setResponseCode(400);
 			throw runtime_error("Error: invalid http head line");
 		}
+		if (element_headline[2] != "HTTP/1.1") {
+			setResponseCode(505);
+			throw runtime_error("Error: invalid http head line");
+		}
+		cout << element_headline[0] << endl;
 		if (element_headline[0] == "GET")
 			return new RGet(element_headline[1], header_key_val, mServer);
 		else if (element_headline[0] == "POST")
 			return new RPost(element_headline[1], header_key_val, mServer);
 		else if (element_headline[0] == "DELETE")
 			return new RDelete(element_headline[1], header_key_val, mServer);
-		else
+		else {
+			setResponseCode(501);
 			throw runtime_error("Error: invalid http method");
-	}
-	catch(const std::exception& e)
-	{
+		}
+	} catch (int error) {
 		mReadStatus = ERROR;
-		std::cerr << e.what() << '\n';
+		return new RBad(error);
+	} catch(const std::exception& e) {
+		cout << "UNEXPECTED Error in ARequest: " << e.what() << endl;
 		return new RBad(400);
 	}
 }
@@ -125,29 +138,45 @@ map<string,string>	Client::createHttpKeyVal(const vector<string>& header_line)
 
 void			Client::operateRequest(ARequest* request)
 {
+	// cout << request->getBody().getBody() << endl;
 	pid_t	pid = request->operate();
-
+	
 	if (pid)
 	{
 		mKq.addProcessPid(pid, reinterpret_cast<void*>(this));
 		mRequestStatus = PROCESSING;
-		cout << "not SENDING" << endl;
+		cout << "now to PROCESSING" << endl;
 	}
 	else
 	{
 		mRequestStatus = SENDING;
-		cout << "check SENDING\n";		
+		cout << "now to SENDING\n";		
 	}
 }
 
 void			Client::writeSocket(struct kevent* event)
 {
-	if(!mResponseMSG.size())
-		mResponseMSG = mRequests.front()->createResponse();
+	if (mResponseMSG.size() == 0)
+	{
+		if (mRequests.front()->getCode() < 400)
+			mResponseMSG = mRequests.front()->createResponse();
+		else
+		{
+			RBad badRequest(mRequests.front()->getCode());
+			mResponseMSG = badRequest.createResponse();
+		}
+	}
 	if (sendResponseMSG(event))
 	{
+		if (mRequests.front()->getCode() >= 400)
+		{
+			mResponseCode = 0;
+			cout << "ERRRRORRRRR!!" << endl;
+			throw runtime_error("send error response success");
+		}
+		delete mRequests.front();
 		mRequests.pop();
-		if(!mRequests.empty())
+		if (!mRequests.empty())
 			operateRequest(mRequests.front());
 		else
 			mRequestStatus = EMPTY;
@@ -156,37 +185,41 @@ void			Client::writeSocket(struct kevent* event)
 
 int			Client::sendResponseMSG(struct kevent* event)
 {
-		size_t	sendinglen = getResponseMSG().size() - getRequests().front()->mSendLen;
-		if (static_cast<size_t>(event->data) <= sendinglen)
-			sendinglen = event->data;
-		sendinglen = send(getFd(), getResponseMSG().c_str() + getRequests().front()->mSendLen, sendinglen, 0);
-		getRequests().front()->mSendLen += sendinglen;
-		if (getRequests().front()->mSendLen == getResponseMSG().size())
-			return 1;
-		return 0;
+
+	size_t	sendinglen = getResponseMSG().size() - getRequests().front()->mSendLen;
+	if (static_cast<size_t>(event->data) <= sendinglen)
+		sendinglen = event->data;
+	cout << getRequests().front()->mSendLen << "   " << event->data << endl;
+	sendinglen = send(getFd(), getResponseMSG().c_str() + getRequests().front()->mSendLen, sendinglen, 0);
+	if (sendinglen == (size_t)-1) {
+		cout << "sending len -1" << endl;
+	}
+	cout << getResponseMSG() << endl;
+	cout << "sending len : " << sendinglen << "size: " << getResponseMSG().size() << endl;
+	// cout << getResponseMSG() << endl;
+	getRequests().front()->mSendLen += sendinglen;
+	if (getRequests().front()->mSendLen == getResponseMSG().size())
+	{
+		mResponseMSG.clear();
+		return 1;
+	}
+	return 0;
 }
 
 void			Client::handleProcess(struct kevent* event)
 {
-	if (event->data != 0)
+	int	exit_status = 0;
+
+	waitpid(event->ident, &exit_status, 0);
+	cout << exit_status <<endl;
+	mRequests.front()->checkPipe();
+	cout << mRequests.front()->getPipeValue() << endl;
+	if (exit_status != 0)
 		mRequests.front()->setCode(500);
 	else
-		mRequests.front()->setCode(201);
+		mRequests.front()->setCode(0);
 	mRequestStatus = SENDING;
 }
-
-
-
-void			Client::resetTimer(int mKq, struct kevent event)
-{
-	event.filter = EVFILT_TIMER;
-	event.fflags = NOTE_SECONDS;
-	event.data = TIMEOUT_SEC;
-	event.flags = EV_ADD | EV_ONESHOT;
-	if (kevent(mKq, &event, 1, NULL, 0, NULL) == -1)
-		throw runtime_error("Error: resetTimer Failed");
-}
-
 
 void			Client::clearClient()
 {
@@ -222,14 +255,19 @@ void			Client::clearClient()
 // getters and setters
 
 int					Client::getReadStatus() const { return mReadStatus; }
-queue<ARequest*>	Client::getRequests() const { return mRequests; }
+queue<ARequest*>&	Client::getRequests() { return mRequests; }
 string&				Client::getResponseMSG() { return mResponseMSG; }
 string&				Client::getHeadBuffer() { return mInputBuffer; }
 string&				Client::getInputBuffer() { return mInputBuffer; }
 int					Client::getResponseCode() const { return mResponseCode; }
-pid_t				Client::getCGI() const { return mCGI; }
+pid_t				Client::getCGI() const { return mPid; }
 int					Client::getRequestStatus() const { return mRequestStatus; }
+std::time_t			Client::getReadLast() const { return mReadLast; }
+std::time_t			Client::getWriteLast() const { return mWriteLast; }
 
 void				Client::setReadStatus(int mStatus) { this->mReadStatus = mStatus; }
 void				Client::setResponseCode(int code) { mResponseCode = code; }
-void				Client::setCGI(pid_t mCGI) { this->mCGI = mCGI; }
+void				Client::setCGI(pid_t mPid) { this->mPid = mPid; }
+void				Client::setRequestStatus(int mRequestStatus) {this->mRequestStatus = mRequestStatus; }
+void				Client::setReadLast() { mReadLast = Time::stamp(); }
+void				Client::setWriteLast() { mWriteLast = Time::stamp(); }

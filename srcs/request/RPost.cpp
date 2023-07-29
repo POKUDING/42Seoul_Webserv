@@ -15,16 +15,16 @@ RPost::RPost(string mRoot, map<string, string> header_key_val, vector<Server>* s
 	} else if (mBasics.transfer_encoding == "chunked") {
 		mBody.setChunked(true);
 	} else {
-		throw runtime_error("Bad request:: Post:: no content-length");
+		throw 400;
 	}
 
 	//dir or file 체크
 	if (mIsFile)
-		throw runtime_error("Bad request:: Post:: not valid directory");
+		throw 400;
 	//method 사용가능한지 확인
 	if (find(mLocation.getLimitExcept().begin(), mLocation.getLimitExcept().end(), "POST") == \
 			mLocation.getLimitExcept().end())
-		throw runtime_error("Bad request:: Post:: method not available");
+		throw 405;
 }
 
 RPost::~RPost() { }
@@ -36,27 +36,17 @@ RPost::~RPost() { }
 const string	RPost::createResponse()
 {
 	string		mMSG;
-	char		buff[1024];
-	size_t 		readLen = 1;
 
 	cout << "POST createResponse called\n";
-	close(mPipe[1]);
-	while (readLen > 0)
-	{
-		readLen = read(mPipe[0], buff, 1024);
-		mMSG.append(buff, readLen);
-	}
-	close(mPipe[0]);
-	mPipe[0] = 0;
-	mPipe[1] = 0;
+	mMSG = mPipeValue;
 
-	cout << mMSG << endl;
 	return mMSG;
 }
 
 pid_t	RPost::operate()
 {
 	cout << "POST operate called\n";
+	mRequest = "POST";
 	if (pipe(mPipe) == -1)
 		throw runtime_error("Error: pipe error");
 	pid_t pid = fork();
@@ -110,34 +100,6 @@ void	RPost::executeCgi()
 	execve(argv[0], argv, environ);
 	write(STDOUT_FILENO, "execve error\n", 12);
 	exit(EXIT_FAILURE);
-}
-
-void	RPost::setCgiEnv()
-{
-	// setenv("SERVER_NAME", getBasics().host.c_str(), 1);
-	setenv("CONTENT_TYPE", getBasics().content_type.c_str(), 1);
-	setenv("CONTENT_LENGTH", SpiderMenUtil::itostr(getBasics().content_length).c_str(), 1);
-	// setenv("HTTP_USER_AGENT", getBasics().user_agent.c_str(), 1);
-	// setenv("SERVER_SOFTWARE", SPIDER_SERVER, 1); // "\r\n 빼야하나?"
-	// setenv("REQUEST_METHOD", getRequestMethod().c_str(), 1);
-	// setenv("PATH_INFO", mLocation.getCgiPath().c_str(), 1);
-	// setenv("SERVER_PORT", to_string(mServer.getListen()).c_str(), 1);
-	// setenv("SERVER_PROTOCOL", "HTTP/1.1", 1);
-
-	// // SERVER_NAME
-	// // SERVER_SOFTWARE // CGI 프로그램 이름 및 버전 ex) 아파치 / 2.2.14
-	// SERVER_PROTOCOL // ??? HTTP/1.1 ?
-	// // SERVER_PORT // ???
-	// // REQUEST_METHOD // GET POST ..
-	// // PATH_INFO // CGI path /wevsrv/cgi_bin/example.cgi
-	// DOCUMENT_ROOT // ???
-	// QUERY_STRING // url?key=value&key=value ..
-	// REMOTE_HOST	//client host name 없으면 정의 x
-	// REMOTE_ADDR	//client ip
-	// // CONTENT_TYPE
-	// // CONTENT_LENGTH
-	// HTTP_REFERER // ????
-	// // HTTP_USER_AGENT
 }
 
 string RPost::getRequestMethod()

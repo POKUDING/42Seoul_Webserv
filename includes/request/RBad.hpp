@@ -7,8 +7,8 @@
 class RBad: public ARequest
 {
 	public:
-		RBad(string mRoot, map<string, string> header_key_val);
 		RBad(int code);
+		RBad(int code, bool mChunked);
 		virtual ~RBad();
 
 		virtual pid_t			operate();

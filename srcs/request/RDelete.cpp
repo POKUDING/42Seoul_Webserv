@@ -42,7 +42,7 @@ const string	RDelete::createResponse()
 	char 	timeStamp[TIME_SIZE];
 
 	//1st line: STATUS
-	mMSG.append(HTTP_STATUS);	//"HTTP/1.1 200 OK\r\n"
+	mMSG.append(STATUS_200);	//"HTTP/1.1 200 OK\r\n"
 	
 	//HEADER============================================
 	Time::stamp(timeStamp);

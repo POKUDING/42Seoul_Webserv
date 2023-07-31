@@ -15,6 +15,7 @@ RPost::RPost(string mRoot, map<string, string> header_key_val, vector<Server>* s
 	} else if (mBasics.transfer_encoding == "chunked") {
 		mBody.setChunked(true);
 	} else {
+		cout << "content length fail" << endl;
 		throw 400;
 	}
 

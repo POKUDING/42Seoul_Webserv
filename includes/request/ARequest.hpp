@@ -57,7 +57,8 @@ class ARequest
 
 		void				findLocation(Server& server);
 		void				findRootLocation(Server& server, string root);
-		int					findExtentionLocation(Server& server);
+		void				findExtentionLocation(Server& server);
+		// int					findExtentionLocation(Server& server);
 		Server	 			findServer(vector<Server>* servers);
 		void				setPipe();
 		void				checkPipe();
@@ -69,9 +70,9 @@ class ARequest
 		int					getType() const;
 		const string&		getRoot() const;
 		const t_basic&		getBasics() const;
-
-	
-		Body&				getBody() { return mBody; }
+		Body&				getBody();
+		string				getCgiPath() const;
+		string				getCgiBin() const;
 
 		size_t			mSendLen;
 	protected:
@@ -91,6 +92,8 @@ class ARequest
 		Location		mLocation;
 		t_basic			mBasics;
 		int				mPipe[2];
+		string			mCgiPath;
+		string			mCgiBin;
 };
 
 #endif // AREQUEST_HPP

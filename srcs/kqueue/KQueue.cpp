@@ -17,9 +17,9 @@ KQueue::~KQueue() { close(mKq); }
 
 void KQueue::addEvents()
 {
-	cout << mChangeList.size() << endl;
+	// cout << mChangeList.size() << endl;
 	if (mChangeList.size()) {
-		cout << "ident : " <<  mChangeList[0].ident << " event " << mChangeList[0].filter << " fflags " << mChangeList[0].fflags << " flags " <<mChangeList[0].flags << endl;
+		// cout << "KQ event add => ident : " <<  mChangeList[0].ident << " filter: " << mChangeList[0].filter << " fflags " << mChangeList[0].fflags << " flags " <<mChangeList[0].flags << endl;
 		kevent(mKq, &mChangeList[0], mChangeList.size(), NULL, 0, NULL);
 	}
 	mChangeList.clear();
@@ -37,7 +37,7 @@ void	KQueue::setNextEvent(int RequestStatus, int fd, void* udata)
 {
 	struct kevent event;
 
-	cout << "\n\n==============\n\n status " << RequestStatus << endl; 
+	cout << "\n============== after Client handler, request status: " << RequestStatus  << "\n" << endl; 
 	if (RequestStatus == SENDING)
 		EV_SET(&event, fd, EVFILT_WRITE, EV_ADD | EV_CLEAR, 0, 0, udata);
 	else // PROCESSING || EMPTY

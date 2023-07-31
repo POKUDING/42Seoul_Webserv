@@ -21,6 +21,7 @@ int	Body::addChunkBody(string& inputbuff)
 {
 	string	input_tmp;
 
+	//body + header의 경우 error 던져짐
 	mChunkBuf.append(inputbuff.c_str(), inputbuff.size());
 	inputbuff.clear();
 	if (mChunkLen == 0)
@@ -42,9 +43,11 @@ int	Body::addChunkBody(string& inputbuff)
 			mChunkLen = parseChunkLen(mChunkBuf);
 		}
 	}
-	if (mReadEnd == true)
+	if (mReadEnd == true) {
 		return 1;
+	}
 	return 0;
+
 }
 
 size_t	Body::parseChunkLen(string& ChunkBuf)
@@ -63,6 +66,7 @@ size_t	Body::parseChunkLen(string& ChunkBuf)
 
 int	Body::addLenBody(string& inputbuffer)
 {
+	//body + header의 경우 error 던져짐
 	if (mBody.size() + inputbuffer.size() > mContentLen + 4)
 		throw runtime_error("Error: invlaid len body format");
 	mBody.append(inputbuffer.c_str(), inputbuffer.size());

@@ -91,6 +91,7 @@ class Client : public Socket
 		Head				mHeader;
 		std::time_t			mReadLast;
 		std::time_t			mWriteLast;
+		bool				mIsPost;
 };
 
 #endif //CLIENT_HPP

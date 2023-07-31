@@ -27,7 +27,7 @@ class SpiderMen
 		deque<Socket>			mServerSockets;
 		KQueue					mKq;
 
-		// void				deleteClientKQ(int fd);
+		void				deleteClientKQ(int fd);
 		void				deleteClient(int fd);
 		void				initServerSockets(const map<int,vector<Server> >& servers);
 

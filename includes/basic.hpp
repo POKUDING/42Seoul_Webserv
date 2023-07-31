@@ -9,7 +9,8 @@
 #define MAX_EVENT 2048
 #define PACKET_SIZE 1460
 
-#define HTTP_STATUS "HTTP/1.1 200 OK\r\n"
+#define STATUS_200 "HTTP/1.1 200 OK\r\n"
+#define STATUS_301 "HTTP/1.1 301 Moved Permanently\r\n"
 #define STATUS_400 "HTTP/1.1 400 Bad Request\r\n"
 #define STATUS_403 "HTTP/1.1 403 Forbidden\r\n" 
 #define STATUS_404 "HTTP/1.1 404 Not Found\r\n"

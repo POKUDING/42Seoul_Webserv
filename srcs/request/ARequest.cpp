@@ -10,7 +10,7 @@ ARequest::ARequest(string root, int mType, map<string, string> header_key_val, v
 	mBasics.content_length = atoi(header_key_val["Content-Length"].c_str());
 	mBasics.content_type = header_key_val["Content-Type"];
 	mBasics.content_disposition = header_key_val["Content-Disposition"];
-	mBasics.transfer_encoding = header_key_val["Transfer-encoding"];
+	mBasics.transfer_encoding = header_key_val["Transfer-Encoding"];
 
 	//method 필수요소 확인: host, user_agent
 	if (mBasics.host.size() == 0 || mBasics.user_agent.size() == 0)
@@ -36,27 +36,29 @@ ARequest::ARequest(string root, int mType, map<string, string> header_key_val, v
 	findLocation(mServer);
 	mSendLen = 0;
 
-	//요청한 file/dir을 실제 location/server block root 주소에 따라 변경
-	if (mLocation.getRoot().size())
-	{
-		string subDir = mRoot.substr(mLocation.getKey().size(), mRoot.size() - mLocation.getKey().size());
-		mRoot = mLocation.getRoot();
-		// cout << "mLocation.getRoot(): " << mRoot.c_str() << " subdir: " << subDir << endl;
-		// cout << "final: " << mRoot.c_str() << endl;
-		mRoot += subDir;
-	} else {
-		// cout << mServer.getRoot() << endl;
-		if (mLocation.getCgiBin().size())
-			mRoot = mServer.getRoot() + mRoot;
-		else
-			mRoot = mServer.getRoot() + mLocation.getKey();
+	sleep(2);
+
+	//GET && dir일 경우, index page가 있으면 root에 붙여준다
+	if (mType == GET && mRoot == mLocation.getKey()) {
+		if (mLocation.getIndex().size()) {
+			mRoot += "/" + mLocation.getIndex();
+			mIsFile = true;
+		}
 	}
+
+	//요청한 file/dir을 실제 location/server block root 주소에 따라 변경
+	if (mLocation.getRoot().size())//location 블럭에 루트가 있는 경우
+		mRoot.replace(mRoot.find(mLocation.getKey()), mLocation.getKey().size(), mLocation.getRoot());
+	else
+		mRoot = mServer.getRoot() + "/" + mRoot;
+
 	//존재 확인
 	if (!mLocation.getRedirect().size() && access(mRoot.c_str(), F_OK) < 0)
 	{
-		cout << mRoot.c_str() << endl;
+		cout << "404 not found? : "<< mRoot.c_str() << endl;
 		throw 404;
 	}
+
 	//file vs dir
 	DIR* dir = opendir(mRoot.c_str());
 	if (dir) {
@@ -76,7 +78,7 @@ void	ARequest::cutQuery()
 	size_t pos = mRoot.rfind("?");
 	if (pos == string::npos || mRoot.find("/", pos) != string::npos)
 	{
-		cout << "false ? " << endl;
+		// cout << "false ? " << endl;
 		return;
 	}
 	mQuery = mRoot.substr(pos + 1);
@@ -116,23 +118,42 @@ void	ARequest::findRootLocation(Server& server, string root)
 		findRootLocation(server, "/");
 }
 
-int	ARequest::findExtentionLocation(Server& server)
+void	ARequest::findExtentionLocation(Server& server)
 {
-	string extention;
+	string extension;
 
 	size_t	pos = mRoot.rfind('.');
 	if (pos == string::npos || mRoot.find('/', pos) != string::npos || pos == mRoot.size())
-		return 1;
-	extention = mRoot.substr(pos);
-	for(int loc_idx = 0, end = server.getLocation().size(); loc_idx < end; ++loc_idx)
+		return;
+	extension = mRoot.substr(pos);
+	for(size_t loc_idx = 0, end = server.getLocation().size(); loc_idx < end; ++loc_idx)
 	{
-		if (extention == server.getLocation()[loc_idx].getKey()) {
-			mLocation = server.getLocation()[loc_idx];
-			return 0;
+		if (extension == server.getLocation()[loc_idx].getKey()) {
+			mCgiPath = server.getLocation()[loc_idx].getCgiPath();
+			mCgiBin = server.getLocation()[loc_idx].getCgiBin();
+			return;
 		}
 	}
-	return 1;
 }
+
+//원본 코드 ======
+// int	ARequest::findExtentionLocation(Server& server)
+// {
+// 	string extension;
+
+// 	size_t	pos = mRoot.rfind('.');
+// 	if (pos == string::npos || mRoot.find('/', pos) != string::npos || pos == mRoot.size())
+// 		return 1;
+// 	extension = mRoot.substr(pos);
+// 	for(int loc_idx = 0, end = server.getLocation().size(); loc_idx < end; ++loc_idx)
+// 	{
+// 		if (extension == server.getLocation()[loc_idx].getKey()) {
+// 			mLocation = server.getLocation()[loc_idx];
+// 			return 0;
+// 		}
+// 	}
+// 	return 1;
+// }
 
 void	ARequest::checkPipe()
 {
@@ -155,14 +176,20 @@ void	ARequest::checkPipe()
 			readvalue = "\r\n" + readvalue;
 		readvalue = "Content-Type: text/html; charset=UTF-8\r\n" + readvalue;
 	}
-	cout << readvalue << endl;
+	// cout << readvalue << endl;
 	mPipeValue = readvalue;
 }
 
 void	ARequest::findLocation(Server& server)
 {
-	if (findExtentionLocation(server))
-		findRootLocation(server, mRoot);
+	//Find extension location으로 cgi path 업데이트 해주기 (있는 경우에만)
+	findExtentionLocation(server);
+	//Find Root Location으로 루트 설정
+	findRootLocation(server, mRoot);
+	
+	//이 아래가 원본
+	// if (findExtentionLocation(server))
+	// 	findRootLocation(server, mRoot);
 }
 
 void	ARequest::setPipe()
@@ -181,10 +208,11 @@ void	ARequest::setCgiEnv()
 	setenv("HTTP_USER_AGENT", getBasics().user_agent.c_str(), 1);
 	setenv("SERVER_SOFTWARE", SPIDER_SERVER, 1); // "\r\n 빼야하나?"
 	setenv("REQUEST_METHOD", mRequest.c_str(), 1);
-	setenv("PATH_INFO", mLocation.getCgiPath().c_str(), 1);
 	setenv("SERVER_PORT", to_string(mServer.getListen()).c_str(), 1);
 	setenv("SERVER_PROTOCOL", "HTTP/1.1", 1);
 	setenv("QUERY_STRING", mQuery.c_str(), 1);
+	//setenv("PATH_INFO", mLocation.getCgiPath().c_str(), 1);
+	setenv("PATH_INFO", getCgiPath().c_str(), 1);
 
 	// // SERVER_NAME
 	// // SERVER_SOFTWARE // CGI 프로그램 이름 및 버전 ex) 아파치 / 2.2.14
@@ -218,3 +246,6 @@ int					ARequest::getType() const { return mType; }
 const string&		ARequest::getRoot() const { return mRoot; }
 const t_basic&		ARequest::getBasics() const { return mBasics; }
 // const t_response&	ARequest::getResponse() const { return mResponse; }
+Body&				ARequest::getBody() { return mBody; }
+string				ARequest::getCgiPath() const { return mCgiPath; }
+string				ARequest::getCgiBin() const { return mCgiBin; }

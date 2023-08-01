@@ -36,8 +36,6 @@ ARequest::ARequest(string root, int mType, map<string, string> header_key_val, v
 	findLocation(mServer);
 	mSendLen = 0;
 
-	sleep(2);
-
 	//GET && dir일 경우, index page가 있으면 root에 붙여준다
 	if (mType == GET && mRoot == mLocation.getKey()) {
 		if (mLocation.getIndex().size()) {
@@ -45,6 +43,10 @@ ARequest::ARequest(string root, int mType, map<string, string> header_key_val, v
 			mIsFile = true;
 		}
 	}
+
+	cout << "mLocation: " << mLocation.getKey() << endl;
+	cout << "mLocation root: " << mLocation.getRoot() << endl;
+	cout << "cur mRoot: " << mRoot << endl;
 
 	//요청한 file/dir을 실제 location/server block root 주소에 따라 변경
 	if (mLocation.getRoot().size())//location 블럭에 루트가 있는 경우
@@ -107,15 +109,35 @@ void	ARequest::findRootLocation(Server& server, string root)
 
 	for(int loc_idx = 0, end = server.getLocation().size(); loc_idx < end; ++loc_idx)
 	{
-		if (root.substr(0, server.getLocation()[loc_idx].getKey().size()) == server.getLocation()[loc_idx].getKey() && \
-			server.getLocation()[loc_idx].getKey().size() > find_len)
-			{
-				mLocation = server.getLocation()[loc_idx];
-				find_len = server.getLocation()[loc_idx].getKey().size();
-			}
+		string locationKey = server.getLocation()[loc_idx].getKey();
+		if (locationKey.size() > 1 && server.getLocation()[loc_idx].getKey()[server.getLocation()[loc_idx].getKey().size() - 1] == '/')
+			locationKey = locationKey.substr(0, locationKey.size() - 1);
+
+		if (find_len == 0 && server.getLocation()[loc_idx].getKey() == "/") {
+			
+			mLocation = server.getLocation()[loc_idx];
+			find_len = server.getLocation()[loc_idx].getKey().size();
+			cout << "UPDATED root" << endl;
+
+		} else if (root.substr(0, locationKey.size()) == locationKey && \
+			server.getLocation()[loc_idx].getKey().size() - 1 > find_len) {
+			
+			mLocation = server.getLocation()[loc_idx];
+			find_len = server.getLocation()[loc_idx].getKey().size();
+			cout << "UPDATED" << endl;
+		}
+		// if (root.substr(0, server.getLocation()[loc_idx].getKey().size()) == server.getLocation()[loc_idx].getKey() && \
+		// 	server.getLocation()[loc_idx].getKey().size() > find_len) {
+			
+		// 	mLocation = server.getLocation()[loc_idx];
+		// 	find_len = server.getLocation()[loc_idx].getKey().size();
+		// 	cout << "UPDATED" << endl;
+		// }
 	}
 	if (find_len == 0)
 		findRootLocation(server, "/");
+
+	cout << "find location: " << mLocation.getKey();
 }
 
 void	ARequest::findExtentionLocation(Server& server)

@@ -23,19 +23,6 @@ RGet::~RGet() { }
 
 pid_t			RGet::operate()
 {
-	// if (!mIsFile) {//dir일 경우
-	
-	// 	if (mRoot == mLocation.getKey()) {//정확히 일치하는 block이면
-	// 		if (mLocation.getIndex().size()) {
-	// 			mRoot += mLocation.getIndex();
-	// 			mIsFile = true;
-	// 			if (access(mRoot.c_str(), F_OK) != 0) {
-	// 				throw runtime_error("Error: GET dir index file not available");
-	// 			}
-	// 		}
-	// 	}
-	// }
-
 	if (mIsFile) {
 		
 		//.php, .py 블록이면 CGI 처리

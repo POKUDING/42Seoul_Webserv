@@ -69,16 +69,19 @@ int			Client::addBuffer()
 	if (mReadStatus <= READING_HEADER)	{
 		mReadStatus = READING_HEADER;
 		return mHeader.addHead(mInputBuffer);
-	} else if (mIsPost && mRequests.back()->getBody().addBody(mInputBuffer)) {
-		mIsPost = false;
-		mReadStatus = WAITING;
-		if (mRequests.size() == 1) {
-			cout << "--> call operate request 2.1" << endl;
-			operateRequest(mRequests.front());
-		}
-		return 1;
+	// } else if (mIsPost && mRequests.back()->getBody().addBody(mInputBuffer)) {
+	// 	mIsPost = false;
+	// 	mReadStatus = WAITING;
+	// 	if (mRequests.size() == 1) {
+	// 		cout << "--> call operate request 2.1" << endl;
+	// 		operateRequest(mRequests.front());
+	// 	}
+	// 	return 1;
 	} else if (mReadStatus == READING_BODY && mRequests.back()->getBody().addBody(mInputBuffer)) {
-		mReadStatus = WAITING;
+		if (mRequests.back()->getType() == BAD)
+			mReadStatus = ERROR;
+		else
+			mReadStatus = WAITING;
 		if (mRequests.size() == 1) {
 			cout << "--> call operate request 2" << endl;
 			operateRequest(mRequests.front());
@@ -118,9 +121,10 @@ ARequest*	Client::createRequest(Head& head)
 			throw 405;
 		}
 	} catch (int error) {
-		mReadStatus = ERROR;
-		if (element_headline[0] == "POST")
-			mIsPost = true;
+		// if (element_headline[0] == "POST")
+		// 	mReadStatus = READING_BODY;
+		// else
+			mReadStatus = ERROR;
 		if (header.find("Transfer-Encoding") == string::npos)
 			return new RBad(error);
 		return new RBad(error, true);
@@ -177,7 +181,7 @@ void			Client::writeSocket(struct kevent* event)
 	}
 	if (sendResponseMSG(event))
 	{
-		if (mRequests.front()->getCode() >= 400)
+		if (mRequests.front()->getType() == BAD)
 		{
 			mResponseCode = 0;
 			throw runtime_error("send error response success");

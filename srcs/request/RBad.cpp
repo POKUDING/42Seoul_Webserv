@@ -2,12 +2,19 @@
 
 // constructor and destructor
 
-RBad::RBad(int code): ARequest(BAD) { createErrorResponse(code); }
-RBad::RBad(int code, bool mChunked): ARequest(BAD)
+RBad::RBad(int code): ARequest(BAD)
 {
+	setCode(code);
 	createErrorResponse(code);
-	getBody().setChunked(mChunked);
 }
+
+// RBad::RBad(int code, bool mChunked): ARequest(BAD)
+// {
+// 	setCode(code);
+// 	createErrorResponse(code);
+// 	getBody().setChunked(mChunked);
+// }
+
 RBad::~RBad() { }
 
 // memeber functions

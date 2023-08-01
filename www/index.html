@@ -34,10 +34,17 @@
 
   <h1>File send</h1>
   <div class="choices">
-	<form action="http://0.0.0.0:4242/upload/" method="POST" enctype="multipart/form-data">
+	<form action="http://0.0.0.0:4242/upload/upload.py" method="POST" enctype="multipart/form-data">
 		<input type="file" name="name" id="abc">
 		<button type="upload">submit</button>
 	</form>
+
+  <h1>bla test</h1>
+  <div class="choices">
+    <form action="http://0.0.0.0:4242/directory/youpi.bla" method="POST" enctype="chunck">
+      <input name="name" id="abc">
+      <button type="upload">submit</button>
+    </form>
 
   <h1>File delete</h1>
   <div class="choices">
@@ -51,40 +58,10 @@
   <!-- 삭제할 파일 c.png -->
   <button type="button" onclick="sendDeleteRequest('http://0.0.0.0:4242/upload/c.png')">c.png 삭제</button><br>
 
-  <!-- <form action="http://0.0.0.0:4242/upload/" method="DELETE">
-    <input type="hidden" name="_method" value="DELETE"/>
-		<input type="text" name="name" id="">
-		<button type="delete">Delete file</button>
-	</form>
-
-  <form action="http://0.0.0.0:4242/upload/b.png" method="DELETE">
-		<!-- <input type="text" name="name" id=""> -->
-    <input type="hidden" name="_method" value="DELETE"/>
-		<button type="delete">Delete b.png</button>
-	</form>
-  <form action="http://0.0.0.0:4242/upload/c.png" method="DELETE">
-		<!-- <input type="text" name="name" id=""> -->
-		<button type="delete">Delete c.png</button>
-	</form> -->
-
   <h1>Redirect Test</h1>
   <form action="http://0.0.0.0:4242/youtube" method="GET">
     <input type="submit" value="YouTube"/>
   </form>
-
-  <h1>User Create</h1>
-  <form action="http://0.0.0.0:4242/cgi_bin/cgi_post.py" method="POST">
-    Name: <input type="text" name="name"/><br>
-    Password: <input type="text" name="password"/><br>
-    <input type="submit" value="Create"/>
-   </form>
   
-  <h1>User Delete</h1>
-  <form action="http://0.0.0.0:4242/cgi_bin/cgi_delete.py" method="DELETE">
-    Name: <input type="text" name="name"/><br>
-    Password: <input type="text" name="password"/><br>
-    <input type="submit" value="Delete"/>
-   </form>
-
 </body>
 </html>

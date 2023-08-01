@@ -40,7 +40,7 @@ void	Client::readSocket(struct kevent* event)
 
 	mInputBuffer.append(buffer, s);
 
-	cout << "recv buffer: " << mInputBuffer << endl;
+	// cout << "recv buffer: " << mInputBuffer << endl;
 	
 	while (addBuffer())
 	{
@@ -52,16 +52,17 @@ void	Client::readSocket(struct kevent* event)
 
 void			Client::addRequests(ARequest* request)
 {
+	// cout <<"--------in Add Request: chunked: " << request->getBody().getChunked() << endl;
 	mRequests.push(request);
-	if (request->getType() == POST || mIsPost)
+	if (request->getType() == POST)
 		mReadStatus = READING_BODY;
 	else
 		mReadStatus = WAITING;
-	
 	if (mReadStatus == WAITING && mRequests.size() == 1) {
 		cout << "--> call operate request 1" << endl;
 		operateRequest(mRequests.front());
 	}
+
 }
 
 int			Client::addBuffer()
@@ -78,6 +79,7 @@ int			Client::addBuffer()
 	// 	}
 	// 	return 1;
 	} else if (mReadStatus == READING_BODY && mRequests.back()->getBody().addBody(mInputBuffer)) {
+		cout << "requests Type: " << mRequests.back()->getType() << endl;
 		if (mRequests.back()->getType() == BAD)
 			mReadStatus = ERROR;
 		else
@@ -113,7 +115,7 @@ ARequest*	Client::createRequest(Head& head)
 		}
 		if (element_headline[0] == "GET")
 			return new RGet(element_headline[1], header_key_val, mServer);
-		else if (element_headline[0] == "POST")
+		else if (element_headline[0] == "POST" || element_headline[0] == "PUT")
 			return new RPost(element_headline[1], header_key_val, mServer);
 		else if (element_headline[0] == "DELETE")
 			return new RDelete(element_headline[1], header_key_val, mServer);
@@ -121,13 +123,11 @@ ARequest*	Client::createRequest(Head& head)
 			throw 405;
 		}
 	} catch (int error) {
-		// if (element_headline[0] == "POST")
-		// 	mReadStatus = READING_BODY;
-		// else
+		if (element_headline[0] == "POST")
+			mReadStatus = READING_BODY;
+		else
 			mReadStatus = ERROR;
-		if (header.find("Transfer-Encoding") == string::npos)
-			return new RBad(error);
-		return new RBad(error, true);
+		return new RBad(error);
 	} catch(const std::exception& e) {
 		cout << "UNEXPECTED Error in ARequest: " << e.what() << endl;
 		return new RBad(400);
@@ -198,19 +198,20 @@ void			Client::writeSocket(struct kevent* event)
 
 int			Client::sendResponseMSG(struct kevent* event)
 {
+	cout << "Request: " << getRequests().front()->getType() << ", dir: " << getRequests().front()->getRoot() << endl;
 	cout << "+++Response+++\n" << getResponseMSG() << "++++++++++++++" << endl;
-	size_t	sendinglen = getResponseMSG().size() - getRequests().front()->mSendLen;
+	size_t	sendinglen = getResponseMSG().size() - getRequests().front()->getSendLen();
 	if (static_cast<size_t>(event->data) <= sendinglen)
 		sendinglen = event->data;
-	cout << "total msg length: " << getResponseMSG().size() << ", already sent: " << getRequests().front()->mSendLen << endl;
+	cout << "total msg length: " << getResponseMSG().size() << ", already sent: " << getRequests().front()->getSendLen() << endl;
 	cout << "possible to send: " << event->data << ", send this time: " << sendinglen << endl;
-	sendinglen = send(getFd(), getResponseMSG().c_str() + getRequests().front()->mSendLen, sendinglen, 0);
+	sendinglen = send(getFd(), getResponseMSG().c_str() + getRequests().front()->getSendLen(), sendinglen, 0);
 	if (sendinglen == (size_t)-1) {
 		cout << "sending len -1" << endl;
 	}
-	getRequests().front()->mSendLen += sendinglen;
-	cout << "sent this time: " << sendinglen << ", already sent: " << getRequests().front()->mSendLen << endl;
-	if (getRequests().front()->mSendLen == getResponseMSG().size())
+	getRequests().front()->addSendLen(sendinglen);
+	cout << "sent this time: " << sendinglen << ", already sent: " << getRequests().front()->getSendLen() << endl;
+	if (getRequests().front()->getSendLen() == getResponseMSG().size())
 	{
 		cout << "send done==========" << endl;
 		mResponseMSG.clear();
@@ -225,9 +226,12 @@ void			Client::handleProcess(struct kevent* event)
 
 	waitpid(event->ident, &exit_status, 0);
 	cout << "handle process: " << exit_status <<endl;
+
 	mRequests.front()->checkPipe();
+	
 	cout << mRequests.front()->getPipeValue() << endl;
-	if (exit_status != 0)
+
+	if (exit_status != EXIT_SUCCESS)
 		mRequests.front()->setCode(500);
 	else
 		mRequests.front()->setCode(0);

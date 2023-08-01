@@ -8,13 +8,8 @@ import sys
 def parse_multipart_octet_stream():
     content_type = os.environ.get('CONTENT_TYPE', '')
     upload_dir = os.environ.get('DOCUMENT_ROOT', './var/www/html')
-
-    if 'multipart/form-data' not in content_type:
-        print("Content-Type: text/plain")
-        print()
-        print("Expected 'multipart/form-data' content type.")
-        sys.exit(1)
-
+    
+    #Order changed
     content_length = int(os.environ.get('CONTENT_LENGTH', 0))
     if content_length == 0:
         print("Content-Type: text/plain")
@@ -22,27 +17,45 @@ def parse_multipart_octet_stream():
         print("No data received.")
         sys.exit(1)
 
-    boundary = content_type.split('boundary=')[-1].encode('utf-8')
-
     # Read the raw POST data
     post_data = sys.stdin.buffer.read(content_length)
 
-    # Split the data into individual parts based on the boundary
-    parts = post_data.split(b'--' + boundary)
+    if content_type == 'multipart/form-data':
+        boundary = content_type.split('boundary=')[-1].encode('utf-8')
 
-    # Create the upload_dir if it doesn't exist
-    os.makedirs(upload_dir, exist_ok=True)
-    for part in parts[1:-1]:  # Skip the first and last parts (boundary markers)
-        # Extract filename and content
-        header, content = part.split(b'\r\n\r\n', 1)
-        filename_match = re.search(r'filename="(.*?)"', header.decode(), re.DOTALL)
-        if filename_match:
-            filename = filename_match.group(1)
-            filename = os.path.basename(filename)  # Remove any path information for security
-            file_path = os.path.join(upload_dir, filename)
+        # Split the data into individual parts based on the boundary
+        parts = post_data.split(b'--' + boundary)
 
-            with open(file_path, 'wb') as f:
-                f.write(content)
+        # Create the upload_dir if it doesn't exist
+        os.makedirs(upload_dir, exist_ok=True)
+        for part in parts[1:-1]:  # Skip the first and last parts (boundary markers)
+            # Extract filename and content
+            header, content = part.split(b'\r\n\r\n', 1)
+            filename_match = re.search(r'filename="(.*?)"', header.decode(), re.DOTALL)
+            if filename_match:
+                filename = filename_match.group(1)
+                filename = os.path.basename(filename)  # Remove any path information for security
+                file_path = os.path.join(upload_dir, filename)
+
+                with open(file_path, 'wb') as f:
+                    f.write(content)
+
+    elif content_type == 'text/plain':
+
+        content = post_data
+        upload_path = upload_dir[:upload_dir.rfind('/')]
+
+        # Create the upload_dir if it doesn't exist
+        os.makedirs(upload_path, exist_ok=True)
+        with open(upload_dir, 'wb') as f:
+            f.write(content)
+
+    else:
+        print("Content-Type: text/plain")
+        print()
+        print("CGI: unvalid content type received.")
+        sys.exit(1)
+    
 
 content = """
 <html>

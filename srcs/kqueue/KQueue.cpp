@@ -21,6 +21,7 @@ void KQueue::addEvents()
 	if (mChangeList.size()) {
 		// cout << "KQ event add => ident : " <<  mChangeList[0].ident << " filter: " << mChangeList[0].filter << " fflags " << mChangeList[0].fflags << " flags " <<mChangeList[0].flags << endl;
 		kevent(mKq, &mChangeList[0], mChangeList.size(), NULL, 0, NULL);
+			// throw runtime_error("kevent add failed");
 	}
 	mChangeList.clear();
 }
@@ -65,7 +66,7 @@ void	KQueue::addClientSocketFd(int fd, void* udata)
 	mChangeList.push_back(event);
 	// if (kevent(mKq, &event, 1, NULL, 0, NULL) == -1)
 		// throw runtime_error("Error: addClientSocket error");
-	EV_SET(&event, fd, EVFILT_TIMER, EV_ADD | EV_ONESHOT, NOTE_SECONDS, TIMEOUT_SEC, udata);
+	EV_SET(&event, fd, EVFILT_TIMER, EV_ADD, NOTE_SECONDS, TIMEOUT_SEC, udata);
 	mChangeList.push_back(event);
 	// if (kevent(mKq, &event, 1, NULL, 0, NULL) == -1)
 		// throw runtime_error("Error: addClientSocket error");

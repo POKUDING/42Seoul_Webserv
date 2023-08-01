@@ -55,17 +55,10 @@ class ARequest
 		virtual pid_t			operate() = 0;
 		virtual	const string	createResponse() = 0;
 
-		void				findLocation(Server& server);
-		void				findRootLocation(Server& server, string root);
-		void				findExtentionLocation(Server& server);
-		// int					findExtentionLocation(Server& server);
-		Server	 			findServer(vector<Server>* servers);
-		void				setPipe();
 		void				checkPipe();
-		// void				createErrorRequest(int code);
 
 		string&				getPipeValue();
-		void				setCode(int code);
+		size_t				getSendLen() const;
 		int					getCode() const;
 		int					getType() const;
 		const string&		getRoot() const;
@@ -73,9 +66,17 @@ class ARequest
 		Body&				getBody();
 		string				getCgiPath() const;
 		string				getCgiBin() const;
+		void				addSendLen(size_t len);
+		void				setCode(int code);
 
-		size_t			mSendLen;
+
 	protected:
+		Server	 		findServer(vector<Server>* servers);
+		void			findLocation(Server& server);
+		void			findRootLocation(Server& server, string root);
+		void			findExtensionLocation(Server& server);
+		// int				findExtensionLocation(Server& server);
+		void			setPipe();
 		void			setCgiEnv();
 		void			cutQuery();
 		int				checkDeleteFile();
@@ -94,6 +95,7 @@ class ARequest
 		int				mPipe[2];
 		string			mCgiPath;
 		string			mCgiBin;
+		size_t			mSendLen;
 };
 
 #endif // AREQUEST_HPP

@@ -8,7 +8,7 @@ class RBad: public ARequest
 {
 	public:
 		RBad(int code);
-		RBad(int code, bool mChunked);
+		// RBad(int code, bool mChunked);
 		virtual ~RBad();
 
 		virtual pid_t			operate();

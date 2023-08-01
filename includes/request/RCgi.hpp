@@ -1,15 +1,15 @@
 #pragma once
-#ifndef RPOST_HPP
-#define RPOST_HPP
+#ifndef RCGI_HPP
+#define RCGI_HPP
 
 #include "ARequest.hpp"
 #include "../socket/Body.hpp"
 
-class RPost: public ARequest
+class RCgi: public ARequest
 {
 	public:
-		RPost(string mRoot, map<string, string> header_key_val, vector<Server>* servers);
-		virtual ~RPost();
+		RCgi(string mRoot, map<string, string> header_key_val, vector<Server>* servers);
+		virtual ~RCgi();
 
 		virtual pid_t			operate();
 		virtual	const string	createResponse();
@@ -21,4 +21,4 @@ class RPost: public ARequest
 		string	getRequestMethod();
 };
 
-#endif // RPOST_HPP
+#endif // RCGI_HPP

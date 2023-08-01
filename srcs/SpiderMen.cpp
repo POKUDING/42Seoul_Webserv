@@ -65,9 +65,8 @@ void	SpiderMen::run()
 			} else if (sock_ptr->getType() == CLIENT) {
 				try {
 					//client error의 경우 close하는 것으로 우선 진행
-					if (mKq.getEvents()[i].flags == EV_ERROR) {
-						throw runtime_error("kevent flags: EV_ERROR");
-					}
+					if (mKq.getEvents()[i].flags == EV_ERROR)
+						throw 0;
 					this->handleClient(&mKq.getEvents()[i], reinterpret_cast<Client *>(sock_ptr));
 					// reinterpret_cast<Client *>(sock_ptr)->resetTimer(mKq.getKq(), mKq.getEvents()[i]);
 				} catch (int error) {
@@ -76,6 +75,7 @@ void	SpiderMen::run()
 						reinterpret_cast<Client *>(sock_ptr)->setResponseCode(error);
 						handleError(reinterpret_cast<Client *>(sock_ptr));
 					} else {
+						deleteClientKQ(sock_ptr->getFd());
 						deleteClient(sock_ptr->getFd());
 						cout << "======================= END of Error" << endl;
 					}
@@ -83,6 +83,7 @@ void	SpiderMen::run()
 					cout << "Error: Client Handler: " << e.what() << ", code: " << reinterpret_cast<Client *>(sock_ptr)->getResponseCode()<< endl;
 					if (reinterpret_cast<Client *>(sock_ptr)->getResponseCode() != 0)
 						handleError(reinterpret_cast<Client *>(sock_ptr));
+					deleteClientKQ(sock_ptr->getFd());
 					deleteClient(sock_ptr->getFd());
 					cout << "======================= END of Error" << endl;
 				}
@@ -101,14 +102,14 @@ void	SpiderMen::deleteClientKQ(int fd)
 		cout << "delete events"  << endl;
         EV_SET(&event, fd, EVFILT_TIMER, EV_DELETE | EV_DISABLE, 0, 0, 0);
 		if (kevent(mKq.getKq(), &event, 1, NULL, 0, NULL) == -1)
-			throw runtime_error("Error: FAILED - deleteClientKQ - read");
-		event.filter = EVFILT_READ;
-		if (kevent(mKq.getKq(), &event, 1, NULL, 0, NULL) == -1)
 			throw runtime_error("Error: FAILED - deleteClientKQ - timer");
-		// if (mClients[fd].getStatus() == SENDING) {
-		event.filter = EVFILT_WRITE;
-		if (kevent(mKq.getKq(), &event, 1, NULL, 0, NULL) == -1)
-			throw runtime_error("Error: FAILED - deleteClientKQ - write");
+		// event.filter = EVFILT_READ;
+		// if (kevent(mKq.getKq(), &event, 1, NULL, 0, NULL) == -1)
+		// 	throw runtime_error("Error: FAILED - deleteClientKQ - read");
+		// // if (mClients[fd].getStatus() == SENDING) {
+		// event.filter = EVFILT_WRITE;
+		// if (kevent(mKq.getKq(), &event, 1, NULL, 0, NULL) == -1)
+		// 	throw runtime_error("Error: FAILED - deleteClientKQ - write");
 	}
 }
 
@@ -196,24 +197,28 @@ void	SpiderMen::handleClient(struct kevent* event, Client* client)
 		switch (client->getReadStatus())
 		{
 		case EMPTY:
-			throw runtime_error("TIMER: empty");
-			break;
+			throw 0;
+			// throw runtime_error("TIMER: empty");
+			// break;
 
 		case PROCESSING:
-			client->setResponseCode(500);;
-			throw runtime_error("TIMER: Processing");
+			throw 500;
+			// client->setResponseCode(500);;
+			// throw runtime_error("TIMER: Processing");
 
 		case SENDING:
-			throw runtime_error("TIMER: Sending");
-			break;
+			throw 0;
+			// throw runtime_error("TIMER: Sending");
+			// break;
 
 		default:
 			break;
 		}
 	} else {
 		cout << "ERROR_EVFILT" << endl;
-		client->setResponseCode(0);
-		throw runtime_error("Error: undefined EVFILT");
+		throw 0;
+		// client->setResponseCode(0);
+		// throw runtime_error("Error: undefined EVFILT");
 	}
 	mKq.setNextEvent(client->getRequestStatus(), client->getFd(), client);
 }

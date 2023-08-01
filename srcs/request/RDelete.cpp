@@ -28,11 +28,8 @@ pid_t			RDelete::operate()
 {
 	// 파일 삭제 시도
 	cout << "\n\nDELETE OPERATE!!!!\n\n" << endl;
-    if (remove(getRoot().c_str()) == 0) {//success 
-		mCode = 200;
-    } else {//권한 없어 실패
-		mCode = 403;
-    }
+    if (remove(getRoot().c_str()) != 0)
+		throw 403;
 	return 0;
 }
 

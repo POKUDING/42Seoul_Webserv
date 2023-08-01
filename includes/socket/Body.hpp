@@ -23,6 +23,7 @@ class Body
 		void	setContentLen(size_t len);
 		size_t	getContentLen();
 		bool	getReadEnd();
+		bool	getChunked();
 		string 	getBody();
 
 	private:

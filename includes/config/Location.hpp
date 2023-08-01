@@ -60,6 +60,7 @@ class Location
 		string			mPy;
 		string			mPhp;
 		string			mReturn;
+		bool			mOnlyFile;
 };
 
 

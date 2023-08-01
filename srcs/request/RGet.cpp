@@ -23,6 +23,16 @@ RGet::~RGet() { }
 
 pid_t			RGet::operate()
 {
+
+	//dir일 경우, index page가 있으면 root에 붙여준다 && mIsFile = 1
+	//아니면 그대로 진행
+	if (!mIsFile) {
+		if (mLocation.getIndex().size()) {
+			mRoot += "/" + mLocation.getIndex();
+			mIsFile = true;
+		}
+	}
+
 	if (mIsFile) {
 		
 		//.php, .py 블록이면 CGI 처리
@@ -129,7 +139,7 @@ const string	RGet::createLegacyResponse()
 		
 		ifstream	fin(getRoot());
 		if (fin.fail())
-			throw runtime_error("Error: GET body file read failed");
+			throw 404;
 		tmp << fin.rdbuf();
 		body = tmp.str();
 		fin.close();

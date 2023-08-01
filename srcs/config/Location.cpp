@@ -2,7 +2,16 @@
 
 // constructor
 Location::Location() { }
-Location::Location(const string& mKey): mKey(mKey), mAutoIndex(false) { }
+Location::Location(const string& key): mKey(key), mAutoIndex(false), mOnlyFile(false)
+{
+	if (*(mKey.rbegin()) == '*' && *(mKey.rbegin() + 1) == '/') {
+		mOnlyFile = true;
+		mKey = mKey.substr(0, mKey.size() - 1);
+	}
+	if (*(mKey.rbegin()) == '/' && mKey.size() > 1) {
+		mKey = mKey.substr(0, mKey.size() - 1);
+	}
+}
 
 // member functions
 
@@ -21,10 +30,10 @@ void	Location::parse(ifstream& f_dataRead)
 			//limit_except 가 없을 경우 get, post, delete 추가
 			if (getLimitExcept().size() == 0)
 				mLimitExcept.push_back("GET");
-			for (int i = 0, end = mLimitExcept.size(); i < end; ++i) {
-				if (mLimitExcept[i] == "POST" && (!mCgiBin.size() || !mCgiPath.size()))
-					throw runtime_error("Error: Invalid location: POST need cgi");
-			}
+			// for (int i = 0, end = mLimitExcept.size(); i < end; ++i) {
+			// 	if (mLimitExcept[i] == "POST" && (!mCgiBin.size() || !mCgiPath.size()))
+			// 		throw runtime_error("Error: Invalid location: POST need cgi");
+			// }
 			return ;//end parsing
 		} else if (splitedLine.size() < 2) {
 			throw runtime_error("Error: Invalid location: too less value");
@@ -93,7 +102,7 @@ const string&			Location::getRedirect() const { return this->mRedirect; }
 void					Location::setRoot(const string& mRoot) { this->mRoot = mRoot; }
 void					Location::addLimitExcept(const string& mLimitExcept)
 {
-	if (mLimitExcept == "GET" || mLimitExcept == "POST" || mLimitExcept == "DELETE")
+	if (mLimitExcept == "GET" || mLimitExcept == "POST" || mLimitExcept == "DELETE" || mLimitExcept == "PUT")
 		this->mLimitExcept.push_back(mLimitExcept);
 	else
 		throw runtime_error("Error: Invalid location: Limit Except");

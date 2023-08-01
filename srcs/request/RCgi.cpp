@@ -1,8 +1,8 @@
-#include "../../includes/request/RPost.hpp"
+#include "../../includes/request/RCgi.hpp"
 
 // constructor and destructor
 
-RPost::RPost(string mRoot, map<string, string> header_key_val, vector<Server>* servers)
+RCgi::RCgi(string mRoot, map<string, string> header_key_val, vector<Server>* servers)
 			: ARequest(mRoot, POST, header_key_val, servers)
 {
 	if (mBasics.content_length) {
@@ -28,13 +28,13 @@ RPost::RPost(string mRoot, map<string, string> header_key_val, vector<Server>* s
 		throw 405;
 }
 
-RPost::~RPost() { }
+RCgi::~RCgi() { }
 
 // member functions
 
 // public
 
-const string	RPost::createResponse()
+const string	RCgi::createResponse()
 {
 	string		mMSG;
 
@@ -44,9 +44,9 @@ const string	RPost::createResponse()
 	return mMSG;
 }
 
-pid_t	RPost::operate()
+pid_t	RCgi::operate()
 {
-	cout << "POST operate called\n" << endl;
+	cout << "POST operate called\n" <<endl;
 	mRequest = "POST";
 	int	inFd[2];
 	if (pipe(mPipe) == -1)
@@ -59,7 +59,7 @@ pid_t	RPost::operate()
 	else if (pid == 0) {
 		if (dup2(inFd[0], STDIN_FILENO) == 1)
 		{
-			cerr << "dup2 error\n";
+			cerr << "dup2 error\n" << endl;
 			throw 500;
 		}
 		close (inFd[1]);
@@ -69,7 +69,7 @@ pid_t	RPost::operate()
 	}
 	if (write(inFd[1], mBody.getBody().c_str(), mBody.getBody().size()) < 0)
 	{
-		cerr << "input to pipe error\n";
+		cerr << "input to pipe error\n" << endl;
 		throw 500;
 	}
 	close(inFd[0]);
@@ -80,7 +80,7 @@ pid_t	RPost::operate()
 
 // private
 
-void	RPost::executeCgi()
+void	RCgi::executeCgi()
 {
 	// 표준 출력 rediretion (자식프로세스의 표준 출력을 mPipe의 write로)
 	if (dup2(mPipe[1], STDOUT_FILENO) == -1) {
@@ -90,32 +90,16 @@ void	RPost::executeCgi()
 	close (mPipe[1]);
 	close (mPipe[0]);
 
-	// 표준 입력 redirection (자식프로세스의 표준 입력을 생성한 파이프의 read로)
-
-	// pipFd[1] 에 Body 쓰기
-
-	// 환경변수 set/conf
-
-	cerr << "cgi bin: " << getCgiBin() << endl;
-	cerr << "cgi path: " << getCgiPath() << endl;
-	string a = getCgiBin();
-	string b;
-	if (!a.size())
-		a = getCgiPath();
-	else
-		b ="";
-	char* const argv[3] = {const_cast<char * const>(a.c_str()), const_cast<char * const>(b.c_str()), NULL};
-	// char* const argv[3] = {const_cast<char * const>(mLocation.getCgiBin().c_str()), const_cast<char * const>(mLocation.getCgiPath().c_str()), NULL};
+	char* const argv[2] = {const_cast<char * const>(mLocation.getCgiPath().c_str()), NULL};
 	extern char** environ;
-	for (int i = 0; i < 2; ++i)
-		cerr << argv[i] << endl;
 	setCgiEnv();
 	if (execve(argv[0], argv, environ) == -1)
 		cerr << "excute falied error\n";
+	// write(STDOUT_FILENO, "execve error\n", 12);
 	exit(EXIT_FAILURE);
 }
 
-string RPost::getRequestMethod()
+string RCgi::getRequestMethod()
 {
 	if (mType == GET)
 		return "GET";
@@ -127,4 +111,4 @@ string RPost::getRequestMethod()
 
 // getters and setters
 
-// const Body&	RPost::getBody() const { return mBody; }
+// const Body&	RCgi::getBody() const { return mBody; }

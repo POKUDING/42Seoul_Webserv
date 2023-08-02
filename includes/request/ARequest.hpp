@@ -36,9 +36,7 @@ typedef struct	s_basic
 	//하기 두개는 Body에서 확인 가능함
 	string	content_disposition;	//(in boundary) Content-Disposition: 
 	string	filename;					//(in Content-Disposition) 저장할 filename(확장자명까지)
-	//must for GET
-
-	//must for DELETE
+	string	x_secret;
 
 } t_basic;
 
@@ -46,7 +44,8 @@ class ARequest
 {
 	public:
 		ARequest(string Root, int mType, map<string, string> header_key_val, vector<Server>* servers);
-		ARequest(int mType);
+		ARequest(int mType, map<string, string> header_key_val, vector<Server>* servers);
+		ARequest(int mType, Server mServer);
 		virtual	~ARequest();
 
 		virtual pid_t			operate() = 0;
@@ -60,6 +59,7 @@ class ARequest
 		size_t				getSendLen() const;
 		int					getCode() const;
 		int					getType() const;
+		Server				getServer() const;
 		const string&		getRoot() const;
 		const t_basic&		getBasics() const;
 		Body&				getBody();

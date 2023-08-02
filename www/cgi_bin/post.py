@@ -58,14 +58,12 @@ def parse_multipart_octet_stream():
         sys.exit(1)
     
 
-content = """
-<html>
+content = """<html>
 <head><title>CGI Example</title></head>
 <body>
 <h1>CGI POST SUCCES!!</h1>
 </body>
-</html>
-"""
+</html>"""
 
 if __name__ == "__main__":
 
@@ -82,6 +80,5 @@ if __name__ == "__main__":
     print()  # 헤더와 본문을 구분하는 빈 줄
 
     print(content)
-    print()
 
     sys.exit(0)

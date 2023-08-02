@@ -26,7 +26,7 @@ void	KQueue::setNextEvent(int RequestStatus, int fd, void* udata)
 {
 	struct kevent event;
 
-	cout << "\n============== after Client handler, request status: " << RequestStatus  << "\n" << endl; 
+	// cout << "\n============== after Client handler, request status: " << RequestStatus  << "\n" << endl; 
 	if (RequestStatus == SENDING) {
 		EV_SET(&event, fd, EVFILT_WRITE, EV_ADD | EV_CLEAR, 0, 0, udata);
 		mChangeList.push_back(event);

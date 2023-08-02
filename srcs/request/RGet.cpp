@@ -12,7 +12,7 @@ RGet::RGet(string mRoot, map<string, string> header_key_val, vector<Server>* ser
 	//해당 location 블록에서 method 사용가능한지 확인
 	if (find(mLocation.getLimitExcept().begin(), mLocation.getLimitExcept().end(), "GET") == \
 			mLocation.getLimitExcept().end())
-		throw 405;	
+		throw 405;
 }
 
 RGet::~RGet() { }
@@ -97,7 +97,7 @@ const string	RGet::createCgiResponse()
 	string 	mMSG;
 	char	timeStamp[1024];
 
-	cout << "$" <<mPipeValue<< "$" << endl;
+	// cout << "$" <<mPipeValue<< "$" << endl;
 	mMSG.append(STATUS_200);
 	Time::stamp(timeStamp);
 	mMSG.append(timeStamp);	
@@ -110,7 +110,7 @@ const string	RGet::createCgiResponse()
 		mMSG.append("\r\n\r\n");
 	} else {
 		mMSG.append("0\r\n\r\n");
-		cout << "mPipeValue cannot found CRLF" << endl;
+		// cout << "mPipeValue cannot found CRLF" << endl;
 	}
 
 	return mMSG;
@@ -147,11 +147,12 @@ const string	RGet::createLegacyResponse()
 		fin.close();
 
 		size_t	pos = mRoot.rfind('.');
-		if (pos == string::npos)
+		Mime	mime;
+		string	extension = mRoot.substr(pos);
+
+		if (pos == string::npos || mime[extension].size() == 0)
 			mMSG.append("Content-Type: text/plain; charset=UTF-8\r\n");
 		else {
-			Mime mime;
-			string extension = mRoot.substr(pos);
 			mMSG.append("Content-Type: ");
 			mMSG.append(mime[extension]);
 			mMSG.append("\r\n"); 

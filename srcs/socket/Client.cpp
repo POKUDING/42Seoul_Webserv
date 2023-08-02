@@ -159,19 +159,18 @@ void			Client::addRequests(ARequest* request)
 		cout << "--> call operate request 1" << endl;
 		operateRequest(mRequests.front());
 	}
-
 }
 
 ARequest*	Client::createRequest(Head& head)
 {
 	vector<string>		element_headline;
+	map<string,string>	header_key_val;
 	
 	cout << "\n\n\nNew request ========\n" << head.getHeadBuffer() << endl;
 	string header = head.getHeadBuffer();
 	try {
 		vector<string>		header_line;
-		map<string,string>	header_key_val;
-
+		
 		header_line = SpiderMenUtil::splitString(header, "\r\n");
 		header_key_val = createHttpKeyVal(header_line);
 		element_headline = SpiderMenUtil::splitString(header_line[0]);
@@ -196,10 +195,12 @@ ARequest*	Client::createRequest(Head& head)
 			mReadStatus = READING_BODY;
 		else
 			mReadStatus = ERROR;
-		return new RBad(error);
+		if (element_headline[0] == "HEAD")
+			return new RBad(error, header_key_val, mServer, HEAD);
+		return new RBad(error, header_key_val, mServer);
 	} catch(const std::exception& e) {
 		cout << "UNEXPECTED Error in ARequest: " << e.what() << endl;
-		return new RBad(400);
+		return new RBad(400, header_key_val, mServer);
 	}
 }
 
@@ -250,8 +251,9 @@ void			Client::writeSocket(struct kevent* event)
 			mResponseMSG = mRequests.front()->createResponse();
 		else
 		{
-			RBad badRequest(mRequests.front()->getCode());
-			mResponseMSG = badRequest.createResponse();
+			// RBad badRequest(mRequests.front()->getCode(), mRequests.front()->getServer());
+			// mResponseMSG = badRequest.createResponse();
+			mResponseMSG = mRequests.front()->createResponse();
 			mRequests.front()->setType(BAD);
 		}
 	}
@@ -275,7 +277,7 @@ int			Client::sendResponseMSG(struct kevent* event)
 	//TEST_CODE: response msg
 	// cout << "Request: " << getRequests().front()->getType() << ", dir: " << getRequests().front()->getRoot() << endl;
 	// if (getRequests().front()->getSendLen() == 0)
-		// cout << "+++Response+++\n" << getResponseMSG() << "++++++++++++++" << endl;
+		cout << "+++Response+++\n" << getResponseMSG() << "++++++++++++++" << endl;
 	
 	size_t	sendinglen = getResponseMSG().size() - getRequests().front()->getSendLen();
 	if (static_cast<size_t>(event->data) <= sendinglen)

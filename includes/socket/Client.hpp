@@ -40,8 +40,6 @@ class Client : public Socket
 		Client(bool mType, int mFd, int mPort, vector<Server>* mServer, KQueue& mKq);
 		virtual ~Client();
 		
-		
-
 		//handler
 		void				handleClientRead(struct kevent* event);
 		void				handleClientWrite(struct kevent* event);
@@ -73,9 +71,7 @@ class Client : public Socket
 //to amend
 		// int					checkRequest(const string& headline);
 		
-		void				resetTimer(int mKq, struct kevent event);
-
-		void				createErrorResponse();
+		// void				resetTimer(int mKq, struct kevent event);
 
 		//getter && setter
 		int					getReadStatus() const;

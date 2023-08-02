@@ -78,7 +78,6 @@ const string	RPost::createResponse()
 	string 	mMSG;
 	char	timeStamp[1024];
 
-	// cout << mPipeValue << endl;
 	mMSG.append(STATUS_200);
 	Time::stamp(timeStamp);
 	mMSG.append(timeStamp);	
@@ -90,7 +89,9 @@ const string	RPost::createResponse()
 		mMSG.append(SpiderMenUtil::itostr(mPipeValue.size() - (mPipeValue.find("\r\n\r\n") + 4)).c_str());
 		mMSG.append("\r\n");
 		mMSG.append(mPipeValue);
-		mMSG.append("\r\n\r\n");
+		// 하기 코드가 있으면 테스터에서 에러뜸
+		// 에러내용: nsolicited response received on idle HTTP channel starting with "\r\n\r\n"; err=<nil>
+		// mMSG.append("\r\n\r\n");
 	} else
 	{
 		mMSG.append("0\r\n\r\n");
@@ -116,8 +117,8 @@ void	RPost::executeCgi()
 	extern char** environ;
 	char* const argv[2] = {const_cast<char * const>(mCgiBin.c_str()), NULL};
 	setCgiEnv();
-	for (int i = 0; i < 1; ++i)
-		cerr << argv[i] << endl;
+	// for (int i = 0; i < 1; ++i)
+	// 	cerr << argv[i] << endl;
 	if (execve(argv[0], argv, environ) == -1)
 		cerr << "excute falied error\n";
 	exit(EXIT_FAILURE);

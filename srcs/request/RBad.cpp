@@ -2,7 +2,14 @@
 
 // constructor and destructor
 
-RBad::RBad(int code): ARequest(BAD)
+RBad::RBad(int code, map<string, string> header_key_val, vector<Server>* servers, int type)
+: ARequest(type, header_key_val, servers)
+{
+	setCode(code);
+	createErrorResponse(code);
+}
+
+RBad::RBad(int code, Server server): ARequest(BAD, server)
 {
 	setCode(code);
 	createErrorResponse(code);
@@ -62,15 +69,15 @@ void			RBad::createErrorResponse(int code)
 		filename = DEFAULT_ERROR_PAGE;
 	}
 
-	// ifstream	fin(filename);
-	// if (fin.fail())
-	// {
-	// 	cerr << "code: " << code <<" file open failed" << endl;
-	// 	throw 0;
-	// }
-	// tmp << fin.rdbuf();
-	// body = tmp.str();
-	// fin.close();
+	ifstream	fin(filename);
+	if (fin.fail())
+	{
+		cerr << "code: " << code <<" file open failed" << endl;
+		throw 0;
+	}
+	tmp << fin.rdbuf();
+	body = tmp.str();
+	fin.close();
 
 	if (!body.size())
 		body = mMSG;
@@ -78,17 +85,21 @@ void			RBad::createErrorResponse(int code)
 	//HEADER============================================
 	Time::stamp(timeStamp);
 	mMSG.append(timeStamp);		//Date: Tue, 20 Jul 2023 12:34:56 GMT\r\n
-	mMSG.append(SPIDER_SERVER);	//Server: SpiderMen/1.0.0\r\n
+	mMSG.append(SPIDER_SERVER);	//Server: SpiderMen/1.0.0\r\n	
 	mMSG.append(CONTENT_HTML);	//Content-Type: text/html; charset=UTF-8\r\n
 	
 	mMSG.append("Content-Length: ");
 	to_str << body.size();
 	to_str >> buffer;
 	mMSG.append(buffer);
-	mMSG.append("\r\n");
+	mMSG.append("\r\n\r\n");//end of head
 
-	mMSG.append("\r\n"); //end of head
+	if (mType != HEAD) {
+		//BODY 추가
+		mMSG.append(body.c_str(), body.size());
+	}
 
-	//BODY 추가
-	mMSG.append(body.c_str(), body.size());
+	// if (code == 405)
+	// 	cout << "ERROR msg: " << mType << "\n~~~~~~~~~~~~~~~~~~~~" << mMSG <<"~~~~~~~~~~~~~~~~~~~~~~~~~"<< endl;
+
 }

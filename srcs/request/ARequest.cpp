@@ -12,6 +12,7 @@ ARequest::ARequest(string root, int mType, map<string, string> header_key_val, v
 	mBasics.content_type = header_key_val["Content-Type"];
 	mBasics.content_disposition = header_key_val["Content-Disposition"];
 	mBasics.transfer_encoding = header_key_val["Transfer-Encoding"];
+	mBasics.x_secret = header_key_val["X-Secret-Header-For-Test"];
 
 	//method 필수요소 확인: host, user_agent
 	if (mBasics.host.size() == 0 || mBasics.user_agent.size() == 0)
@@ -42,7 +43,7 @@ ARequest::ARequest(string root, int mType, map<string, string> header_key_val, v
 	//존재 확인
 	if (mType != POST && !mLocation.getRedirect().size() && access(mRoot.c_str(), F_OK) < 0)
 	{
-		cout << "404 not found? : "<< mRoot.c_str() << endl;
+		// cout << "404 not found? : "<< mRoot.c_str() << endl;
 		throw 404;
 	}
 
@@ -62,7 +63,14 @@ ARequest::ARequest(string root, int mType, map<string, string> header_key_val, v
 		mBody.setMaxBodySize(mLocation.getLocationMaxBodySize());
 }
 
-ARequest::ARequest(int mType) : mRoot(""), mType(mType), mSendLen(0) {}
+ARequest::ARequest(int mType, map<string, string> header_key_val, vector<Server>* servers) : mRoot(""), mType(mType), mSendLen(0)
+{
+	mBasics.host = header_key_val["Host"];
+	mServer = findServer(servers);
+}
+
+
+ARequest::ARequest(int mType, Server mServer) : mRoot(""), mType(mType), mServer(mServer), mSendLen(0) { }
 ARequest::~ARequest() { }
 
 // member functions
@@ -104,6 +112,7 @@ string&				ARequest::getPipeValue() { return mPipeValue; }
 size_t				ARequest::getSendLen() const { return mSendLen; }
 int					ARequest::getCode() const { return mCode; }
 int					ARequest::getType() const { return mType; }
+Server				ARequest::getServer() const { return mServer; }
 const string&		ARequest::getRoot() const { return mRoot; }
 const t_basic&		ARequest::getBasics() const { return mBasics; }
 Body&				ARequest::getBody() { return mBody; }
@@ -126,16 +135,11 @@ Server	ARequest::findServer(vector<Server>* servers)
 
 void	ARequest::findLocation(Server& server)
 {
-	
 	//Find Root Location으로 루트 설정
 	findRootLocation(server, mRoot);
 	
 	//Find extension location으로 cgi path 업데이트 해주기 (있는 경우에만)
 	findExtensionLocation(server);
-
-	//이 아래가 원본
-	// if (findExtensionLocation(server))
-	// 	findRootLocation(server, mRoot);
 }
 
 void	ARequest::findRootLocation(Server& server, string root)
@@ -193,6 +197,7 @@ void	ARequest::setCgiEnv()
 	setenv("SERVER_PROTOCOL", "HTTP/1.1", 1);
 	setenv("QUERY_STRING", mQuery.c_str(), 1);
 	setenv("PATH_INFO", getCgiPath().c_str(), 1);
+	setenv("HTTP_X_SECRET_HEADER_FOR_TEST", getBasics().x_secret.c_str(), 1);
 
 	if (mBody.getChunked()) {
 		string	type = "text/plain";

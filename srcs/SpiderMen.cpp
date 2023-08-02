@@ -36,7 +36,7 @@ void	SpiderMen::run()
 			Socket* sock_ptr = reinterpret_cast<Socket *>(mKq.getEvents()[i].udata);
 
 			// TEST_CODE : kqueue
-			cout << "Event rise => socket: " << sock_ptr->getFd() << ", type: " << sock_ptr->getType() << ", filter: " << mKq.getEvents()[i].filter << endl;
+			// cout << "Event rise => socket: " << sock_ptr->getFd() << ", type: " << sock_ptr->getType() << ", filter: " << mKq.getEvents()[i].filter << endl;
 			
 			if (sock_ptr->getType() == SERVER) {
 				try {
@@ -155,7 +155,7 @@ void	SpiderMen::handleServer(Socket* sock)
 
 void	SpiderMen::handleClient(struct kevent* event, Client* client)
 {
-	cout << "\n============== Client handler: ";
+	// cout << "\n============== Client handler: ";
 	if (event->filter == EVFILT_READ) {
 		cout << "READ" << endl;
 		client->handleClientRead(event);
@@ -198,6 +198,8 @@ void	SpiderMen::handleClient(struct kevent* event, Client* client)
 
 void	SpiderMen::handleError(Client* client)
 {
+	Server server = client->getRequests().front()->getServer();
+
 	for (size_t i = 0, end = client->getRequests().size(); i < end; ++i)
 	{
 		delete client->getRequests().front();
@@ -205,7 +207,7 @@ void	SpiderMen::handleError(Client* client)
 		client->getRequests().pop();
 	}
 	cout << "handleError called: " << client->getRequests().size() << endl;
-	client->getRequests().push(new RBad(client->getResponseCode()));
+	client->getRequests().push(new RBad(client->getResponseCode(), server));
 	cout << "handleError called after push: " << client->getRequests().size() << endl;
 	
 	cout << "--> call operate request 4" << endl;

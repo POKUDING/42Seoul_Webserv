@@ -37,7 +37,7 @@ SRCS				+=	$(addprefix $(SRC_DIR)/$(CONFIG_DIR)/, Config.cpp Location.cpp Server
 SRCS				+=	$(addprefix $(SRC_DIR)/$(KQUEUE_DIR)/, KQueue.cpp)
 SRCS				+=	$(addprefix $(SRC_DIR)/$(REQUEST_DIR)/, ARequest.cpp RBad.cpp RDelete.cpp RGet.cpp RPost.cpp)
 SRCS				+=	$(addprefix $(SRC_DIR)/$(SOCKET_DIR)/, Body.cpp Client.cpp Head.cpp Socket.cpp )
-SRCS				+=	$(addprefix $(SRC_DIR)/$(UTIL_DIR)/, SpiderMenUtil.cpp Time.cpp)
+SRCS				+=	$(addprefix $(SRC_DIR)/$(UTIL_DIR)/, SpiderMenUtil.cpp Time.cpp Mime.cpp)
 OBJS				:=	$(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/$(OBJ_DIR)/%.o, $(SRCS))
 DEPS				:=	$(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/$(DEP_DIR)/%.d, $(SRCS))
 

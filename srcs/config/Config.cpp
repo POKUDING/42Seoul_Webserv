@@ -34,8 +34,7 @@ void	Config::parse(const string& file)
 			server.parse(f_dataRead);
 			map<int, vector<Server> >::iterator it = mServer.find(server.getListen());
 
-			if (it == mServer.end())
-			{
+			if (it == mServer.end()) {
 				vector<Server> tempServer;
 				tempServer.push_back(server);
 				mServer.insert(pair<int, vector<Server> >(server.getListen(), tempServer));				

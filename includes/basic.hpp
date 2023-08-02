@@ -1,15 +1,16 @@
 #ifndef BASIC_HPP
 #define BASIC_HPP
 
-#define SERVER_PORT 12345
-#define MAX_BODY_SIZE 100000
+#define MAX_BODY_SIZE 100000000
 #define MAX_PORT_SIZE 65535		//max(short)
-#define DEFAULT_FILE "./conf/default.conf"
+#define DEFAULT_CONF_FILE "./conf/default.conf"
+#define DEFAULT_ERROR_PAGE "./www/error/error_default.html"
 #define BACKLOG 15
 #define MAX_EVENT 2048
 #define PACKET_SIZE 1460
 
 #define STATUS_200 "HTTP/1.1 200 OK\r\n"
+#define STATUS_201 "HTTP/1.1 201 Created\r\n"
 #define STATUS_301 "HTTP/1.1 301 Moved Permanently\r\n"
 #define STATUS_400 "HTTP/1.1 400 Bad Request\r\n"
 #define STATUS_403 "HTTP/1.1 403 Forbidden\r\n" 
@@ -21,7 +22,7 @@
 #define STATUS_505 "HTTP/1.1 505 HTTP Version not supported\r\n"
 
 #define SPIDER_SERVER "Server: SpiderMen/1.2.3\r\n"
-#define CONTENT_TYPE "Content-Type: text/html; charset=UTF-8\r\n"
+#define CONTENT_HTML "Content-Type: text/html; charset=UTF-8\r\n"
 
 #define CLOSE "close"
 #define KEEP_ALIVE "keep-alive"

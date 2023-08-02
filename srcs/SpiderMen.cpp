@@ -26,23 +26,18 @@ void	SpiderMen::run()
 		for (int i = 0; i < eventNum; ++i) {
 			if (mKq.getEvents()[i].ident == 0)
 				break;
-			if (mKq.getEvents()[i].filter == EVFILT_TIMER) {
-				cout << "TIMER" << endl;
-			} else if (mKq.getEvents()[i].filter == EVFILT_PROC) {
-				cout << "proces" << endl;
-			}
-			Socket* sock_ptr = reinterpret_cast<Socket *>(mKq.getEvents()[i].udata);
-
-			// if (sock_ptr->getType() == CLIENT && mClients.find(mKq.getEvents()[i].ident) == mClients.end()) {
-			// 	cout << "Asdf: " << mKq.getEvents()[i].ident<< endl;
-			// 	EV_SET(&mKq.getEvents()[i], mKq.getEvents()[i].ident, EVFILT_TIMER, EV_DELETE | EV_DISABLE, 0, 0, 0);
-			// 	if (kevent(mKq.getKq(), &mKq.getEvents()[i], 1, NULL, 0, NULL) == -1)
-			// 		throw runtime_error("Error: FAILED - deleteClientKQ - read");
-			// 	// continue;
+			// TEST_CODE : filter print
+			// if (mKq.getEvents()[i].filter == EVFILT_TIMER) {
+			// 	cout << "TIMER" << endl;
+			// } else if (mKq.getEvents()[i].filter == EVFILT_PROC) {
+			// 	cout << "proces" << endl;
 			// }
+
+			Socket* sock_ptr = reinterpret_cast<Socket *>(mKq.getEvents()[i].udata);
 
 			// TEST_CODE : kqueue
 			cout << "Event rise => socket: " << sock_ptr->getFd() << ", type: " << sock_ptr->getType() << ", filter: " << mKq.getEvents()[i].filter << endl;
+			
 			if (sock_ptr->getType() == SERVER) {
 				try {
 					if (mKq.getEvents()[i].flags == EV_ERROR) {
@@ -55,7 +50,6 @@ void	SpiderMen::run()
 					//client socket 에러 (accept(), kevent())
 					cout << "Error: Server Handler: close client [" << fd << "]" << endl;
 					if (fd) {
-						deleteClientKQ(fd);
 						deleteClient(fd);
 					}
 				} catch (const exception& e) {
@@ -66,25 +60,24 @@ void	SpiderMen::run()
 				try {
 					//client error의 경우 close하는 것으로 우선 진행
 					if (mKq.getEvents()[i].flags == EV_ERROR)
+					{
+						cerr << "ev_error flag" << endl;
 						throw 0;
+					}
 					this->handleClient(&mKq.getEvents()[i], reinterpret_cast<Client *>(sock_ptr));
 					// reinterpret_cast<Client *>(sock_ptr)->resetTimer(mKq.getKq(), mKq.getEvents()[i]);
 				} catch (int error) {
-					cout << "Error: Client Handler: " << ", code: " << error<< endl;
+					cout << "Error: Client Handler: "<< sock_ptr->getFd() << ", error status: " << error<< endl;
 					if (error) {
 						reinterpret_cast<Client *>(sock_ptr)->setResponseCode(error);
 						handleError(reinterpret_cast<Client *>(sock_ptr));
 					} else {
-						deleteClientKQ(sock_ptr->getFd());
 						deleteClient(sock_ptr->getFd());
-						cout << "======================= END of Error" << endl;
+						cout << "======================= END of Error: client closed" << endl;
 					}
 				} catch (const exception& e) {
 					cout << "Error: Client Handler: " << e.what() << ", code: " << reinterpret_cast<Client *>(sock_ptr)->getResponseCode()<< endl;
-					if (reinterpret_cast<Client *>(sock_ptr)->getResponseCode() != 0)
-						handleError(reinterpret_cast<Client *>(sock_ptr));
-					deleteClientKQ(sock_ptr->getFd());
-					deleteClient(sock_ptr->getFd());
+					cout << "CHANGE THIS EXCEPTION to INTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT" << endl;
 					cout << "======================= END of Error" << endl;
 				}
 			}
@@ -94,31 +87,11 @@ void	SpiderMen::run()
 
 // private
 
-void	SpiderMen::deleteClientKQ(int fd)
-{
-	struct kevent	event;
-	
-	if (mClients.find(fd) != mClients.end()) {
-		cout << "delete events"  << endl;
-        EV_SET(&event, fd, EVFILT_TIMER, EV_DELETE | EV_DISABLE, 0, 0, 0);
-		if (kevent(mKq.getKq(), &event, 1, NULL, 0, NULL) == -1)
-			throw runtime_error("Error: FAILED - deleteClientKQ - timer");
-		// event.filter = EVFILT_READ;
-		// if (kevent(mKq.getKq(), &event, 1, NULL, 0, NULL) == -1)
-		// 	throw runtime_error("Error: FAILED - deleteClientKQ - read");
-		// // if (mClients[fd].getStatus() == SENDING) {
-		// event.filter = EVFILT_WRITE;
-		// if (kevent(mKq.getKq(), &event, 1, NULL, 0, NULL) == -1)
-		// 	throw runtime_error("Error: FAILED - deleteClientKQ - write");
-	}
-}
-
 void	SpiderMen::deleteClient(int fd)
 {
-	if (mClients.find(fd) != mClients.end()) {
-		close(fd);
-		mClients.erase(fd);
-	}
+	mKq.deleteTimer(fd);
+	close(fd);
+	mClients.erase(fd);
 }
 
 void	SpiderMen::initServerSockets(const map<int,vector<Server> >& servers)
@@ -185,10 +158,10 @@ void	SpiderMen::handleClient(struct kevent* event, Client* client)
 	cout << "\n============== Client handler: ";
 	if (event->filter == EVFILT_READ) {
 		cout << "READ" << endl;
-		client->readSocket(event);
+		client->handleClientRead(event);
 	} else if (event->filter == EVFILT_WRITE) {
 		cout << "WRITE" << endl;
-		client->writeSocket(event);
+		client->handleClientWrite(event);
 	} else if (event->filter == EVFILT_PROC) {
 		cout << "PROC" << endl;
 		client->handleProcess(event);

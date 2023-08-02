@@ -6,7 +6,7 @@ RDelete::RDelete(string mRoot, map<string, string> header_key_val, vector<Server
 			: ARequest(mRoot, DELETE, header_key_val, servers)
 {
 	cout << "DELETE CALL!!" << endl;
-	mRequest = "DELETE";
+	mMethod = "DELETE";
 	if (mBasics.content_length || mBasics.transfer_encoding.size())
 		throw 400;
 	//dir or file 체크
@@ -46,7 +46,7 @@ const string	RDelete::createResponse()
 	mMSG.append(timeStamp);	//Date: Tue, 20 Jul 2023 12:34:56 GMT\r\n
 	mMSG.append(SPIDER_SERVER);	//Server: SpiderMen/1.0.0\r\n
 
-	mMSG.append(CONTENT_TYPE);	//Content-Type: text/html; charset=UTF-8\r\n
+	mMSG.append(CONTENT_HTML);	//Content-Type: text/html; charset=UTF-8\r\n
 	// mMSG.append("Content-Type: ");	//png 등의 경우 별도의 content-type필요
 
 

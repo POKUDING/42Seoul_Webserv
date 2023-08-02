@@ -16,9 +16,6 @@
 #include "../socket/Body.hpp"
 // #include "./RBad.hpp"
 
-extern	char** env;
-// class	RBad;
-
 using namespace std;
 
 typedef struct	s_basic 
@@ -55,47 +52,51 @@ class ARequest
 		virtual pid_t			operate() = 0;
 		virtual	const string	createResponse() = 0;
 
-		void				checkPipe();
+		// void				checkPipe();
 
 		string&				getPipeValue();
+		int					getReadPipe();
+		int					getWritePipe();
 		size_t				getSendLen() const;
 		int					getCode() const;
 		int					getType() const;
 		const string&		getRoot() const;
 		const t_basic&		getBasics() const;
 		Body&				getBody();
-		string				getCgiPath() const;
-		string				getCgiBin() const;
+		const string&		getCgiPath() const;
+		const string&		getCgiBin() const;
 		void				addSendLen(size_t len);
 		void				setCode(int code);
+		void				setType(int type);
 
 
 	protected:
-		Server	 		findServer(vector<Server>* servers);
-		void			findLocation(Server& server);
-		void			findRootLocation(Server& server, string root);
-		void			findExtensionLocation(Server& server);
-		// int				findExtensionLocation(Server& server);
-		void			setPipe();
-		void			setCgiEnv();
-		void			cutQuery();
-		int				checkDeleteFile();
-
 		bool			mIsFile;
 		int				mCode;
 		string			mRoot;
 		string			mQuery;
 		string			mPipeValue;
-		string			mRequest;
+		string			mMethod;
 		int				mType;
 		Server			mServer;
 		Body			mBody;
 		Location		mLocation;
 		t_basic			mBasics;
-		int				mPipe[2];
+		int				mReadPipe;
+		int				mWritePipe;
 		string			mCgiPath;
 		string			mCgiBin;
 		size_t			mSendLen;
+		
+		Server	 		findServer(vector<Server>* servers);
+		void			findLocation(Server& server);
+		void			findRootLocation(Server& server, string root);
+		void			findExtensionLocation(Server& server);
+		// int				findExtensionLocation(Server& server);
+		void			setPipe(int* fd);
+		void			setCgiEnv();
+		void			cutQuery();
+		int				checkDeleteFile();
 };
 
 #endif // AREQUEST_HPP

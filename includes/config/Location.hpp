@@ -28,10 +28,11 @@ class Location
 		const string&			getCgiPath() const;
 		const string&			getIndex() const;
 		bool					getAutoIndex() const;
-		const string&			getSh() const;
 		const string&			getPy() const;
 		const string&			getPhp() const;
 		const string&			getReturn() const;
+		int						getLocationMaxBodySize() const;
+		bool					getOnlyFile() const;
 
 		void					setRoot(const string& mRoot);
 		void					addLimitExcept(const string& mLimitExcept);
@@ -40,10 +41,10 @@ class Location
 		void					setCgiPath(const string& mCgiPath);
 		void					setIndex(const string& mIndex);
 		void					setAutoIndex(const string& mAutoIndex);
-		void					setSh(const string& mSh);
 		void					setPy(const string& mPy);
 		void					setPhp(const string& mPhp);
 		void					setReturn(const string& mReturn);
+		void					setLocationMaxBodySize(const string& mMaxBodySize);
 
 		void					printMembers() const;
 
@@ -56,11 +57,11 @@ class Location
 		string			mCgiPath;
 		string			mIndex;
 		bool			mAutoIndex;
-		string			mSh;
 		string			mPy;
 		string			mPhp;
 		string			mReturn;
 		bool			mOnlyFile;
+		int				mLocationMaxBodySize;
 };
 
 

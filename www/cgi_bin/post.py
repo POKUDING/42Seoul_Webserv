@@ -61,7 +61,7 @@ content = """
 <html>
 <head><title>CGI Example</title></head>
 <body>
-<h1>POST SUCCES!!</h1>
+<h1>CGI POST SUCCES!!</h1>
 </body>
 </html>
 """
@@ -77,10 +77,6 @@ if __name__ == "__main__":
 
     content_length = len(content)
 
-    print("HTTP/1.1 201 OK")
-    print("Content-Length:", content_length)
-    print("Connection: keep-alive")
-    
     print("Content-Type: text/html")
     print()  # 헤더와 본문을 구분하는 빈 줄
 

@@ -14,21 +14,23 @@ class Body
 		Body();
 		virtual ~Body();
 
-		int		addBody(string& inputbuffer);
-		int		addChunkBody(string& inputbuffer);
-		int		addLenBody(string& inputbuffer);
-		size_t	parseChunkLen(string& ChunkBuf);
+		int			addBody(string& inputbuffer);
+		int			addChunkBody(string& inputbuffer);
+		int			addLenBody(string& inputbuffer);
+		size_t		parseChunkLen(string& ChunkBuf);
 
-		void	setChunked(bool chunk);
-		void	setContentLen(size_t len);
-		size_t	getContentLen();
-		bool	getReadEnd();
-		bool	getChunked();
-		string 	getBody();
+		void		setMaxBodySize(size_t mMaxbody);
+		void		setChunked(bool chunk);
+		void		setContentLen(size_t len);
+		size_t		getContentLen();
+		bool		getReadEnd();
+		bool		getChunked();
+		string& 	getBody();
 
 	private:
 		bool	mReadEnd;
 		bool	mChunked;
+		size_t	mMaxBodySize;
 		size_t	mContentLen;
 		size_t	mChunkLen;
 		string	mChunkBuf;

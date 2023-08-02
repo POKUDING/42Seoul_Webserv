@@ -56,10 +56,13 @@ void	Server::setValue(const vector<string>& splitedLine)
 	}
 	if (splitedLine[0] == "root") {
 		this->setRoot(splitedLine[1]);
+		return ;
 	} else if (splitedLine[0] == "listen") {
 		this->setListen(splitedLine[1]);
+		return ;
 	} else if (splitedLine[0] == "client_max_body_size") {
 		this->setClientMaxBodySize(splitedLine[1]);
+		return ;
 	} else {
 		throw runtime_error("Error: Invalid server: wrong key");
 	}
@@ -99,20 +102,22 @@ void						Server::setListen(const string& mListen)
 
 	this->mListen = portNumber;
 }
-void						Server::setClientMaxBodySize(const string& mClientMaxBodySize)
+
+void	Server::setClientMaxBodySize(const string& mClientMaxBodySize)
 {
 	int	tmp;
 
 	///need to modify str -> int
 	if (mClientMaxBodySize.size() > 6)
 		throw runtime_error("Error: invalid maxbodysize: too big");
-	for(size_t i = 0; i < mClientMaxBodySize.size(); i++)
-	{
+	for (size_t i = 0; i < mClientMaxBodySize.size(); i++) {
 		if (!isdigit(mClientMaxBodySize[i]))
 			throw runtime_error("Error: invalid maxbodysize: not digit");
 	}
+	if (mClientMaxBodySize.size() > 10 || mClientMaxBodySize.compare("2147483647") > 0)
+		throw runtime_error("Error: invalid maxbodysize: not in range");
 	tmp = atoi(mClientMaxBodySize.c_str());
-	if (tmp < 1 || tmp > MAX_BODY_SIZE)
+	if (tmp < 0)
 		throw runtime_error("Error: invalid maxbodysize: not in range");
 	this->mClientMaxBodySize = tmp;
 }

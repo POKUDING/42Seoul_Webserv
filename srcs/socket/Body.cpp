@@ -11,6 +11,8 @@ Body::~Body() {}
 
 int	Body::addBody(string& inputbuffer)
 {
+	if (mMaxBodySize - mBody.size() < inputbuffer.size())
+		throw 400;
 	if (mChunked)
 	{
 		// cout << "chunk Body called" << endl;
@@ -99,11 +101,11 @@ int	Body::addLenBody(string& inputbuffer)
 
 // getters and setters
 
-
+void	Body::setMaxBodySize(size_t mMaxbody) { this->mMaxBodySize = mMaxbody; }
 void	Body::setContentLen(size_t len) { this->mContentLen = len; }
 void	Body::setChunked(bool chunk) { this->mChunked = chunk; }
 
 bool	Body::getChunked() { return mChunked; }
 size_t	Body::getContentLen() { return mContentLen; }
 bool	Body::getReadEnd() { return mReadEnd; }
-string	Body::getBody() { return mBody; }
+string&	Body::getBody() { return mBody; }

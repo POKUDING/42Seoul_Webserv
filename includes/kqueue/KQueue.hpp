@@ -23,9 +23,8 @@ class KQueue
 		void			addServerSocketFd(int fd, void* udata);
 		void			addClientSocketFd(int fd, void* udata);
 		void			addProcessPid(pid_t pid, void* udata);
-		void			deleteProcesssPid(pid_t pid);
-		void			deleteClientSocketFd(int fd);
-		void 			addEvents();
+		void			addPipeFd(int writeFd, int readFd, void* udata);
+		void			deleteTimer(int fd);
 
 		int				getKq();
 		struct kevent*	getEvents();
@@ -34,6 +33,8 @@ class KQueue
 		int						mKq;
 		vector<struct kevent>	mChangeList;
 		struct kevent			mEvents[MAX_EVENT];
+		
+		void 			changeEvents();
 };
 
 #endif // KQUEUE_HPP

@@ -5,6 +5,7 @@
 #include <dirent.h>
 #include <algorithm>
 #include "ARequest.hpp"
+#include "../util/Mime.hpp"
 
 using namespace std;
 

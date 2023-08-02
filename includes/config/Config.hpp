@@ -22,7 +22,7 @@ class Config
 		Config();
 		Config(string fileName);
 
-		void								parse(const string& file = DEFAULT_FILE);
+		void								parse(const string& file = DEFAULT_CONF_FILE);
 		const map< int, vector<Server> >&	getServer() const;
 		// void					printMembers() const;
 

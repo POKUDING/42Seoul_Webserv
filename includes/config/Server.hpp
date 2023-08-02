@@ -42,7 +42,7 @@ class Server
 		map<string, string>	mErrorPage;
 		string				mRoot;
 		int					mListen;
-		int					mClientMaxBodySize;	
+		int					mClientMaxBodySize;
 };
 
 // template<typename K, typename V>

@@ -39,27 +39,45 @@ class Client : public Socket
 	public:
 		Client(bool mType, int mFd, int mPort, vector<Server>* mServer, KQueue& mKq);
 		virtual ~Client();
+		
+		
 
+		//handler
+		void				handleClientRead(struct kevent* event);
+		void				handleClientWrite(struct kevent* event);
+		void				handleProcess(struct kevent* event);
+		
+		//read
 		void				readSocket(struct kevent* event);
-		void				addRequests(ARequest* request);
 		int					addBuffer();
-		void				clearClient();
-
+		void				addRequests(ARequest* request);
 		ARequest*			createRequest(Head& head);
 		map<string,string>	createHttpKeyVal(const vector<string>&	header_line);
 
+		//operate
+		void				operateRequest(ARequest* request);
+
+
+		//write
 		void				writeSocket(struct kevent* event);
 		int					sendResponseMSG(struct kevent* event);
 
-		void				operateRequest(ARequest* request);
+		//read-pipe
+		void				readPipe(struct kevent* event);
+		//write-pipe
+		void				writePipe(struct kevent* event);
 
-		void				handleProcess(struct kevent* event);
+		//reset client
+		void				clearClient();
+
+//to amend
 		// int					checkRequest(const string& headline);
-		// void				example();
+		
 		void				resetTimer(int mKq, struct kevent event);
 
 		void				createErrorResponse();
 
+		//getter && setter
 		int					getReadStatus() const;
 		queue<ARequest*>&	getRequests();
 		string&				getResponseMSG();
@@ -75,7 +93,6 @@ class Client : public Socket
 		void				setResponseCode(int code);
 		void				setCGI(pid_t mPid);
 		void				setRequestStatus(int mRequestStatus);
-
 		void				setReadLast();
 		void				setWriteLast();
 
@@ -89,9 +106,8 @@ class Client : public Socket
 		string				mResponseMSG;
 		pid_t				mPid;
 		Head				mHeader;
-		std::time_t			mReadLast;
-		std::time_t			mWriteLast;
-		bool				mIsPost;
+		time_t				mReadLast;
+		time_t				mWriteLast;
 };
 
 #endif //CLIENT_HPP

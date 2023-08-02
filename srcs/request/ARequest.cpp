@@ -3,7 +3,7 @@
 // constructors and destructor
 
 ARequest::ARequest(string root, int mType, map<string, string> header_key_val, vector<Server>* servers)
-			: mCode(0), mType(mType), mSendLen(0)
+			: mCode(0), mType(mType), mReadPipe(0), mWritePipe(0), mSendLen(0)
 {
 	memset((void *)&mBasics, 0, sizeof(mBasics));
 	mBasics.host = header_key_val["Host"];
@@ -54,6 +54,12 @@ ARequest::ARequest(string root, int mType, map<string, string> header_key_val, v
 	} else {
 		mIsFile = true;
 	}
+
+	//maxbodysize setting
+	if (mLocation.getLocationMaxBodySize() < 0)
+		mBody.setMaxBodySize(mServer.getClientMaxBodySize());
+	else
+		mBody.setMaxBodySize(mLocation.getLocationMaxBodySize());
 }
 
 ARequest::ARequest(int mType) : mRoot(""), mType(mType), mSendLen(0) {}
@@ -63,35 +69,37 @@ ARequest::~ARequest() { }
 
 // public
 
-void	ARequest::checkPipe()
-{
-	char	buff[1024];
-	string	readvalue;
-	int		readlen = 1;
+// void	ARequest::checkPipe()
+// {
+// 	char	buff[1024];
+// 	string	readvalue;
+// 	int		readlen = 1;
 
-	while (readlen > 0)
-	{
-		cout << "start" << endl;
-		readlen = read(mPipe[0], buff, 1024);
-		if (readlen > 0)
-			readvalue.append(buff, readlen);
-		cout << "fin " << buff << endl;
-	}
-	close(mPipe[0]);
-	readvalue = SpiderMenUtil::replaceCRLF(readvalue);
-	if (readvalue.find("Content-Type:") == string::npos)
-	{
-		size_t pos = readvalue.find("\r\n\r\n");
-		if (pos == string::npos)
-			readvalue = "\r\n" + readvalue;
-		readvalue = "Content-Type: text/html; charset=UTF-8\r\n" + readvalue;
-	}
-	// cout << readvalue << endl;
-	mPipeValue = readvalue;
-}
+// 	while (readlen > 0)
+// 	{
+// 		cout << "start" << endl;
+// 		readlen = read(mPipe[0], buff, 1024);
+// 		if (readlen > 0)
+// 			readvalue.append(buff, readlen);
+// 		cout << "fin " << buff << endl;
+// 	}
+// 	close(mPipe[0]);
+// 	readvalue = SpiderMenUtil::replaceCRLF(readvalue);
+// 	if (readvalue.find("Content-Type:") == string::npos)
+// 	{
+// 		size_t pos = readvalue.find("\r\n\r\n");
+// 		if (pos == string::npos)
+// 			readvalue = "\r\n" + readvalue;
+// 		readvalue = "Content-Type: text/html; charset=UTF-8\r\n" + readvalue;
+// 	}
+// 	// cout << readvalue << endl;
+// 	mPipeValue = readvalue;
+// }
 
 // getters and setters
 
+int					ARequest::getReadPipe() { return mReadPipe; }
+int					ARequest::getWritePipe() { return mWritePipe; }
 string&				ARequest::getPipeValue() { return mPipeValue; }
 size_t				ARequest::getSendLen() const { return mSendLen; }
 int					ARequest::getCode() const { return mCode; }
@@ -99,8 +107,8 @@ int					ARequest::getType() const { return mType; }
 const string&		ARequest::getRoot() const { return mRoot; }
 const t_basic&		ARequest::getBasics() const { return mBasics; }
 Body&				ARequest::getBody() { return mBody; }
-string				ARequest::getCgiPath() const { return mCgiPath; }
-string				ARequest::getCgiBin() const { return mCgiBin; }
+const string&		ARequest::getCgiPath() const { return mCgiPath; }
+const string&		ARequest::getCgiBin() const { return mCgiBin; }
 void				ARequest::addSendLen(size_t len) { mSendLen += len; }
 void				ARequest::setCode(int code) { this->mCode = code; }
 
@@ -142,10 +150,7 @@ void	ARequest::findRootLocation(Server& server, string root)
 			
 			mLocation = server.getLocation()[loc_idx];
 			find_len = server.getLocation()[loc_idx].getKey().size();
-
-			mCgiPath = server.getLocation()[loc_idx].getCgiPath();
 			mCgiBin = server.getLocation()[loc_idx].getCgiBin();
-			// cout << "UPDATED" << endl;
 		}
 	}
 	if (find_len == 0)
@@ -164,42 +169,17 @@ void	ARequest::findExtensionLocation(Server& server)
 	extension = mRoot.substr(pos);
 	for(size_t loc_idx = 0, end = server.getLocation().size(); loc_idx < end; ++loc_idx)
 	{
-		if (extension == server.getLocation()[loc_idx].getKey()) {
-			if (!mCgiBin.size())
-				mCgiBin = server.getLocation()[loc_idx].getCgiBin();
+		if (extension == server.getLocation()[loc_idx].getKey()) {	
 			if (!mCgiPath.size())
 				mCgiPath = server.getLocation()[loc_idx].getCgiPath();
-			
-			cerr << "FE: cgi bin: " << mCgiBin << endl;
-			cerr << "FE: cgi path: " <<mCgiPath << endl;
-
 			return;
 		}
 	}
 }
 
-//원본 코드 ======
-// int	ARequest::findExtensionLocation(Server& server)
-// {
-// 	string extension;
-
-// 	size_t	pos = mRoot.rfind('.');
-// 	if (pos == string::npos || mRoot.find('/', pos) != string::npos || pos == mRoot.size())
-// 		return 1;
-// 	extension = mRoot.substr(pos);
-// 	for(int loc_idx = 0, end = server.getLocation().size(); loc_idx < end; ++loc_idx)
-// 	{
-// 		if (extension == server.getLocation()[loc_idx].getKey()) {
-// 			mLocation = server.getLocation()[loc_idx];
-// 			return 0;
-// 		}
-// 	}
-// 	return 1;
-// }
-
-void	ARequest::setPipe()
+void	ARequest::setPipe(int *fd)
 {
-	if (pipe(mPipe) < 0)
+	if (pipe(fd) < 0)
 		throw runtime_error("Error: pipe create failed");
 }
 
@@ -209,7 +189,7 @@ void	ARequest::setCgiEnv()
 	setenv("DOCUMENT_ROOT", mRoot.c_str(), 1);
 	setenv("HTTP_USER_AGENT", getBasics().user_agent.c_str(), 1);
 	setenv("SERVER_SOFTWARE", SPIDER_SERVER, 1); // "\r\n 빼야하나?"
-	setenv("REQUEST_METHOD", mRequest.c_str(), 1);
+	setenv("REQUEST_METHOD", mMethod.c_str(), 1);
 	setenv("SERVER_PORT", to_string(mServer.getListen()).c_str(), 1);
 	setenv("SERVER_PROTOCOL", "HTTP/1.1", 1);
 	setenv("QUERY_STRING", mQuery.c_str(), 1);
@@ -218,14 +198,14 @@ void	ARequest::setCgiEnv()
 	if (mBody.getChunked()) {
 		string	type = "text/plain";
 		int		length = getBody().getBody().size();
-		setenv("CONTENT_TYPE", type.c_str(), 1);
+		setenv("CONTENT_HTML", type.c_str(), 1);
 		setenv("CONTENT_LENGTH", SpiderMenUtil::itostr(length).c_str(), 1);
 	} else {
-		setenv("CONTENT_TYPE", getBasics().content_type.c_str(), 1);
+		setenv("CONTENT_HTML", getBasics().content_type.c_str(), 1);
 		setenv("CONTENT_LENGTH", SpiderMenUtil::itostr(getBasics().content_length).c_str(), 1);
 	}
 	//밑 두 줄 원본임
-	// setenv("CONTENT_TYPE", getBasics().content_type.c_str(), 1);
+	// setenv("CONTENT_HTML", getBasics().content_type.c_str(), 1);
 	// setenv("CONTENT_LENGTH", SpiderMenUtil::itostr(getBasics().content_length).c_str(), 1);
 	
 
@@ -239,7 +219,7 @@ void	ARequest::setCgiEnv()
 	// QUERY_STRING // url?key=value&key=value ..
 	// REMOTE_HOST	//client host name 없으면 정의 x
 	// REMOTE_ADDR	//client ip
-	// // CONTENT_TYPE
+	// // CONTENT_HTML
 	// // CONTENT_LENGTH
 	// HTTP_REFERER // ????
 	// // HTTP_USER_AGENT
@@ -257,3 +237,5 @@ void	ARequest::cutQuery()
 	mRoot = mRoot.substr(0, pos);
 	cout << "mQuery : " << mQuery << "mRoot : " << mRoot << endl;
 }
+
+void	ARequest::setType(int type) { mType = type; }

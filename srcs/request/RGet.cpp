@@ -5,7 +5,7 @@
 RGet::RGet(string mRoot, map<string, string> header_key_val, vector<Server>* servers)
 			: ARequest(mRoot, GET, header_key_val, servers)
 {
-	mRequest = "GET";
+	mMethod = "GET";
 	if (mBasics.content_length || mBasics.transfer_encoding.size()) 
 		throw 400;
 	
@@ -37,32 +37,46 @@ pid_t			RGet::operate()
 		
 		//.php, .py 블록이면 CGI 처리
 		if (mLocation.getCgiPath().size()) {
-			
-			setPipe();	//pipe 생성 (ARequest에 있음)
+			int outFd[2];
+			setPipe(outFd);	//pipe 생성 (ARequest에 있음)
 			pid_t pid = fork();			
 
 			//cgi 실행 파일, 전달할 .py/php 파일 이름, NULL
 			if (pid == 0) {
 				extern char** environ;
 				setCgiEnv();
-				cout << "\n\n\n\n\n" <<mRequest << "\n\n\n\n" << endl;
-				char* const argv[3] = {const_cast<char * const>(mLocation.getCgiPath().c_str()), \
+
+				// cout << "\n\n\n\n\n" << mMethod << "\n\n\n\n" << endl;
+				
+				char* const argv[3] = {const_cast<char * const>(getCgiBin().c_str()), \
 										const_cast<char * const>(getRoot().c_str()), NULL};
-				cout << getCgiBin() << endl;
-				dup2(mPipe[1],1);
-				close (mPipe[0]);
-				close (mPipe[1]);
+
+				dup2(outFd[1],1);
+				close (outFd[0]);
+				close (outFd[1]);
 				if (execve(getCgiBin().c_str(), argv, environ) < 0)
 				{
 					cerr<< "execve faile!!" << strerror(errno) << endl;
 					exit(1);
 				}
 			}
-			close(mPipe[1]);
+			mReadPipe = outFd[0];
+			close(outFd[1]);
 			return pid;
 		} 
 	}
 	return 0;
+}
+
+const string	RGet::createResponse()
+{
+	cout << "create Response !" << endl;
+	if (mLocation.getRedirect().size())
+		return redirectResponse();
+	else if (getCgiBin().size())
+		return createCgiResponse();
+	else
+		return createLegacyResponse();	
 }
 
 const string	RGet::redirectResponse()
@@ -78,23 +92,12 @@ const string	RGet::redirectResponse()
 	return mMSG;
 }
 
-const string	RGet::createResponse()
-{
-	cout << "create Response !" << endl;
-	if (mLocation.getRedirect().size())
-		return redirectResponse();
-	else if (mLocation.getCgiPath().size())
-		return createCgiResponse();
-	else
-		return createLegacyResponse();	
-}
-
 const string	RGet::createCgiResponse()
 {
 	string 	mMSG;
 	char	timeStamp[1024];
 
-	// cout << mPipeValue << endl;
+	cout << "$" <<mPipeValue<< "$" << endl;
 	mMSG.append(STATUS_200);
 	Time::stamp(timeStamp);
 	mMSG.append(timeStamp);	
@@ -105,8 +108,7 @@ const string	RGet::createCgiResponse()
 	if (mPipeValue.find("\r\n\r\n") != string::npos) {
 		mMSG.append(SpiderMenUtil::itostr(mPipeValue.size() - (mPipeValue.find("\r\n\r\n") + 4)).c_str());
 		mMSG.append("\r\n\r\n");
-	} else
-	{
+	} else {
 		mMSG.append("0");
 		cout << "mPipeValue cannot found CRLF" << endl;
 	}
@@ -144,9 +146,16 @@ const string	RGet::createLegacyResponse()
 		body = tmp.str();
 		fin.close();
 
-	//MIME 처리 필요
-		mMSG.append(CONTENT_TYPE);	//Content-Type: text/html; charset=UTF-8\r\n
-		// mMSG.append("Content-Type: ");	//png 등의 경우 별도의 content-type필요
+		size_t	pos = mRoot.rfind('.');
+		if (pos == string::npos)
+			mMSG.append("Content-Type: text/plain; charset=UTF-8\r\n");
+		else {
+			Mime mime;
+			string extension = mRoot.substr(pos);
+			mMSG.append("Content-Type: ");
+			mMSG.append(mime[extension]);
+			mMSG.append("\r\n"); 
+		}
 		
 		mMSG.append("Content-Length: ");
 		// cout << "body size = " << body.size() << endl;
@@ -165,7 +174,7 @@ const string	RGet::createLegacyResponse()
 		mMSG.append(body.c_str(), body.size());
 
 	} else {//if dir
-		mMSG.append("Content-Type: text/plain\r\n");
+		mMSG.append("Content-Type: text/plain; charset=UTF-8\r\n");
 		
 		if (mLocation.getAutoIndex()) {// autoindex yes => 리스트 보여줌
 			

@@ -8,13 +8,6 @@ RBad::RBad(int code): ARequest(BAD)
 	createErrorResponse(code);
 }
 
-// RBad::RBad(int code, bool mChunked): ARequest(BAD)
-// {
-// 	setCode(code);
-// 	createErrorResponse(code);
-// 	getBody().setChunked(mChunked);
-// }
-
 RBad::~RBad() { }
 
 // memeber functions
@@ -33,8 +26,7 @@ void			RBad::createErrorResponse(int code)
 	string			buffer;
 	string			body;
 
-	switch (code)
-	{
+	switch (code) {
 	case 400:
 		mMSG.append(STATUS_400);
 		break;
@@ -64,23 +56,30 @@ void			RBad::createErrorResponse(int code)
 		break;
 	}
 
-	if (mServer.getErrorPage()[SpiderMenUtil::itostr(code)].size())
-	{
+	if (mServer.getErrorPage()[SpiderMenUtil::itostr(code)].size()) {
 		filename = mServer.getRoot() + "/" +  mServer.getErrorPage()[SpiderMenUtil::itostr(code)];
-		ifstream	fin(filename);
-		if (fin.fail())
-			throw runtime_error("Error: error response msg failed");
-		tmp << fin.rdbuf();
-		body = tmp.str();
-		fin.close();
+	} else {
+		filename = DEFAULT_ERROR_PAGE;
 	}
+
+	// ifstream	fin(filename);
+	// if (fin.fail())
+	// {
+	// 	cerr << "code: " << code <<" file open failed" << endl;
+	// 	throw 0;
+	// }
+	// tmp << fin.rdbuf();
+	// body = tmp.str();
+	// fin.close();
+
 	if (!body.size())
 		body = mMSG;
+
 	//HEADER============================================
 	Time::stamp(timeStamp);
 	mMSG.append(timeStamp);		//Date: Tue, 20 Jul 2023 12:34:56 GMT\r\n
 	mMSG.append(SPIDER_SERVER);	//Server: SpiderMen/1.0.0\r\n
-	mMSG.append(CONTENT_TYPE);	//Content-Type: text/html; charset=UTF-8\r\n
+	mMSG.append(CONTENT_HTML);	//Content-Type: text/html; charset=UTF-8\r\n
 	
 	mMSG.append("Content-Length: ");
 	to_str << body.size();

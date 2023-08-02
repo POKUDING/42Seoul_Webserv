@@ -54,6 +54,7 @@ def parse_multipart_octet_stream():
         print("Content-Type: text/plain")
         print()
         print("CGI: unvalid content type received.")
+        print(content_type)
         sys.exit(1)
     
 

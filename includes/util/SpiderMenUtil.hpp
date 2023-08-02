@@ -16,7 +16,7 @@ class SpiderMenUtil
 		static vector<string>	splitString(string str, string del);
 		static vector<string>	splitString(string str);
 		static string			itostr(int num);
-		static string 			replaceCRLF(const std::string& input);
+		static string 			replaceCRLF(const string& input);
 	private:
 		// SpiderMenUtil();
 		// SpiderMenUtil(SpiderMenUtil& src);

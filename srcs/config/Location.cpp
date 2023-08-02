@@ -140,11 +140,11 @@ void					Location::setLocationMaxBodySize(const string& mMaxBodySize)
 {
 	int	bodySizeTmp;
 
-	if (mMaxBodySize.size() > 11 || mMaxBodySize.compare("2147483647") > 0)
+	if (mMaxBodySize.size() > 11 || (mMaxBodySize.size() == 10 && mMaxBodySize.compare("2147483647") > 0))
 		throw runtime_error("Error: invalid maxbodysize: not in range");
 	bodySizeTmp = atoi(mMaxBodySize.c_str());
 	if (bodySizeTmp < 0)
-		throw runtime_error("Error: invalid maxbodysize: not in range");
+		throw runtime_error("Error: invalid maxbodysize: not in range : atoi error");
 	this->mLocationMaxBodySize = bodySizeTmp;
 }
 

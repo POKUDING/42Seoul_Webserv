@@ -46,6 +46,8 @@ void			Client::handleProcess(struct kevent* event)
 	waitpid(event->ident, &exit_status, 0);
 	cout << "handle process: " << exit_status <<endl;
 
+	// cout << mRequests.front()->getPipeValue() << "$" << endl;
+
 	// mRequests.front()->checkPipe();
 	
 	// cout << mRequests.front()->getPipeValue() << endl;
@@ -137,7 +139,9 @@ void	Client::readPipe(struct kevent* event)
 				mRequests.front()->getPipeValue() = "\r\n" + mRequests.front()->getPipeValue();
 			mRequests.front()->getPipeValue() = "Content-Type: text/plain; charset=UTF-8\r\n" + mRequests.front()->getPipeValue();
 		}
-		mReadStatus = SENDING;
+		// cout << mRequests.front()->getPipeValue() << "$ if 문 안쪽 "<<endl;
+		// cout << "find \\r\\n" << mRequests.front()->getPipeValue().find("\r\r\n", 17) << ": " << mRequests.front()->getPipeValue().substr(mRequests.front()->getPipeValue().find("\r\r\n", 17)) << endl;
+		mRequestStatus = SENDING;
 	}
 }
 
@@ -240,7 +244,7 @@ void			Client::operateRequest(ARequest* request)
 
 void			Client::writeSocket(struct kevent* event)
 {
-	if (mResponseMSG.size() == 0)
+	if (mResponseMSG.size() == 0 && mRequests.size())
 	{
 		if (mRequests.front()->getCode() < 400)
 			mResponseMSG = mRequests.front()->createResponse();
@@ -251,7 +255,7 @@ void			Client::writeSocket(struct kevent* event)
 			mRequests.front()->setType(BAD);
 		}
 	}
-	if (sendResponseMSG(event))
+	if (mRequests.size() && sendResponseMSG(event))
 	{
 		if (mRequests.front()->getType() == BAD) {
 			throw 0;
@@ -270,8 +274,8 @@ int			Client::sendResponseMSG(struct kevent* event)
 {
 	//TEST_CODE: response msg
 	// cout << "Request: " << getRequests().front()->getType() << ", dir: " << getRequests().front()->getRoot() << endl;
-	if (getRequests().front()->getSendLen() == 0)
-		cout << "+++Response+++\n" << getResponseMSG() << "++++++++++++++" << endl;
+	// if (getRequests().front()->getSendLen() == 0)
+		// cout << "+++Response+++\n" << getResponseMSG() << "++++++++++++++" << endl;
 	
 	size_t	sendinglen = getResponseMSG().size() - getRequests().front()->getSendLen();
 	if (static_cast<size_t>(event->data) <= sendinglen)
@@ -301,7 +305,7 @@ void		Client::writePipe(struct kevent* event)
 	size_t	sendingLen = event->data;
 	size_t	sendLen = 0;
 
-	if (sendingLen <= mRequests.front()->getBody().getBody().size())
+	if (sendingLen >= mRequests.front()->getBody().getBody().size())
 		sendingLen = mRequests.front()->getBody().getBody().size();
 	if (sendingLen)
 		sendLen = write(event->ident,  mRequests.front()->getBody().getBody().c_str(), sendingLen);

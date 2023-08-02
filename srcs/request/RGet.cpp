@@ -73,7 +73,7 @@ const string	RGet::createResponse()
 	cout << "create Response !" << endl;
 	if (mLocation.getRedirect().size())
 		return redirectResponse();
-	else if (getCgiBin().size())
+	else if (getCgiPath().size())
 		return createCgiResponse();
 	else
 		return createLegacyResponse();	
@@ -109,7 +109,7 @@ const string	RGet::createCgiResponse()
 		mMSG.append(SpiderMenUtil::itostr(mPipeValue.size() - (mPipeValue.find("\r\n\r\n") + 4)).c_str());
 		mMSG.append("\r\n\r\n");
 	} else {
-		mMSG.append("0");
+		mMSG.append("0\r\n\r\n");
 		cout << "mPipeValue cannot found CRLF" << endl;
 	}
 

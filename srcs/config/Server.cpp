@@ -108,13 +108,13 @@ void	Server::setClientMaxBodySize(const string& mClientMaxBodySize)
 	int	tmp;
 
 	///need to modify str -> int
-	if (mClientMaxBodySize.size() > 6)
+	if (mClientMaxBodySize.size() > 10)
 		throw runtime_error("Error: invalid maxbodysize: too big");
 	for (size_t i = 0; i < mClientMaxBodySize.size(); i++) {
 		if (!isdigit(mClientMaxBodySize[i]))
 			throw runtime_error("Error: invalid maxbodysize: not digit");
 	}
-	if (mClientMaxBodySize.size() > 10 || mClientMaxBodySize.compare("2147483647") > 0)
+	if (mClientMaxBodySize.size() > 10 || (mClientMaxBodySize.size() == 10 && mClientMaxBodySize.compare("2147483647") > 0))
 		throw runtime_error("Error: invalid maxbodysize: not in range");
 	tmp = atoi(mClientMaxBodySize.c_str());
 	if (tmp < 0)

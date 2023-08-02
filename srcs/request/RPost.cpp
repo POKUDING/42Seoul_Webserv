@@ -64,7 +64,6 @@ pid_t	RPost::operate()
 		close (outFd[0]);
 		close (inFd[1]);
 		close (inFd[0]);
-		setCgiEnv();
 		executeCgi();
 	}
 	mWritePipe = inFd[1];
@@ -80,7 +79,7 @@ const string	RPost::createResponse()
 	char	timeStamp[1024];
 
 	// cout << mPipeValue << endl;
-	mMSG.append(STATUS_201);
+	mMSG.append(STATUS_200);
 	Time::stamp(timeStamp);
 	mMSG.append(timeStamp);	
 	mMSG.append(SPIDER_SERVER);
@@ -89,10 +88,12 @@ const string	RPost::createResponse()
 	mMSG.append("Content-Length: ");
 	if (mPipeValue.find("\r\n\r\n") != string::npos) {
 		mMSG.append(SpiderMenUtil::itostr(mPipeValue.size() - (mPipeValue.find("\r\n\r\n") + 4)).c_str());
+		mMSG.append("\r\n");
+		mMSG.append(mPipeValue);
 		mMSG.append("\r\n\r\n");
 	} else
 	{
-		mMSG.append("0");
+		mMSG.append("0\r\n\r\n");
 		cerr << "mPipeValue cannot found CRLF" << endl;
 	}
 
@@ -111,12 +112,10 @@ void	RPost::executeCgi()
 
 	// 환경변수 set/conf
 
-	cerr << "cgi bin: " << getCgiBin() << endl;
-	cerr << "cgi path: " << getCgiPath() << endl;
 	// char* const argv[3] = {const_cast<char * const>(mLocation.getCgiBin().c_str()), const_cast<char * const>(mLocation.getCgiPath().c_str()), NULL};
 	extern char** environ;
-	setCgiEnv();
 	char* const argv[2] = {const_cast<char * const>(mCgiBin.c_str()), NULL};
+	setCgiEnv();
 	for (int i = 0; i < 1; ++i)
 		cerr << argv[i] << endl;
 	if (execve(argv[0], argv, environ) == -1)

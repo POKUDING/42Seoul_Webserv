@@ -113,7 +113,6 @@ void				ARequest::addSendLen(size_t len) { mSendLen += len; }
 void				ARequest::setCode(int code) { this->mCode = code; }
 
 // protected
-
 Server	ARequest::findServer(vector<Server>* servers)
 {
 	for (int server_idx = 0,server_end = servers->size(); server_idx < server_end; ++server_idx)
@@ -198,10 +197,10 @@ void	ARequest::setCgiEnv()
 	if (mBody.getChunked()) {
 		string	type = "text/plain";
 		int		length = getBody().getBody().size();
-		setenv("CONTENT_HTML", type.c_str(), 1);
+		setenv("CONTENT_TYPE", type.c_str(), 1);
 		setenv("CONTENT_LENGTH", SpiderMenUtil::itostr(length).c_str(), 1);
 	} else {
-		setenv("CONTENT_HTML", getBasics().content_type.c_str(), 1);
+		setenv("CONTENT_TYPE", getBasics().content_type.c_str(), 1);
 		setenv("CONTENT_LENGTH", SpiderMenUtil::itostr(getBasics().content_length).c_str(), 1);
 	}
 	//밑 두 줄 원본임

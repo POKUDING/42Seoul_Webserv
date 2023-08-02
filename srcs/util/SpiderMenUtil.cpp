@@ -70,15 +70,23 @@ string	SpiderMenUtil::itostr(int num)
 	return rtn;
 }
 
-string SpiderMenUtil::replaceCRLF(const std::string& input)
+string SpiderMenUtil::replaceCRLF(const string& input)
 {
-    std::string result;
+    string result;
     size_t startPos = 0;
     size_t foundPos = input.find('\n');
 
-    while (foundPos != std::string::npos) {
-        result += input.substr(startPos, foundPos - startPos);
+    if (foundPos == 0) {
         result += "\r\n";
+        startPos = foundPos + 1;
+        foundPos = input.find('\n', startPos);
+    }
+
+    while (foundPos != string::npos) {
+        if (input[foundPos - 1] != '\r') {
+            result += input.substr(startPos, foundPos - startPos);
+            result += "\r\n";
+        }
         startPos = foundPos + 1;
         foundPos = input.find('\n', startPos);
     }

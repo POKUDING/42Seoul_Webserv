@@ -8,32 +8,26 @@
 #include <vector>
 #include <map>
 #include <cstring>
-#include <stdexcept>
+// #include <stdexcept>
+#include <unistd.h>
 #include "Server.hpp"
 #include "../util/SpiderMenUtil.hpp"
 #include "../basic.hpp"
 
 using namespace std;
 
-
 class Config
 {
 	public:
 		Config();
+		Config(string fileName);
 
-		//Config parsing related function to be added
-		void					parse(const string& file = DEFAULT_FILE);
-		// void					printMembers() const;
-
+		void								parse(const string& file = DEFAULT_CONF_FILE);
 		const map< int, vector<Server> >&	getServer() const;
-
-		// void					addServer(Server& Server);
-		
+		// void					printMembers() const;
 
 	private:
 		map< int, vector<Server> >	mServer;
 };
 
-
-
-#endif //CONFIG_HPP
+#endif // CONFIG_HPP

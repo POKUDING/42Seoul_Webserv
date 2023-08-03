@@ -1,56 +1,62 @@
 #ifndef BASIC_HPP
 #define BASIC_HPP
 
-#define SERVER_PORT 12345
-#define MAX_BODY_SIZE 100000
+#define MAX_BODY_SIZE 100000000
 #define MAX_PORT_SIZE 65535		//max(short)
-#define DEFAULT_FILE "./conf/default.conf"
+#define DEFAULT_CONF_FILE "./conf/default.conf"
+#define DEFAULT_ERROR_PAGE "./www/errors/error_default.html"
 #define BACKLOG 15
 #define MAX_EVENT 2048
 #define PACKET_SIZE 1460
 
-#define HTTP_STATUS "HTTP/1.1 200 OK\r\n"
-#define SPIDER_SERVER "Server: SpiderMen/1.0.0\r\n"
-#define CONTENT_TYPE "Content-Type: text/html; charset=UTF-8\r\n"
+#define STATUS_200 "HTTP/1.1 200 OK\r\n"
+#define STATUS_201 "HTTP/1.1 201 Created\r\n"
+#define STATUS_301 "HTTP/1.1 301 Moved Permanently\r\n"
+#define STATUS_400 "HTTP/1.1 400 Bad Request\r\n"
+#define STATUS_403 "HTTP/1.1 403 Forbidden\r\n" 
+#define STATUS_404 "HTTP/1.1 404 Not Found\r\n"
+#define STATUS_405 "HTTP/1.1 405 Method Not Allowed\r\n"
+#define STATUS_413 "HTTP/1.1 413 Request Entity Too Large\r\n"
+#define STATUS_500 "HTTP/1.1 500 Internal Server Error\r\n"
+#define STATUS_501 "HTTP/1.1 501 Not Implemented\r\n"
+#define STATUS_504 "HTTP/1.1 504 Gateway Time-out\r\n"
+#define STATUS_505 "HTTP/1.1 505 HTTP Version not supported\r\n"
 
-// #define OK "OK"
-// #define BAD_REQUEST "Bad Request"
-// #define SERVER_ERROR "Internal Server Error"
+#define SPIDER_SERVER "Server: SpiderMen/1.2.3\r\n"
+#define CONTENT_HTML "Content-Type: text/html; charset=UTF-8\r\n"
 
-#define TIMEOUT_SEC 10
+#define CLOSE "close"
+#define KEEP_ALIVE "keep-alive"
+
+#define TIMEOUT_SEC 3000
 
 #define CHUNKED -1
 #define FAIL_FD 0
 
-namespace nSocket {
-	enum eType {
-		SERVER = 0,
-		CLIENT = 1
-	};
+enum eSocket {
+	SERVER = 0,
+	CLIENT = 1
+};
 
-	enum eConnection {
-		CLOSE = 0,
-		KEEP_ALIVE = 1
-	};
-}
+enum eMethod {
+	GET = 0,
+	POST = 1,
+	DELETE = 2,
+	BAD = 3,
+	HEAD = 4
+};
 
-namespace nMethod {
-	enum eType {
-		GET = 0,
-		POST = 1,
-		DELETE = 2
-	};
-}
+enum eReadStatus {
+	WAITING = 0,		//(writing done), connected & waiting
+	READING_HEADER = 1,	//request start, reading header
+	READING_BODY = 2,	//header done, reading body
+	ERROR = 3			//something wrong, no more reading
+};
 
-namespace nStatus {
-	enum eClient {
-		WAITING = 0,		//(writing done), connected & waiting
-		READING_HEADER = 1,	//request start, reading header
-		READING_BODY = 2,	//header done, reading body
-		PROCESSING = 3,		//body done(request recv done), processing
-		SENDING = 4			//writing
-	};
+enum eRequestStatus {
+	EMPTY = 0,			//no requests
+	PROCESSING = 1,		//cgi working
+	SENDING = 2			//writing
+};
 
-}
-
-#endif //BASIC_HPP
+#endif // BASIC_HPP

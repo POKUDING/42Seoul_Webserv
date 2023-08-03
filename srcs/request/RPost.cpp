@@ -1,57 +1,142 @@
 #include "../../includes/request/RPost.hpp"
 
-RPost::RPost(string mRoot, map<string, string> header_key_val)
-			: ARequest(mRoot, nMethod::POST, header_key_val)
+// constructor and destructor
+
+RPost::RPost(string mRoot, map<string, string> header_key_val, vector<Server>* servers)
+			: ARequest(mRoot, POST, header_key_val, servers)
 {
 	if (mBasics.content_length) {
 		size_t	pos;
 		
 		pos = mBasics.content_type.find("boundary=");
+		mBody.setContentLen(mBasics.content_length);
 		if (pos != string::npos)
 			mBasics.boundary = mBasics.content_type.substr(pos + 9, mBasics.content_type.size() - pos - 9);
 	} else if (mBasics.transfer_encoding == "chunked") {
-		//chunked flag 필요
-		mBasics.content_length = CHUNKED;
+		mBody.setChunked(true);
 	} else {
-		throw runtime_error("Bad request:: Post:: no content-length");
+		// cerr << "content length fail" << endl;
+		throw 400;
 	}
+
+	//file only인 location에 dir 요청으로 들어온 경우
+	if (mLocation.getOnlyFile() && !mIsFile) {
+		// cerr << "/* only file Error" << endl;
+		throw 400;
+	}
+	
+	//method 사용가능한지 확인
+	if (find(mLocation.getLimitExcept().begin(), mLocation.getLimitExcept().end(), "POST") == mLocation.getLimitExcept().end() && \
+		find(mLocation.getLimitExcept().begin(), mLocation.getLimitExcept().end(), "PUT") == mLocation.getLimitExcept().end())
+		throw 405;
 }
 
 RPost::~RPost() { }
 
+// member functions
+
+// public
+
+pid_t	RPost::operate()
+{
+	// cout << "POST operate called\n" << endl;
+	mMethod = "POST";
+	int	inFd[2];
+	int	outFd[2];
+
+	if (pipe(outFd) == -1)
+		throw runtime_error("Error: pipe error");
+	if (pipe(inFd) == -1)
+		throw runtime_error("Error: pipe error");
+	pid_t pid = fork();
+	if (pid == -1)
+		throw runtime_error("Error: fork error");
+	else if (pid == 0) {
+		if (dup2(inFd[0], STDIN_FILENO) == 1)
+		{
+			cerr << "dup2 error\n";
+			exit (EXIT_FAILURE);
+		}
+		if (dup2(outFd[1], STDOUT_FILENO) == -1) {
+			cerr << "dup2 error" << endl;
+			exit(EXIT_FAILURE);
+		} 
+		close (outFd[1]);
+		close (outFd[0]);
+		close (inFd[1]);
+		close (inFd[0]);
+		executeCgi();
+	}
+	mWritePipe = inFd[1];
+	mReadPipe = outFd[0];
+	fcntl(mWritePipe, F_SETFL, O_NONBLOCK);
+	fcntl(mReadPipe, F_SETFL, O_NONBLOCK);
+	close(inFd[0]);
+	close(outFd[1]);
+	return pid;
+}
+
 const string	RPost::createResponse()
 {
-	string	mMSG;
-	char 	timeStamp[TIME_SIZE];
+	string 	mMSG;
+	char	timeStamp[1024];
 
-	//1st line: STATUS
-	mMSG.append(HTTP_STATUS);	//"HTTP/1.1 200 OK\r\n"
-	
-	//HEADER============================================
+	mMSG.append(STATUS_200);
 	Time::stamp(timeStamp);
-	mMSG.append(timeStamp);	//Date: Tue, 20 Jul 2023 12:34:56 GMT\r\n
-	mMSG.append(SPIDER_SERVER);	//Server: SpiderMen/1.0.0\r\n
-
-	mMSG.append(CONTENT_TYPE);	//Content-Type: text/html; charset=UTF-8\r\n
-	// mMSG.append("Content-Type: ");	//png 등의 경우 별도의 content-type필요
-
-
-	mMSG.append("Content-Length: 13\r\n");
-	// stringstream	to_str;
-	// to_str << getResponse().content_length;
-	// to_str >> mMSG;
-
-	if (this->getBasics().connection == nSocket::KEEP_ALIVE)
-		mMSG.append("Connection: Keep-Alive\r\n");
-		
-	mMSG.append("\r\n");		//end of head
-
-	//BODY============================================
-	//mMSG에 요청받은 페이지 내용 추가
-	mMSG.append("POST SUCCESS!\r\n");
+	mMSG.append(timeStamp);	
+	mMSG.append(SPIDER_SERVER);
+	if (this->getBasics().connection == KEEP_ALIVE)
+		mMSG.append("Connection: keep-alive\r\n");
+	mMSG.append("Content-Length: ");
+	if (mPipeValue.find("\r\n\r\n") != string::npos) {
+		mMSG.append(SpiderMenUtil::itostr(mPipeValue.size() - (mPipeValue.find("\r\n\r\n") + 4)).c_str());
+		mMSG.append("\r\n");
+		mMSG.append(mPipeValue);
+		// 하기 코드가 있으면 테스터에서 에러뜸
+		// 에러내용: nsolicited response received on idle HTTP channel starting with "\r\n\r\n"; err=<nil>
+		// mMSG.append("\r\n\r\n");
+	} else
+	{
+		mMSG.append("0\r\n\r\n");
+		cerr << "mPipeValue cannot found CRLF" << endl;
+	}
 
 	return mMSG;
 }
 
-const string&	RPost::getBody() const { return mBody; }
-void			RPost::setBody(string mBody) { this->mBody = mBody; }
+// private
+
+void	RPost::executeCgi()
+{
+	// 표준 출력 rediretion (자식프로세스의 표준 출력을 mPipe의 write로)
+
+	// 표준 입력 redirection (자식프로세스의 표준 입력을 생성한 파이프의 read로)
+
+	// pipFd[1] 에 Body 쓰기
+
+	// 환경변수 set/conf
+
+	// char* const argv[3] = {const_cast<char * const>(mLocation.getCgiBin().c_str()), const_cast<char * const>(mLocation.getCgiPath().c_str()), NULL};
+	extern char** environ;
+	char* const argv[2] = {const_cast<char * const>(mCgiPath.c_str()), NULL};
+	setCgiEnv();
+	// for (int i = 0; i < 1; ++i)
+	// cerr << argv[0] << endl;
+	if (execve(argv[0], argv, environ) == -1)
+		cerr << "excute falied error\n";
+	exit(EXIT_FAILURE);
+}
+
+string RPost::getRequestMethod()
+{
+	if (mType == GET)
+		return "GET";
+	else if (mType == POST)
+		return "POST";
+	else // (mType == DELETE)
+		return "DELETE";
+}
+
+// getters and setters
+
+// const Body&	RPost::getBody() const { return mBody; }

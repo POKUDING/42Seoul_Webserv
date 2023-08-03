@@ -1,15 +1,67 @@
 <!DOCTYPE html>
 <html>
+
+<script>
+  function sendDeleteRequest(url) {
+    fetch(url, {
+      method: 'DELETE',
+    })
+    .then(response => {
+      if (response.ok) {
+        alert('파일이 성공적으로 삭제되었습니다.');
+      } else {
+        alert('파일 삭제에 실패했습니다.');
+      }
+    })
+    .catch(error => {
+      console.error('에러 발생:', error);
+    });
+  }
+</script>
+
 <head>
   <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon"> 
   <title>Welcome to SpiderMen</title>
   <meta charset="utf-8">
 </head>
+
 <body>
-  <h1><a href="index.html">HTML Page</a></h1>
+  <h1><a href="http://0.0.0.0:4242/">this is HTML Page</a></h1>
   <ol>
-    <li><a href="index.py">to Python Page</a></li>
-    <li><a href="index.php">to PHP Page</a></li>
+    <li><a href="http://0.0.0.0:4242/index.py">to Python Page</a></li>
+    <li><a href="http://0.0.0.0:4242/index.php">to PHP Page</a></li>
   </ol>
+
+  <h1>File send</h1>
+  <div class="choices">
+	<form action="http://0.0.0.0:4242/upload/upload.py" method="POST" enctype="multipart/form-data">
+		<input type="file" name="name" id="abc">
+		<button type="upload">submit</button>
+	</form>
+
+  <h1>bla test</h1>
+  <div class="choices">
+    <form action="http://0.0.0.0:4242/directory/youpi.bla" method="POST" enctype="chunck">
+      <input name="name" id="abc">
+      <button type="upload">submit</button>
+    </form>
+
+  <h1>File delete</h1>
+  <div class="choices">
+
+  <!-- 삭제할 파일 a.png -->
+  <button type="button" onclick="sendDeleteRequest('http://0.0.0.0:4242/upload/a.png')">a.png 삭제</button><br>
+
+  <!-- 삭제할 파일 b.png -->
+  <button type="button" onclick="sendDeleteRequest('http://0.0.0.0:4242/upload/b.png')">b.png 삭제</button><br>
+
+  <!-- 삭제할 파일 c.png -->
+  <button type="button" onclick="sendDeleteRequest('http://0.0.0.0:4242/upload/c.png')">c.png 삭제</button><br>
+
+  <h1>Redirect Test</h1>
+  <form action="http://0.0.0.0:4242/youtube" method="GET">
+    <input type="submit" value="YouTube"/>
+  </form>
+  
 </body>
 </html>

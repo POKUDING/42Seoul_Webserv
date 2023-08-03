@@ -6,6 +6,7 @@
 # include <string>
 # include <cctype>
 # include <iostream>
+# include <sstream>
 
 using namespace std;
 
@@ -14,6 +15,8 @@ class SpiderMenUtil
 	public:
 		static vector<string>	splitString(string str, string del);
 		static vector<string>	splitString(string str);
+		static string			itostr(int num);
+		static string 			replaceCRLF(const string& input);
 	private:
 		// SpiderMenUtil();
 		// SpiderMenUtil(SpiderMenUtil& src);
@@ -21,4 +24,4 @@ class SpiderMenUtil
 		// ~SpiderMenUtil();
 };
 
-#endif
+#endif // SPIDERMENUTIL_HPP

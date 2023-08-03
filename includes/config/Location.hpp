@@ -14,6 +14,7 @@ using namespace std;
 class Location
 {
 	public:
+		Location();
 		Location(const string& mKey);
 
 		void					parse(ifstream& f_dataRead);
@@ -22,23 +23,28 @@ class Location
 		const string&			getKey() const;
 		const string&			getRoot() const;
 		const vector<string>&	getLimitExcept() const;
-		const string&			getFastcgiPass() const;
+		const string&			getRedirect() const;
+		const string&			getCgiBin() const;
+		const string&			getCgiPath() const;
 		const string&			getIndex() const;
 		bool					getAutoIndex() const;
-		const string&			getSh() const;
 		const string&			getPy() const;
 		const string&			getPhp() const;
 		const string&			getReturn() const;
+		int						getLocationMaxBodySize() const;
+		bool					getOnlyFile() const;
 
-		void					addLimitExcept(const string& mLimitExcept);
 		void					setRoot(const string& mRoot);
-		void					setFastcgiPass(const string& mFastcgiPass);
+		void					addLimitExcept(const string& mLimitExcept);
+		void					setRedirect(const string& mRedircect);
+		void					setCgiBin(const string& mCgiBin);
+		void					setCgiPath(const string& mCgiPath);
 		void					setIndex(const string& mIndex);
 		void					setAutoIndex(const string& mAutoIndex);
-		void					setSh(const string& mSh);
 		void					setPy(const string& mPy);
 		void					setPhp(const string& mPhp);
 		void					setReturn(const string& mReturn);
+		void					setLocationMaxBodySize(const string& mMaxBodySize);
 
 		void					printMembers() const;
 
@@ -46,14 +52,17 @@ class Location
 		string			mKey;
 		vector<string>	mLimitExcept;
 		string			mRoot;
-		string			mFastcgiPass;
+		string			mRedirect;
+		string			mCgiBin;
+		string			mCgiPath;
 		string			mIndex;
 		bool			mAutoIndex;
-		string			mSh;
 		string			mPy;
 		string			mPhp;
 		string			mReturn;
+		bool			mOnlyFile;
+		int				mLocationMaxBodySize;
 };
 
 
-#endif //LOCATION_HPP
+#endif // LOCATION_HPP

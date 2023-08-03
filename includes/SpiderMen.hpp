@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include "./config/Config.hpp"
+#include "./kqueue/KQueue.hpp"
 #include "./socket/Client.hpp"
 
 using namespace std;
@@ -23,23 +24,16 @@ class SpiderMen
 	private:
 		map<int,const Server&>	mFdServers;
 		map<int, Client>		mClients;
-		deque<ASocket>			mServerSockets;
-		int						mKq;
-		
-		deque<ASocket>&	getServerSockets();
-		map<int, Client>&	getClients();
-		void				addServerSockets(ASocket& sock);
-		void				addClients(int fd, Client& client);
+		deque<Socket>			mServerSockets;
+		KQueue					mKq;
+
 		void				deleteClientKQ(int fd);
 		void				deleteClient(int fd);
-		void				initSocket(const map<int,vector<Server> >& servers);
-		void				handleServer(ASocket* sock);
+		void				initServerSockets(const map<int,vector<Server> >& servers);
+
+		void				handleServer(Socket* sock);
 		void				handleClient(struct kevent* event, Client* client);
-		void				readSocket(struct kevent* event, Client* client);
-		// void				initKque(x);
-		// SpiderMen(void);
-		// SpiderMen(const SpiderMen& src);
-		// SpiderMen& operator=(SpiderMen const& rhs);
+		void				handleError(Client* client);
 };
 
-#endif //WEBSRV_HPP
+#endif //SPIDERMEN_HPP

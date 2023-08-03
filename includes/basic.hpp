@@ -16,6 +16,7 @@
 #define STATUS_403 "HTTP/1.1 403 Forbidden\r\n" 
 #define STATUS_404 "HTTP/1.1 404 Not Found\r\n"
 #define STATUS_405 "HTTP/1.1 405 Method Not Allowed\r\n"
+#define STATUS_413 "HTTP/1.1 413 Request Entity Too Large\r\n"
 #define STATUS_500 "HTTP/1.1 500 Internal Server Error\r\n"
 #define STATUS_501 "HTTP/1.1 501 Not Implemented\r\n"
 #define STATUS_504 "HTTP/1.1 504 Gateway Time-out\r\n"

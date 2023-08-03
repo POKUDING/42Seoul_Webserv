@@ -61,7 +61,7 @@ void	SpiderMen::run()
 					//client error의 경우 close하는 것으로 우선 진행
 					if (mKq.getEvents()[i].flags == EV_ERROR)
 					{
-						cerr << "ev_error flag" << endl;
+						// cerr << "ev_error flag" << endl;
 						throw 0;
 					}
 					this->handleClient(&mKq.getEvents()[i], reinterpret_cast<Client *>(sock_ptr));
@@ -73,7 +73,7 @@ void	SpiderMen::run()
 						handleError(reinterpret_cast<Client *>(sock_ptr));
 					} else {
 						deleteClient(sock_ptr->getFd());
-						cout << "======================= END of Error: client closed" << endl;
+						// cout << "======================= END of Error: client closed" << endl;
 					}
 				} catch (const exception& e) {
 					cout << "Error: Client Handler: " << e.what() << ", code: " << reinterpret_cast<Client *>(sock_ptr)->getResponseCode()<< endl;
@@ -145,10 +145,8 @@ void	SpiderMen::handleServer(Socket* sock)
 		throw FAIL_FD;
 	}
 	Client client_tmp(CLIENT, fd, sock->getPortNumber(), sock->getServer(), mKq);
-//클라이언트 소켓은 논블록처리하면 안된다는 말이 있던데 확인해봐야 합니다
-	// if (fcntl(client_tmp.getFd(), F_SETFL, O_NONBLOCK) == -1)			//소켓 논블록처리
-	// 	throw runtime_error("Error: client socket nonblock failed.");
-
+	if (fcntl(client_tmp.getFd(), F_SETFL, O_NONBLOCK) == -1)
+		throw runtime_error("Error: client socket nonblock failed.");
 	mClients.insert(pair<int, Client>(fd, client_tmp));
 	mKq.addClientSocketFd(fd, reinterpret_cast<void *>(&(mClients.find(fd)->second)));
 }
@@ -157,16 +155,16 @@ void	SpiderMen::handleClient(struct kevent* event, Client* client)
 {
 	// cout << "\n============== Client handler: ";
 	if (event->filter == EVFILT_READ) {
-		cout << "READ" << endl;
+		// cout << "READ" << endl;
 		client->handleClientRead(event);
 	} else if (event->filter == EVFILT_WRITE) {
-		cout << "WRITE" << endl;
+		// cout << "WRITE" << endl;
 		client->handleClientWrite(event);
 	} else if (event->filter == EVFILT_PROC) {
-		cout << "PROC" << endl;
+		// cout << "PROC" << endl;
 		client->handleProcess(event);
 	} else if (event->filter == EVFILT_TIMER) {
-		cout << "TIMER" << endl;
+		// cout << "TIMER" << endl;
 		switch (client->getReadStatus())
 		{
 		case EMPTY:
@@ -175,6 +173,7 @@ void	SpiderMen::handleClient(struct kevent* event, Client* client)
 			// break;
 
 		case PROCESSING:
+			// cerr << "spider men case processing error" << endl;
 			throw 500;
 			// client->setResponseCode(500);;
 			// throw runtime_error("TIMER: Processing");
@@ -208,9 +207,9 @@ void	SpiderMen::handleError(Client* client)
 	}
 	cout << "handleError called: " << client->getRequests().size() << endl;
 	client->getRequests().push(new RBad(client->getResponseCode(), server));
-	cout << "handleError called after push: " << client->getRequests().size() << endl;
+	// cout << "handleError called after push: " << client->getRequests().size() << endl;
 	
-	cout << "--> call operate request 4" << endl;
+	// cout << "--> call operate request 4" << endl;
 	client->operateRequest(client->getRequests().front());
 
 	// client->setRequestStatus(SENDING);

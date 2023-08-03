@@ -14,6 +14,15 @@ ARequest::ARequest(string root, int mType, map<string, string> header_key_val, v
 	mBasics.transfer_encoding = header_key_val["Transfer-Encoding"];
 	mBasics.x_secret = header_key_val["X-Secret-Header-For-Test"];
 
+	switch(mType) {
+		case GET: mMethod = "GET"; break;
+		case POST: mMethod = "POST"; break;
+		case DELETE: mMethod = "DELETE"; break;
+		case BAD: mMethod = "BAD"; break;
+		case HEAD: mMethod = "HEAD"; break;
+		default: break;
+	}
+
 	//method 필수요소 확인: host, user_agent
 	if (mBasics.host.size() == 0 || mBasics.user_agent.size() == 0)
 		throw 400;
@@ -146,14 +155,14 @@ void	ARequest::findRootLocation(Server& server, string root)
 {
 	size_t		find_len = 0;
 
-	for(int loc_idx = 0, end = server.getLocation().size(); loc_idx < end; ++loc_idx)
-	{
+	for(int loc_idx = 0, end = server.getLocation().size(); loc_idx < end; ++loc_idx) {
 		if (root.substr(0, server.getLocation()[loc_idx].getKey().size()) == server.getLocation()[loc_idx].getKey() && \
 			server.getLocation()[loc_idx].getKey().size() > find_len) {
 			
 			mLocation = server.getLocation()[loc_idx];
 			find_len = server.getLocation()[loc_idx].getKey().size();
-			mCgiBin = server.getLocation()[loc_idx].getCgiBin();
+			if (mType != GET)
+				mCgiPath = server.getLocation()[loc_idx].getCgiPath();
 		}
 	}
 	if (find_len == 0)
@@ -170,12 +179,18 @@ void	ARequest::findExtensionLocation(Server& server)
 	if (pos == string::npos || mRoot.find('/', pos) != string::npos || pos == mRoot.size())
 		return;
 	extension = mRoot.substr(pos);
-	for(size_t loc_idx = 0, end = server.getLocation().size(); loc_idx < end; ++loc_idx)
-	{
-		if (extension == server.getLocation()[loc_idx].getKey()) {	
-			if (!mCgiPath.size())
+	for (size_t loc_idx = 0, end = server.getLocation().size(); loc_idx < end; ++loc_idx) {
+		if (extension == server.getLocation()[loc_idx].getKey()) {
+			if (!server.getLocation()[loc_idx].getLimitExcept().size()) {
 				mCgiPath = server.getLocation()[loc_idx].getCgiPath();
-			return;
+				return;
+			}
+			for (int LimitExceptIdx = 0, end = server.getLocation()[loc_idx].getLimitExcept().size(); LimitExceptIdx < end; ++LimitExceptIdx) {
+				if (server.getLocation()[loc_idx].getLimitExcept()[LimitExceptIdx] == mMethod) {
+					mCgiPath = server.getLocation()[loc_idx].getCgiPath();
+					return;
+				}
+			}	
 		}
 	}
 }
@@ -239,7 +254,7 @@ void	ARequest::cutQuery()
 	}
 	mQuery = mRoot.substr(pos + 1);
 	mRoot = mRoot.substr(0, pos);
-	cout << "mQuery : " << mQuery << "mRoot : " << mRoot << endl;
+	// cout << "mQuery : " << mQuery << "mRoot : " << mRoot << endl;
 }
 
 void	ARequest::setType(int type) { mType = type; }

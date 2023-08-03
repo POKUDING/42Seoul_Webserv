@@ -34,33 +34,16 @@ void			RBad::createErrorResponse(int code)
 	string			body;
 
 	switch (code) {
-	case 400:
-		mMSG.append(STATUS_400);
-		break;
-	case 403:
-		mMSG.append(STATUS_403);
-		break;
-	case 404:
-		mMSG.append(STATUS_404);
-		break;
-	case 405:
-		mMSG.append(STATUS_405);
-		break;
-	case 500:
-		mMSG.append(STATUS_500);
-		break;
-	case 501:
-		mMSG.append(STATUS_501);
-		break;
-	case 504:
-		mMSG.append(STATUS_504);
-		break;
-	case 505:
-		mMSG.append(STATUS_505);
-		break;
-	default:
-		mMSG.append(STATUS_500);
-		break;
+		case 400: mMSG.append(STATUS_400); break;
+		case 403: mMSG.append(STATUS_403); break;
+		case 404: mMSG.append(STATUS_404); break;
+		case 405: mMSG.append(STATUS_405); break;
+		case 413: mMSG.append(STATUS_413); break;
+		case 500: mMSG.append(STATUS_500); break;
+		case 501: mMSG.append(STATUS_501); break;
+		case 504: mMSG.append(STATUS_504); break;
+		case 505: mMSG.append(STATUS_505); break;
+		default: mMSG.append(STATUS_500); break;
 	}
 
 	if (mServer.getErrorPage()[SpiderMenUtil::itostr(code)].size()) {
@@ -72,7 +55,7 @@ void			RBad::createErrorResponse(int code)
 	ifstream	fin(filename);
 	if (fin.fail())
 	{
-		cerr << "code: " << code <<" file open failed" << endl;
+		// cerr << "code: " << code <<" file open failed" << endl;
 		throw 0;
 	}
 	tmp << fin.rdbuf();

@@ -15,12 +15,13 @@ RPost::RPost(string mRoot, map<string, string> header_key_val, vector<Server>* s
 	} else if (mBasics.transfer_encoding == "chunked") {
 		mBody.setChunked(true);
 	} else {
-		cout << "content length fail" << endl;
+		// cerr << "content length fail" << endl;
 		throw 400;
 	}
 
 	//file only인 location에 dir 요청으로 들어온 경우
 	if (mLocation.getOnlyFile() && !mIsFile) {
+		// cerr << "/* only file Error" << endl;
 		throw 400;
 	}
 	
@@ -38,7 +39,7 @@ RPost::~RPost() { }
 
 pid_t	RPost::operate()
 {
-	cout << "POST operate called\n" << endl;
+	// cout << "POST operate called\n" << endl;
 	mMethod = "POST";
 	int	inFd[2];
 	int	outFd[2];
@@ -68,6 +69,8 @@ pid_t	RPost::operate()
 	}
 	mWritePipe = inFd[1];
 	mReadPipe = outFd[0];
+	fcntl(mWritePipe, F_SETFL, O_NONBLOCK);
+	fcntl(mReadPipe, F_SETFL, O_NONBLOCK);
 	close(inFd[0]);
 	close(outFd[1]);
 	return pid;
@@ -115,10 +118,10 @@ void	RPost::executeCgi()
 
 	// char* const argv[3] = {const_cast<char * const>(mLocation.getCgiBin().c_str()), const_cast<char * const>(mLocation.getCgiPath().c_str()), NULL};
 	extern char** environ;
-	char* const argv[2] = {const_cast<char * const>(mCgiBin.c_str()), NULL};
+	char* const argv[2] = {const_cast<char * const>(mCgiPath.c_str()), NULL};
 	setCgiEnv();
 	// for (int i = 0; i < 1; ++i)
-	// 	cerr << argv[i] << endl;
+	// cerr << argv[0] << endl;
 	if (execve(argv[0], argv, environ) == -1)
 		cerr << "excute falied error\n";
 	exit(EXIT_FAILURE);

@@ -70,10 +70,16 @@ void	KQueue::addPipeFd(int writeFd, int readFd, void* udata)
 {
 	struct kevent event;
 
-	EV_SET(&event, writeFd, EVFILT_WRITE, EV_ADD, 0, 0, udata);
-	mChangeList.push_back(event);
-	EV_SET(&event, readFd, EVFILT_READ, EV_ADD, 0, 0, udata);
-	mChangeList.push_back(event);
+	if (writeFd)
+	{
+		EV_SET(&event, writeFd, EVFILT_WRITE, EV_ADD, 0, 0, udata);
+		mChangeList.push_back(event);
+	}
+	if (readFd)
+	{
+		EV_SET(&event, readFd, EVFILT_READ, EV_ADD, 0, 0, udata);
+		mChangeList.push_back(event);
+	}
 }
 
 

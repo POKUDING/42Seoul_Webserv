@@ -10,3 +10,5 @@ test_request.txt
 test_response.txt
 webserv
 log.txt
+log
+www/put_test/file_should_exist_after

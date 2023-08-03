@@ -36,7 +36,8 @@ pid_t			RGet::operate()
 	if (mIsFile) {
 		
 		//.php, .py 블록이면 CGI 처리
-		if (mLocation.getCgiPath().size()) {
+		if (mCgiPath.size()) {
+
 			int outFd[2];
 			setPipe(outFd);	//pipe 생성 (ARequest에 있음)
 			pid_t pid = fork();			
@@ -48,19 +49,20 @@ pid_t			RGet::operate()
 
 				// cout << "\n\n\n\n\n" << mMethod << "\n\n\n\n" << endl;
 				
-				char* const argv[3] = {const_cast<char * const>(getCgiBin().c_str()), \
-										const_cast<char * const>(getRoot().c_str()), NULL};
-
+				char* const argv[2] = {const_cast<char * const>(mCgiPath.c_str()), NULL};
+								
 				dup2(outFd[1],1);
 				close (outFd[0]);
 				close (outFd[1]);
-				if (execve(getCgiBin().c_str(), argv, environ) < 0)
+				if (execve(argv[0], argv, environ) < 0)
 				{
 					cerr<< "execve faile!!" << strerror(errno) << endl;
 					exit(1);
 				}
 			}
+			mWritePipe = 0;
 			mReadPipe = outFd[0];
+			fcntl(mReadPipe, F_SETFL, O_NONBLOCK);
 			close(outFd[1]);
 			return pid;
 		} 
@@ -70,7 +72,7 @@ pid_t			RGet::operate()
 
 const string	RGet::createResponse()
 {
-	cout << "create Response !" << endl;
+	// cout << "create Response !" << endl;
 	if (mLocation.getRedirect().size())
 		return redirectResponse();
 	else if (getCgiPath().size())
@@ -83,7 +85,7 @@ const string	RGet::redirectResponse()
 {
 	string	mMSG;
 
-	cout << "redirect MSG !" << endl;
+	// cout << "redirect MSG !" << endl;
 	mMSG.append(STATUS_301);
 	mMSG.append("Location: ");
 	mMSG.append(mLocation.getRedirect());
@@ -107,7 +109,8 @@ const string	RGet::createCgiResponse()
 	mMSG.append("Content-Length: ");
 	if (mPipeValue.find("\r\n\r\n") != string::npos) {
 		mMSG.append(SpiderMenUtil::itostr(mPipeValue.size() - (mPipeValue.find("\r\n\r\n") + 4)).c_str());
-		mMSG.append("\r\n\r\n");
+		mMSG.append("\r\n");
+		mMSG.append(mPipeValue);
 	} else {
 		mMSG.append("0\r\n\r\n");
 		// cout << "mPipeValue cannot found CRLF" << endl;
@@ -118,7 +121,7 @@ const string	RGet::createCgiResponse()
 
 const string	RGet::createLegacyResponse()
 {
-	cout << "create Legacy RESPONSE!" << endl;
+	// cout << "create Legacy RESPONSE!" << endl;
 
 	string		mMSG;
 	char 		timeStamp[TIME_SIZE];

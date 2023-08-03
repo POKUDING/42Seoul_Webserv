@@ -18,10 +18,12 @@ class Body
 		int			addChunkBody(string& inputbuffer);
 		int			addLenBody(string& inputbuffer);
 		size_t		parseChunkLen(string& ChunkBuf);
-
+		
 		void		setMaxBodySize(size_t mMaxbody);
 		void		setChunked(bool chunk);
 		void		setContentLen(size_t len);
+		size_t		getSize();
+		size_t		getMaxBodySize();
 		size_t		getContentLen();
 		bool		getReadEnd();
 		bool		getChunked();

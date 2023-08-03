@@ -9,6 +9,7 @@
 #include <cstdlib>
 #include <unistd.h>
 #include <dirent.h>
+#include <fcntl.h>
 #include "../config/Server.hpp"
 #include "../basic.hpp"
 #include "../util/Time.hpp"

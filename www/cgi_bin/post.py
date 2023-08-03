@@ -15,7 +15,7 @@ def parse_multipart_octet_stream():
         print("Content-Type: text/plain")
         print()
         print("No data received.")
-        sys.exit(1)
+        sys.exit(0)
 
     # Read the raw POST data
     post_data = sys.stdin.buffer.read(content_length)
@@ -55,7 +55,7 @@ def parse_multipart_octet_stream():
         print()
         print("CGI: unvalid content type received.")
         print(content_type)
-        sys.exit(1)
+        sys.exit(0)
     
 
 content = """<html>

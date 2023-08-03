@@ -11,8 +11,7 @@ Body::~Body() {}
 
 int	Body::addBody(string& inputbuffer)
 {
-	if (mMaxBodySize - mBody.size() < inputbuffer.size())
-		throw 400;
+
 	if (mChunked)
 	{
 		// cout << "chunk Body called" << endl;
@@ -21,7 +20,6 @@ int	Body::addBody(string& inputbuffer)
 	}
 	else
 	{
-
 		// cout << "Len Body called" << endl;
 		return (addLenBody(inputbuffer));
 	}
@@ -39,16 +37,13 @@ int	Body::addChunkBody(string& inputbuff)
 	while (!mReadEnd && mChunkLen && mChunkBuf.size())
 	{
 		// cout << "BEFORE chunke len : " << mChunkLen << " mChunkBuf size : " <<mChunkBuf.size() << endl;
-		if (mChunkBuf.size() < mChunkLen)
-		{
+		if (mChunkBuf.size() < mChunkLen) {
 			mBody.append(mChunkBuf.c_str(), mChunkBuf.size());
 			mChunkLen -= (mChunkBuf.size());
 			mChunkBuf.clear();
 			// cout << "AFTER \n$" << mBody << "$" <<endl;
 			// cout << "AFTER chunke len : " << mChunkLen << " mChunkBuf size : " <<mChunkBuf.size() << endl;
-		}
-		else
-		{
+		} else {
 			mBody.append(mChunkBuf.c_str(), mChunkLen);
 			mChunkBuf = mChunkBuf.substr(mChunkLen);
 			// cout << "body size :" << mBody.size() << "\n$" << mBody  << "$" << endl;
@@ -61,7 +56,7 @@ int	Body::addChunkBody(string& inputbuff)
 		}
 	}
 	if (mReadEnd == true) {
-		cout << "chunked finished++++" << endl;
+		// cout << "chunked finished++++" << endl;
 		// cout << mBody << endl;
 		// cout << "++++++++++++++++++++" << endl;
 		return 1;
@@ -105,6 +100,9 @@ void	Body::setMaxBodySize(size_t mMaxbody) { this->mMaxBodySize = mMaxbody; }
 void	Body::setContentLen(size_t len) { this->mContentLen = len; }
 void	Body::setChunked(bool chunk) { this->mChunked = chunk; }
 
+
+size_t	Body::getSize() { return mBody.size(); }
+size_t	Body::getMaxBodySize() { return mMaxBodySize; }
 bool	Body::getChunked() { return mChunked; }
 size_t	Body::getContentLen() { return mContentLen; }
 bool	Body::getReadEnd() { return mReadEnd; }

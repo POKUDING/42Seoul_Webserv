@@ -34,7 +34,7 @@ void	Location::parse(ifstream& f_dataRead)
 			if (getLimitExcept().size() == 0)
 				mLimitExcept.push_back("GET");
 			for (int i = 0, end = mLimitExcept.size(); i < end; ++i) {
-				if (mLimitExcept[i] == "POST" && !mCgiBin.size())
+				if (mLimitExcept[i] == "POST" && !mCgiPath.size())
 					throw runtime_error("Error: Invalid location: POST need cgi");
 			}
 			return ; //end parsing

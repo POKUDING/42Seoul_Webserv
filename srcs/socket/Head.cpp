@@ -22,7 +22,7 @@ int	Head::addHead(string& inputBuff)
 			inputBuff = inputBuff.substr(pos + 4);
 		else
 			inputBuff.clear();
-		cout << "after remove header, in input buffer: $" << inputBuff << "$" << endl;
+		// cout << "after remove header, in input buffer: $" << inputBuff << "$" << endl;
 		return 1;
 	}
 	return 0;

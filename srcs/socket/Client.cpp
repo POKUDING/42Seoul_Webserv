@@ -44,7 +44,7 @@ void			Client::handleProcess(struct kevent* event)
 	int	exit_status = 0;
 
 	waitpid(event->ident, &exit_status, 0);
-	cout << "handle process: " << exit_status <<endl;
+	// cout << "handle process: " << exit_status <<endl;
 
 	// cout << mRequests.front()->getPipeValue() << "$" << endl;
 
@@ -53,7 +53,10 @@ void			Client::handleProcess(struct kevent* event)
 	// cout << mRequests.front()->getPipeValue() << endl;
 
 	if (exit_status != EXIT_SUCCESS)
+	{
+		// cerr << "fork exit with 1 " << endl;
 		throw 500;
+	}
 	// 	mRequests.front()->setCode(500);
 	// else
 	// 	mRequests.front()->setCode(0);
@@ -71,9 +74,10 @@ void	Client::readSocket(struct kevent* event)
 	
 	if (s < 1) {
 		if (s == 0) {
-			cerr << "socket closed" << endl;
+			// cerr << "socket closed" << endl;
 			throw 0;
 		} else {
+			// cerr << "read socket error" << endl;
 			throw 500;
 		}
 	}
@@ -97,13 +101,18 @@ int			Client::addBuffer()
 		return mHeader.addHead(mInputBuffer);
 		
 	} else if (mReadStatus == READING_BODY && mRequests.back()->getBody().addBody(mInputBuffer)) {
-		cout << "requests Type: " << mRequests.back()->getType() << endl;
+		// cout << "requests Type: " << mRequests.back()->getType() << endl;		
+		if (mRequests.back()->getBody().getMaxBodySize() < mRequests.back()->getBody().getSize())
+		{
+			// cerr << "in Len body over than maxbody size Error" << endl;
+			throw 413;
+		}
 		if (mRequests.back()->getType() == BAD)
 			mReadStatus = ERROR;
 		else
 			mReadStatus = WAITING;
 		if (mRequests.size() == 1) {
-			cout << "--> call operate request 2" << endl;
+			// cout << "--> call operate request 2" << endl;
 			operateRequest(mRequests.front());
 		}
 		return 1;
@@ -117,12 +126,12 @@ void	Client::readPipe(struct kevent* event)
 	string	readvalue;
 	int		readlen = 1;
 
-	cout << "start" << endl;
+	// cout << "start" << endl;
 	readlen = read(event->ident, buff, event->data);
 	if (readlen < 0) {
 		close (event->ident);//close(mRequests.front()->getReadPipe());
 		close (mRequests.front()->getWritePipe());
-		cerr << "readPipe error" << endl;
+		// cerr << "readPipe error" << endl;
 		throw 500;
 	}
 	mRequests.front()->getPipeValue().append(buff, readlen);
@@ -156,7 +165,7 @@ void			Client::addRequests(ARequest* request)
 	else
 		mReadStatus = WAITING;
 	if (mReadStatus == WAITING && mRequests.size() == 1) {
-		cout << "--> call operate request 1" << endl;
+		// cout << "--> call operate request 1" << endl;
 		operateRequest(mRequests.front());
 	}
 }
@@ -176,6 +185,7 @@ ARequest*	Client::createRequest(Head& head)
 		element_headline = SpiderMenUtil::splitString(header_line[0]);
 		head.clear();
 		if (count(header_line[0].begin(), header_line[0].end(), ' ') != 2 || element_headline.size() != 3) {
+			// cerr << "create Request headline Error" << endl;
 			throw 400;
 		}
 		if (element_headline[2] != "HTTP/1.1") {
@@ -234,10 +244,10 @@ void			Client::operateRequest(ARequest* request)
 		mKq.addPipeFd(mRequests.front()->getWritePipe(), mRequests.front()->getReadPipe(), reinterpret_cast<void*>(this));
 		//event push;
 		mRequestStatus = PROCESSING;
-		cout << "now to PROCESSING" << endl;
+		// cout << "now to PROCESSING" << endl;
 	} else {
 		mRequestStatus = SENDING;
-		cout << "now to SENDING\n";		
+		// cout << "now to SENDING\n";		
 	}
 }
 
@@ -260,12 +270,13 @@ void			Client::writeSocket(struct kevent* event)
 	if (mRequests.size() && sendResponseMSG(event))
 	{
 		if (mRequests.front()->getType() == BAD) {
+			// cerr << "front type is BAD" << endl;
 			throw 0;
 		}
 		delete mRequests.front();
 		mRequests.pop();
 		if (!mRequests.empty()) {
-			cout << "--> call operate request 3" << endl;
+			// cout << "--> call operate request 3" << endl;
 			operateRequest(mRequests.front());
 		} else
 			mRequestStatus = EMPTY;
@@ -276,8 +287,14 @@ int			Client::sendResponseMSG(struct kevent* event)
 {
 	//TEST_CODE: response msg
 	// cout << "Request: " << getRequests().front()->getType() << ", dir: " << getRequests().front()->getRoot() << endl;
-	// if (getRequests().front()->getSendLen() == 0)
-		cout << "+++Response+++\n" << getResponseMSG() << "++++++++++++++" << endl;
+	if (getRequests().front()->getSendLen() == 0) {
+		if (getResponseMSG().size() > 1000)
+			cout << "Response+++++++++\n" << getResponseMSG().substr(0, 500) << "++++++++++++++"<< endl;
+		else
+			cout << "Response+++++++++\n" << getResponseMSG() << "++++++++++++++" << endl;
+	}
+
+	
 	
 	size_t	sendinglen = getResponseMSG().size() - getRequests().front()->getSendLen();
 	if (static_cast<size_t>(event->data) <= sendinglen)
@@ -291,7 +308,7 @@ int			Client::sendResponseMSG(struct kevent* event)
 	}
 	
 	getRequests().front()->addSendLen(sendinglen);
-	cout << "sent this time: " << sendinglen << ", already sent: " << getRequests().front()->getSendLen() << endl;
+	// cout << "sent this time: " << sendinglen << ", already sent: " << getRequests().front()->getSendLen() << endl;
 	
 	if (getRequests().front()->getSendLen() == getResponseMSG().size())
 	{
@@ -311,10 +328,10 @@ void		Client::writePipe(struct kevent* event)
 		sendingLen = mRequests.front()->getBody().getBody().size();
 	if (sendingLen)
 		sendLen = write(event->ident,  mRequests.front()->getBody().getBody().c_str(), sendingLen);
-	if (sendLen <= 0)
+	if (sendingLen && sendLen <= 0)
 	{
 		close (event->ident);
-		cerr << "input to pipe error\n";
+		// cerr << "input to pipe error" << endl;
 		throw 500;
 	}
 	mRequests.front()->getBody().getBody() = mRequests.front()->getBody().getBody().substr(sendLen);

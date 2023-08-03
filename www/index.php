@@ -36,7 +36,7 @@
   <h1>여긴 뭐게요</h1>
   <ol>
     <?php
-      echo file_get_contents("./source/php.txt");
+      echo file_get_contents("./www/source/php.txt");
     ?>
   </ol>
 

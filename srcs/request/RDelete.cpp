@@ -5,7 +5,7 @@
 RDelete::RDelete(string mRoot, map<string, string> header_key_val, vector<Server>* servers)
 			: ARequest(mRoot, DELETE, header_key_val, servers)
 {
-	cout << "DELETE CALL!!" << endl;
+	// cout << "DELETE CALL!!" << endl;
 	mMethod = "DELETE";
 	if (mBasics.content_length || mBasics.transfer_encoding.size())
 		throw 400;
@@ -27,7 +27,7 @@ RDelete::~RDelete() { }
 pid_t			RDelete::operate()
 {
 	// 파일 삭제 시도
-	cout << "\n\nDELETE OPERATE!!!!\n\n" << endl;
+	// cout << "\n\nDELETE OPERATE!!!!\n\n" << endl;
     if (remove(getRoot().c_str()) != 0)
 		throw 403;
 	return 0;

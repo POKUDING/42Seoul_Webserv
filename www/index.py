@@ -1,6 +1,5 @@
 #!/usr/local/bin/python3  
-print("Content-Type: text/html")
-print()
+print("Content-Type: text/html\n")
 print('''<!DOCTYPE html>
 <html>
 
@@ -38,4 +37,3 @@ print('''<!DOCTYPE html>
       
 </body>
 </html>''')
-print()

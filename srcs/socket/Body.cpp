@@ -59,6 +59,7 @@ int	Body::addChunkBody(string& inputbuff)
 		// cout << "chunked finished++++" << endl;
 		// cout << mBody << endl;
 		// cout << "++++++++++++++++++++" << endl;
+		inputbuff.append(mChunkBuf.c_str(), mChunkBuf.size());
 		return 1;
 	}
 	return 0;
@@ -82,13 +83,18 @@ size_t	Body::parseChunkLen(string& ChunkBuf)
 int	Body::addLenBody(string& inputbuffer)
 {
 	//body + header의 경우 error 던져짐
-	if (mBody.size() + inputbuffer.size() > mContentLen + 4)
-		throw runtime_error("Error: invlaid len body format");
 	mBody.append(inputbuffer.c_str(), inputbuffer.size());
 	inputbuffer.clear();
-	if (mBody.size() == mContentLen)
+	if (mBody.size() + inputbuffer.size() > mContentLen + 4)
+	{
+		inputbuffer = mBody.substr(mContentLen + 4);
+		mBody = mBody.substr(0, mContentLen + 4);
+	}
+	if (mBody.size() == mContentLen + 4)
 	{
 		mReadEnd = true;
+		if (mBody.find("\r\n\r\n", mContentLen) == string::npos)
+			throw runtime_error("Error: invlaid len body format");
 		return 1;
 	}
 	return 0;

@@ -70,28 +70,24 @@ void	Client::readSocket(struct kevent* event)
 	char	buffer[buffer_size];
 	
 	memset(buffer, 0, buffer_size);
-	ssize_t s = recv(getFd(), buffer, buffer_size, 0);
-	
-	if (s < 1) {
-		if (s == 0) {
-			// cerr << "socket closed" << endl;
-			throw 0;
-		} else {
-			// cerr << "read socket error" << endl;
-			throw 500;
+	while (1)
+	{
+		ssize_t s = recv(getFd(), buffer, buffer_size, 0);
+		if (s < 1) {
+			if (s == 0) {
+				// cerr << "socket closed" << endl;
+				throw 0;
+			} else 
+				break;
 		}
+		mInputBuffer.append(buffer, s);
 	}
-
-	mInputBuffer.append(buffer, s);
-
 	// cout << "recv buffer: " << mInputBuffer << endl;
-	
 	while (addBuffer())
 	{
 		if (mHeader.getHeadBuffer().size())
 			addRequests(createRequest(mHeader));
 	}
-	
 }
 
 int			Client::addBuffer()
@@ -99,7 +95,6 @@ int			Client::addBuffer()
 	if (mReadStatus <= READING_HEADER)	{
 		mReadStatus = READING_HEADER;
 		return mHeader.addHead(mInputBuffer);
-		
 	} else if (mReadStatus == READING_BODY && mRequests.back()->getBody().addBody(mInputBuffer)) {
 		// cout << "requests Type: " << mRequests.back()->getType() << endl;		
 		if (mRequests.back()->getBody().getMaxBodySize() < mRequests.back()->getBody().getSize())
@@ -124,33 +119,34 @@ void	Client::readPipe(struct kevent* event)
 {
 	char	buff[event->data];
 	string	readvalue;
-	int		readlen = 1;
+	int		readlen;
 
 	// cout << "start" << endl;
-	readlen = read(event->ident, buff, event->data);
-	if (readlen < 0) {
-		close (event->ident);//close(mRequests.front()->getReadPipe());
-		close (mRequests.front()->getWritePipe());
-		// cerr << "readPipe error" << endl;
-		throw 500;
-	}
-	mRequests.front()->getPipeValue().append(buff, readlen);
-
-	// cout << "fin, buff: " << buff << endl;
-	
-	if (readlen == 0) {
-		close (event->ident);//read pipe close;
-		mRequests.front()->getPipeValue() = SpiderMenUtil::replaceCRLF(mRequests.front()->getPipeValue());
-		if (mRequests.front()->getPipeValue().find("Content-Type:") == string::npos)
-		{
-			size_t pos = mRequests.front()->getPipeValue().find("\r\n\r\n");
-			if (pos == string::npos)
-				mRequests.front()->getPipeValue() = "\r\n" + mRequests.front()->getPipeValue();
-			mRequests.front()->getPipeValue() = "Content-Type: text/plain; charset=UTF-8\r\n" + mRequests.front()->getPipeValue();
+	while (1)
+	{
+		readlen = read(event->ident, buff, event->data);
+		if (readlen < 0) {
+			break;
 		}
-		// cout << mRequests.front()->getPipeValue() << "$ if 문 안쪽 "<<endl;
-		// cout << "find \\r\\n" << mRequests.front()->getPipeValue().find("\r\r\n", 17) << ": " << mRequests.front()->getPipeValue().substr(mRequests.front()->getPipeValue().find("\r\r\n", 17)) << endl;
-		mRequestStatus = SENDING;
+
+		// cout << "fin, buff: " << buff << endl;
+		
+		if (readlen == 0) {
+			close (event->ident);//read pipe close;
+			mRequests.front()->getPipeValue() = SpiderMenUtil::replaceCRLF(mRequests.front()->getPipeValue());
+			if (mRequests.front()->getPipeValue().find("Content-Type:") == string::npos)
+			{
+				size_t pos = mRequests.front()->getPipeValue().find("\r\n\r\n");
+				if (pos == string::npos)
+					mRequests.front()->getPipeValue() = "\r\n" + mRequests.front()->getPipeValue();
+				mRequests.front()->getPipeValue() = "Content-Type: text/plain; charset=UTF-8\r\n" + mRequests.front()->getPipeValue();
+			}
+			// cout << mRequests.front()->getPipeValue() << "$ if 문 안쪽 "<<endl;
+			// cout << "find \\r\\n" << mRequests.front()->getPipeValue().find("\r\r\n", 17) << ": " << mRequests.front()->getPipeValue().substr(mRequests.front()->getPipeValue().find("\r\r\n", 17)) << endl;
+			mRequestStatus = SENDING;
+			break;
+		}
+		mRequests.front()->getPipeValue().append(buff, readlen);
 	}
 }
 

@@ -23,6 +23,8 @@ void	SpiderMen::run()
 		eventNum = mKq.getEventNum();
 		if (eventNum == -1)
 			eventNum = MAX_EVENT;
+		cout << "Event num: " <<eventNum << endl;
+		cout << "clients size: " << mClients.size() << endl;
 		for (int i = 0; i < eventNum; ++i) {
 			if (mKq.getEvents()[i].ident == 0)
 				break;
@@ -34,6 +36,11 @@ void	SpiderMen::run()
 			// }
 
 			Socket* sock_ptr = reinterpret_cast<Socket *>(mKq.getEvents()[i].udata);
+			cout << "TYPE:" <<sock_ptr->getType() << endl;
+			cout << "FD: "<<sock_ptr->getFd() << endl;
+			cout << "IDENT: "<< (&mKq.getEvents()[i])->ident << endl;
+
+
 
 			// TEST_CODE : kqueue
 			// cout << "Event rise => socket: " << sock_ptr->getFd() << ", type: " << sock_ptr->getType() << ", filter: " << mKq.getEvents()[i].filter << endl;
@@ -53,19 +60,18 @@ void	SpiderMen::run()
 						deleteClient(fd);
 					}
 				} catch (const exception& e) {
-					//정의하지 않은 다른 에러 처리를 위해 넣어둠: 해당 server socket새로 만들어야 할 수도 있음
+					//client fd 만들어지기 전 에러
 					cout << "Error: Server Handler: " << e.what() << endl;
 				}
 			} else if (sock_ptr->getType() == CLIENT) {
 				try {
 					//client error의 경우 close하는 것으로 우선 진행
-					if (mKq.getEvents()[i].flags == EV_ERROR)
-					{
+					if (mKq.getEvents()[i].flags == EV_ERROR) {
 						// cerr << "ev_error flag" << endl;
 						throw 0;
 					}
 					this->handleClient(&mKq.getEvents()[i], reinterpret_cast<Client *>(sock_ptr));
-					// reinterpret_cast<Client *>(sock_ptr)->resetTimer(mKq.getKq(), mKq.getEvents()[i]);
+					mKq.resetTimer(sock_ptr->getFd(), sock_ptr);
 				} catch (int error) {
 					cout << "Error: Client Handler: "<< sock_ptr->getFd() << ", error status: " << error<< endl;
 					if (error) {
@@ -89,9 +95,11 @@ void	SpiderMen::run()
 
 void	SpiderMen::deleteClient(int fd)
 {
-	mKq.deleteTimer(fd);
-	close(fd);
-	mClients.erase(fd);
+	if (mClients.find(fd) != mClients.end()) {
+		mKq.deleteTimer(fd);
+		close(fd);
+		mClients.erase(fd);
+	}
 }
 
 void	SpiderMen::initServerSockets(const map<int,vector<Server> >& servers)
@@ -146,7 +154,7 @@ void	SpiderMen::handleServer(Socket* sock)
 	}
 	Client client_tmp(CLIENT, fd, sock->getPortNumber(), sock->getServer(), mKq);
 	if (fcntl(client_tmp.getFd(), F_SETFL, O_NONBLOCK) == -1)
-		throw runtime_error("Error: client socket nonblock failed.");
+		throw fd;
 	mClients.insert(pair<int, Client>(fd, client_tmp));
 	mKq.addClientSocketFd(fd, reinterpret_cast<void *>(&(mClients.find(fd)->second)));
 }
@@ -164,24 +172,16 @@ void	SpiderMen::handleClient(struct kevent* event, Client* client)
 		// cout << "PROC" << endl;
 		client->handleProcess(event);
 	} else if (event->filter == EVFILT_TIMER) {
-		// cout << "TIMER" << endl;
-		switch (client->getReadStatus())
+		cout << "TIMER" << endl;
+		switch (client->getRequestStatus())
 		{
-		case EMPTY:
-			throw 0;
-			// throw runtime_error("TIMER: empty");
-			// break;
+		case EMPTY:		throw 0;
 
 		case PROCESSING:
-			// cerr << "spider men case processing error" << endl;
+			// kill()
 			throw 500;
-			// client->setResponseCode(500);;
-			// throw runtime_error("TIMER: Processing");
 
-		case SENDING:
-			throw 0;
-			// throw runtime_error("TIMER: Sending");
-			// break;
+		case SENDING:	throw 0;
 
 		default:
 			break;
@@ -197,6 +197,8 @@ void	SpiderMen::handleClient(struct kevent* event, Client* client)
 
 void	SpiderMen::handleError(Client* client)
 {
+	if (client->getRequests().empty())
+		throw 0;
 	Server server = client->getRequests().front()->getServer();
 
 	for (size_t i = 0, end = client->getRequests().size(); i < end; ++i)
@@ -215,5 +217,5 @@ void	SpiderMen::handleError(Client* client)
 	// client->setRequestStatus(SENDING);
 	mKq.setNextEvent(client->getRequestStatus(), client->getFd(), client);
 	
-	
+
 }

@@ -70,8 +70,6 @@ class Client : public Socket
 
 //to amend
 		// int					checkRequest(const string& headline);
-		
-		// void				resetTimer(int mKq, struct kevent event);
 
 		//getter && setter
 		int					getReadStatus() const;
@@ -89,8 +87,8 @@ class Client : public Socket
 		void				setResponseCode(int code);
 		void				setCGI(pid_t mPid);
 		void				setRequestStatus(int mRequestStatus);
-		void				setReadLast();
-		void				setWriteLast();
+		// void				setReadLast();
+		// void				setWriteLast();
 
 	private:
 		// void			parseHeader(void);
@@ -102,8 +100,8 @@ class Client : public Socket
 		string				mResponseMSG;
 		pid_t				mPid;
 		Head				mHeader;
-		time_t				mReadLast;
-		time_t				mWriteLast;
+		// time_t				mReadLast;
+		// time_t				mWriteLast;
 };
 
 #endif //CLIENT_HPP

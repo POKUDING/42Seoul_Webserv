@@ -59,8 +59,11 @@ int	Body::addChunkBody(string& inputbuff)
 		// cout << "chunked finished++++" << endl;
 		// cout << mBody << endl;
 		// cout << "++++++++++++++++++++" << endl;
-		inputbuff.append(mChunkBuf.c_str(), mChunkBuf.size());
-		return 1;
+		if (mChunkBuf.size() >= 2)
+		{
+			inputbuff.append(mChunkBuf.c_str() + 2, mChunkBuf.size() - 2);
+			return 1;
+		}
 	}
 	return 0;
 

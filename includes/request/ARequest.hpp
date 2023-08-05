@@ -60,7 +60,7 @@ class ARequest
 		size_t				getSendLen() const;
 		int					getCode() const;
 		int					getType() const;
-		Server				getServer() const;
+		Server				getServer();
 		const string&		getRoot() const;
 		const t_basic&		getBasics() const;
 		Body&				getBody();

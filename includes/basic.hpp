@@ -28,7 +28,7 @@
 #define CLOSE "close"
 #define KEEP_ALIVE "keep-alive"
 
-#define TIMEOUT_SEC 3000
+#define TIMEOUT_SEC 10
 
 #define CHUNKED -1
 #define FAIL_FD 0

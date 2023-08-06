@@ -70,6 +70,11 @@ void			RBad::createErrorResponse(int code)
 	mMSG.append(timeStamp);		//Date: Tue, 20 Jul 2023 12:34:56 GMT\r\n
 	mMSG.append(SPIDER_SERVER);	//Server: SpiderMen/1.0.0\r\n	
 	mMSG.append(CONTENT_HTML);	//Content-Type: text/html; charset=UTF-8\r\n
+	if (code == 413)
+	{
+		mMSG.append("\r\n\r\n");//end of head
+		return ;
+	}
 	
 	mMSG.append("Content-Length: ");
 	to_str << body.size();

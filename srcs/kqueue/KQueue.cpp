@@ -27,24 +27,22 @@ void	KQueue::setNextEvent(int RequestStatus, int fd, void* udata)
 	struct kevent event;
 
 	// cout << "\n============== after Client handler, request status: " << RequestStatus  << "\n" << endl; 
-	if (RequestStatus == SENDING) {
-		EV_SET(&event, fd, EVFILT_WRITE, EV_ADD, 0, 0, udata);
+	if (RequestStatus == SENDING || RequestStatus == ERROR) {
+		EV_SET(&event, fd, EVFILT_WRITE, EV_ENABLE, 0, 0, udata);
 		// mChangeList.push_back(event);
 		if (kevent(mKq, &event, 1, NULL, 0, NULL) == -1)
 			throw runtime_error("evadd1 failed");
-		EV_SET(&event, fd, EVFILT_READ, EV_DELETE, 0, 0, udata);
+		EV_SET(&event, fd, EVFILT_READ, EV_DISABLE, 0, 0, udata);
 		// mChangeList.push_back(event);
-		// if (kevent(mKq, &event, 1, NULL, 0, NULL) == -1)
-		// 	throw runtime_error("evadd2 failed");
-		kevent(mKq, &event, 1, NULL, 0, NULL);
+		if (kevent(mKq, &event, 1, NULL, 0, NULL) == -1)
+			throw runtime_error("evadd2 failed");
 	}
 	else {
-		EV_SET(&event, fd, EVFILT_WRITE, EV_DELETE, 0, 0, udata);
+		EV_SET(&event, fd, EVFILT_WRITE, EV_DISABLE, 0, 0, udata);
 		// mChangeList.push_back(event);
-		// if (kevent(mKq, &event, 1, NULL, 0, NULL) == -1)
-		// 	throw runtime_error("evadd3 failed");
-		kevent(mKq, &event, 1, NULL, 0, NULL);
-		EV_SET(&event, fd, EVFILT_READ, EV_ADD, 0, 0, udata);
+		if (kevent(mKq, &event, 1, NULL, 0, NULL) == -1)
+			throw runtime_error("evadd3 failed");
+		EV_SET(&event, fd, EVFILT_READ, EV_ENABLE, 0, 0, udata);
 		// mChangeList.push_back(event);
 		if (kevent(mKq, &event, 1, NULL, 0, NULL) == -1)
 			throw runtime_error("evadd4 failed");
@@ -64,6 +62,8 @@ void	KQueue::addClientSocketFd(int fd, void* udata)
 	struct kevent event;
 
 	EV_SET(&event, fd, EVFILT_READ, EV_ADD, 0, 0, udata);
+	mChangeList.push_back(event);
+	EV_SET(&event, fd, EVFILT_WRITE, EV_ADD | EV_DISABLE, 0, 0, udata);
 	mChangeList.push_back(event);
 	EV_SET(&event, fd, EVFILT_TIMER, EV_ADD, NOTE_SECONDS, TIMEOUT_SEC, udata);
 	mChangeList.push_back(event);
@@ -92,12 +92,20 @@ void	KQueue::addPipeFd(int writeFd, int readFd, void* udata)
 	}
 }
 
+void	KQueue::deleteProcessPid(int pid)
+{
+	struct kevent event;
+	EV_SET(&event, pid, EVFILT_PROC, EV_DELETE, 0, 0, NULL);
+	// if (kevent(mKq, &event, 1, NULL, 0, NULL) == -1)
+	// 	throw runtime_error("deleteProcessPid failed");
+	kevent(mKq, &event, 1, NULL, 0, NULL);
+}
 
 void	KQueue::deleteTimer(int fd)
 {
 	struct kevent event;
 
-	EV_SET(&event, fd, EVFILT_TIMER, EV_DISABLE, 0, 0, 0);
+	EV_SET(&event, fd, EVFILT_TIMER, EV_DISABLE, 0, 0, NULL);
 	// if (kevent(mKq, &event, 1, NULL, 0, NULL) == -1)
 	// 	throw runtime_error("deleteTimer failed");
 	kevent(mKq, &event, 1, NULL, 0, NULL);

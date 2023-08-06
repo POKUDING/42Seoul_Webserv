@@ -5,7 +5,7 @@
 #define MAX_PORT_SIZE 65535		//max(short)
 #define DEFAULT_CONF_FILE "./conf/default.conf"
 #define DEFAULT_ERROR_PAGE "./www/errors/error_default.html"
-#define BACKLOG 15
+#define BACKLOG 1000
 #define MAX_EVENT 2048
 #define PACKET_SIZE 1460
 
@@ -42,8 +42,9 @@ enum eMethod {
 	GET = 0,
 	POST = 1,
 	DELETE = 2,
-	BAD = 3,
-	HEAD = 4
+	PUT = 3,
+	BAD = 4,
+	HEAD = 5
 };
 
 enum eReadStatus {

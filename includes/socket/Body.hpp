@@ -4,7 +4,10 @@
 
 #include <string>
 #include <iostream>
+#include <unistd.h>
 #include "../socket/Body.hpp"
+#include "../util/InputBuffer.hpp"
+
 
 using namespace std;
 
@@ -14,10 +17,11 @@ class Body
 		Body();
 		virtual ~Body();
 
-		int			addBody(string& inputbuffer);
-		int			addChunkBody(string& inputbuffer);
-		int			addLenBody(string& inputbuffer);
-		size_t		parseChunkLen(string& ChunkBuf);
+		int			addBody(InputBuffer& inputbuffer);
+		int			addChunkBody(InputBuffer& inputbuffer);
+		int			addLenBody(InputBuffer& inputbuffer);
+		size_t		parseChunkLen(InputBuffer& inputbuffer);
+		int			writeBody(int fd);
 		
 		void		setMaxBodySize(size_t mMaxbody);
 		void		setChunked(bool chunk);
@@ -32,6 +36,7 @@ class Body
 	private:
 		bool	mReadEnd;
 		bool	mChunked;
+		size_t	mSendLen;
 		size_t	mMaxBodySize;
 		size_t	mContentLen;
 		size_t	mChunkLen;

@@ -2,14 +2,14 @@
 
 // constructor and destructor
 
-Body::Body() :  mReadEnd(false), mChunked(false), mContentLen(0), mChunkLen(0) {}
+Body::Body() :  mReadEnd(false), mChunked(false), mSendLen(0), mContentLen(0), mChunkLen(0) {}
 Body::~Body() {}
 
 // memeber functions
 
 // public
 
-int	Body::addBody(string& inputbuffer)
+int	Body::addBody(InputBuffer& inputbuffer)
 {
 
 	if (mChunked)
@@ -25,82 +25,106 @@ int	Body::addBody(string& inputbuffer)
 	}
 }
 
-int	Body::addChunkBody(string& inputbuff)
+int	Body::addChunkBody(InputBuffer& inputbuffer)
 {
 	string	input_tmp;
 
 	//body + header의 경우 error 던져짐
-	mChunkBuf.append(inputbuff.c_str(), inputbuff.size());
-	inputbuff.clear();
+	// mChunkBuf.append(inputbuff.c_str() + minputBuffIdx, inputbuff.size() - minputBuffIdx);
+	// inputbuff.clear();
 	if (mChunkLen == 0)
-		mChunkLen = parseChunkLen(mChunkBuf);
-	while (!mReadEnd && mChunkLen && mChunkBuf.size())
+		mChunkLen = parseChunkLen(inputbuffer);
+		// mChunkLen = parseChunkLen(inputbuff.c_str() + minputBuffIdx);
+	cout << "mChunkLen: "<<mChunkLen <<", input size : " <<inputbuffer.size() - inputbuffer.getIndex() << endl;
+	while (!mReadEnd && mChunkLen && inputbuffer.size() - inputbuffer.getIndex())
 	{
-		// cout << "BEFORE chunke len : " << mChunkLen << " mChunkBuf size : " <<mChunkBuf.size() << endl;
-		if (mChunkBuf.size() < mChunkLen) {
-			mBody.append(mChunkBuf.c_str(), mChunkBuf.size());
-			mChunkLen -= (mChunkBuf.size());
-			mChunkBuf.clear();
-			// cout << "AFTER \n$" << mBody << "$" <<endl;
-			// cout << "AFTER chunke len : " << mChunkLen << " mChunkBuf size : " <<mChunkBuf.size() << endl;
-		} else {
-			mBody.append(mChunkBuf.c_str(), mChunkLen);
-			mChunkBuf = mChunkBuf.substr(mChunkLen);
-			// cout << "body size :" << mBody.size() << "\n$" << mBody  << "$" << endl;
-			// cout << "\\r\\n result : " << mBody.find("\r\n") << endl;
-			// cout << "in buffer : \n$" << mChunkBuf <<  "$"<<endl;
-			if (mBody.find("\r\n") != mBody.size() - 2)
+		if (inputbuffer.size() - inputbuffer.getIndex() >= mChunkLen + 2) {
+			mBody.append(inputbuffer.getCharPointer(), mChunkLen);
+			// mChunkBuf = mChunkBuf.substr(mChunkLen);
+			if (inputbuffer.getCharPointer()[mChunkLen] != '\r' || inputbuffer.getCharPointer()[mChunkLen + 1] != '\n')
 				throw runtime_error("Error: invalid chunk format");
-			mBody = mBody.substr(0, mBody.size() - 2);
-			mChunkLen = parseChunkLen(mChunkBuf);
-		}
+			inputbuffer.updateIndex(inputbuffer.getIndex() + mChunkLen + 2);
+			mChunkLen = parseChunkLen(inputbuffer);
+		} else
+			break;
 	}
 	if (mReadEnd == true) {
 		// cout << "chunked finished++++" << endl;
-		// cout << mBody << endl;
 		// cout << "++++++++++++++++++++" << endl;
-		if (mChunkBuf.size() >= 2)
+		cerr << "mReadEnd == true" << endl;
+		cout << inputbuffer.getCharPointer() << endl;
+		if (inputbuffer.size() - inputbuffer.getIndex() - mChunkLen >= 2)
 		{
-			inputbuff.append(mChunkBuf.c_str() + 2, mChunkBuf.size() - 2);
+			cerr << "if 문 안" << endl;
+			inputbuffer.reset(inputbuffer.getIndex() + 2);
 			return 1;
 		}
+		// if (inputbuffer.size() - inputbuffer.getIndex() - mChunkLen == 2)
+		// {
+		// 	inputbuffer.reset();
+		// 	return 1;
+		// }
 	}
 	return 0;
 
 }
 
-size_t	Body::parseChunkLen(string& ChunkBuf)
+size_t	Body::parseChunkLen(InputBuffer& inputbuff)
 {
 	char 	*end_ptr;
 	size_t	len;
 
-	len = strtol(ChunkBuf.c_str(), &end_ptr, 16);
+	// cout << "in Parse chunklen input buff : \n$" <<inputbuff.getCharPointer() << "$" << endl;
+	len = strtol(inputbuff.getCharPointer(), &end_ptr, 16);
+	// cerr << "len: " << len << endl;
 	if (end_ptr[0] != '\r' || end_ptr[1] != '\n')
 		return 0;
-	if (len == 0)
+	if (len == 0) 
+	{
+		if (end_ptr[2] != '\r' || end_ptr[3] != '\n')
+			return 0;
 		mReadEnd = true;
-	ChunkBuf = ChunkBuf.substr(ChunkBuf.find("\r\n") + 2);
-	return len + 2;
+	}
+	inputbuff.updateIndex(inputbuff.getIndex() + (end_ptr - inputbuff.getCharPointer() + 2));
+	return len;
 }
 
-int	Body::addLenBody(string& inputbuffer)
+int	Body::addLenBody(InputBuffer& inputbuffer)
 {
 	//body + header의 경우 error 던져짐
-	mBody.append(inputbuffer.c_str(), inputbuffer.size());
-	inputbuffer.clear();
-	if (mBody.size() + inputbuffer.size() > mContentLen + 4)
+	if (inputbuffer.size() < mContentLen + 4)
+		return 0;
+	mBody.append(inputbuffer.getCharPointer(), mContentLen);
+	if (inputbuffer.compare(inputbuffer.getIndex() + mContentLen, 4, "/r/n/r/n"))
+		throw runtime_error("Error: invlaid len body format");
+	inputbuffer.reset(inputbuffer.getIndex() + mContentLen + 4);
+	mReadEnd = true;
+	return 1;
+}
+
+int	Body::writeBody(int fd)
+{
+	size_t	sendLen = 0;
+	size_t	sendingLen = mBody.size() - mSendLen;
+	
+	cout << "write body called sendinglen : " << sendingLen << endl;
+	if (sendingLen)
+		sendLen = write(fd, mBody.c_str() + mSendLen, sendingLen);
+	cout << " here" << endl;
+	if (sendingLen && sendLen <= 0)
 	{
-		inputbuffer = mBody.substr(mContentLen + 4);
-		mBody = mBody.substr(0, mContentLen + 4);
+		close (fd);
+		cerr << "input to pipe error" << endl;
+		throw 500;
 	}
-	if (mBody.size() == mContentLen + 4)
+	cout << "SendLen success : " <<sendLen <<endl;
+	mSendLen += sendLen;
+	if (mBody.size() == mSendLen && mReadEnd)
 	{
-		mReadEnd = true;
-		if (mBody.find("\r\n\r\n", mContentLen) == string::npos)
-			throw runtime_error("Error: invlaid len body format");
-		return 1;
+		cout << "close pipe" << endl;
+		close (fd);
 	}
-	return 0;
+	return sendLen;
 }
 
 // getters and setters

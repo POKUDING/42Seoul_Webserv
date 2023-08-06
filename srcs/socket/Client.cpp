@@ -8,7 +8,18 @@ Client::Client(bool mType, int mFd, int mPort, vector<Server>* mServer, KQueue& 
 Client::~Client()
 {
 	// cout << "\n\n 소멸자자자 " << mRequests.size() << endl;
-	for (size_t i = 0, end = mRequests.size(); i < end; ++i)
+	size_t end = mRequests.size();
+	if (end && mRequests.front()->getReadPipe())
+	{
+		cout << "close read pipe : " << mRequests.front()->getReadPipe() <<endl;
+		close(mRequests.front()->getReadPipe());
+	}
+	if (end && mRequests.front()->getWritePipe())
+	{
+		cout << "close write pipe : " << mRequests.front()->getWritePipe() <<endl;
+		close(mRequests.front()->getWritePipe());
+	}
+	for (size_t i = 0; i < end; ++i)
 	{
 		delete mRequests.front();
 		mRequests.pop();
@@ -22,17 +33,17 @@ Client::~Client()
 // handler
 void			Client::handleClientRead(struct kevent* event)
 {
-	if (mRequests.size() != 0 && static_cast<int>(event->ident) == mRequests.front()->getReadPipe())
+	if (mRequests.size() && static_cast<int>(event->ident) == mRequests.front()->getReadPipe())
 		readPipe(event); //read pipe value;
-	else
+	else if (getFd() == static_cast<int>(event->ident))
 		readSocket(event);
 }
 
 void			Client::handleClientWrite(struct kevent* event)
 {
-	if (mRequests.size() != 0 && static_cast<int>(event->ident) == mRequests.front()->getWritePipe())
+	if (mRequests.size() && mRequests.front()->getType() != BAD && static_cast<int>(event->ident) == mRequests.front()->getWritePipe())
 		writePipe(event);//write pipe;
-	else
+	else if (getFd() == static_cast<int>(event->ident))
 		writeSocket(event);
 }
 
@@ -41,6 +52,7 @@ void			Client::handleProcess(struct kevent* event)
 	int	exit_status = 0;
 
 	waitpid(event->ident, &exit_status, 0);
+	mPid = 0;
 	// cout << "handle process: " << exit_status <<endl;
 
 	// cout << mRequests.front()->getPipeValue() << "$" << endl;
@@ -63,7 +75,6 @@ void			Client::handleProcess(struct kevent* event)
 
 void	Client::readSocket(struct kevent* event)
 {
-	(void)event;
 	size_t	buffer_size = 1000000;
 	char	buffer[buffer_size];
 
@@ -101,13 +112,14 @@ int			Client::addBuffer()
 		if (mRequests.back()->getBody().getMaxBodySize() < mRequests.back()->getBody().getSize())
 		{
 			// cerr << "in Len body over than maxbody size Error" << endl;
+			mReadStatus = ERROR;
 			throw 413;
 		}
 		if (mRequests.back()->getType() == BAD)
 			mReadStatus = ERROR;
 		else
 			mReadStatus = WAITING;
-		if (mRequests.size() == 1) {
+		if (mRequests.size() == 1 && mRequests.front()->getType() == PUT) {
 			// cout << "--> call operate request 2" << endl;
 			operateRequest(mRequests.front());
 		}
@@ -155,11 +167,11 @@ void			Client::addRequests(ARequest* request)
 	// cout <<"--------in Add Request: chunked: " << request->getBody().getChunked() << endl;
 	mRequests.push(request);
 	cout << "requests size: "<<mRequests.size() << endl;
-	if (request->getType() == POST)
+	if (request->getType() == POST || request->getType() == PUT)
 		mReadStatus = READING_BODY;
 	else
 		mReadStatus = WAITING;
-	if (mReadStatus == WAITING && mRequests.size() == 1) {
+	if (mRequests.size() == 1 && request->getType() != PUT) {
 		// cout << "--> call operate request 1" << endl;
 		operateRequest(mRequests.front());
 	}
@@ -188,8 +200,10 @@ ARequest*	Client::createRequest(Head& head)
 		}
 		if (element_headline[0] == "GET")
 			return new RGet(element_headline[1], header_key_val, mServer);
-		else if (element_headline[0] == "POST" || element_headline[0] == "PUT")
+		else if (element_headline[0] == "POST")
 			return new RPost(element_headline[1], header_key_val, mServer);
+		else if (element_headline[0] == "PUT")
+			return new RPut(element_headline[1], header_key_val, mServer);
 		else if (element_headline[0] == "DELETE")
 			return new RDelete(element_headline[1], header_key_val, mServer);
 		else {
@@ -236,6 +250,7 @@ void			Client::operateRequest(ARequest* request)
 	pid_t	pid = request->operate();
 	
 	if (pid) {
+		mPid = pid;
 		mKq.addProcessPid(pid, reinterpret_cast<void*>(this));
 		mKq.addPipeFd(mRequests.front()->getWritePipe(), mRequests.front()->getReadPipe(), reinterpret_cast<void*>(this));
 		//event push;
@@ -267,7 +282,7 @@ void			Client::writeSocket(struct kevent* event)
 	if (mRequests.size() && sendResponseMSG(event))
 	{
 		if (mRequests.front()->getType() == BAD) {
-			// cerr << "front type is BAD" << endl;
+			cerr << "front type is BAD" << endl;
 			throw 0;
 		}
 		delete mRequests.front();
@@ -286,9 +301,9 @@ int			Client::sendResponseMSG(struct kevent* event)
 	// cout << "Request: " << getRequests().front()->getType() << ", dir: " << getRequests().front()->getRoot() << endl;
 	if (getRequests().front()->getSendLen() == 0) {
 		if (getResponseMSG().size() > 1000)
-			cout << getFd() <<" Response+++++++++\n" << getResponseMSG().substr(0, 500) << "++++++++++++++"<< endl;
+			cout << getFd() << " " << event->ident << " Response+++++++++\n" << getResponseMSG().substr(0, 500) << "++++++++++++++"<< endl;
 		else
-			cout << getFd() <<" Response+++++++++\n" << getResponseMSG() << "++++++++++++++" << endl;
+			cout << getFd() << " " << event->ident << " Response+++++++++\n" << getResponseMSG() << "++++++++++++++" << endl;
 	}
 
 	
@@ -318,23 +333,7 @@ int			Client::sendResponseMSG(struct kevent* event)
 
 void		Client::writePipe(struct kevent* event)
 {
-	size_t	sendingLen = event->data;
-	size_t	sendLen = 0;
-
-			// cout << "\n====Write Pipe call\n" << endl;
-	if (sendingLen >= mRequests.front()->getBody().getBody().size())
-		sendingLen = mRequests.front()->getBody().getBody().size();
-	if (sendingLen)
-		sendLen = write(event->ident,  mRequests.front()->getBody().getBody().c_str(), sendingLen);
-	if (sendingLen && sendLen <= 0)
-	{
-		close (event->ident);
-		// cerr << "input to pipe error" << endl;
-		throw 500;
-	}
-	mRequests.front()->getBody().getBody() = mRequests.front()->getBody().getBody().substr(sendLen);
-	if (mRequests.front()->getBody().getBody().size() == 0)
-		close (event->ident);
+	mRequests.front()->getBody().writeBody(event->ident);
 }
 
 void			Client::clearClient()
@@ -354,14 +353,10 @@ string&				Client::getResponseMSG() { return mResponseMSG; }
 string&				Client::getHeadBuffer() { return mInputBuffer; }
 string&				Client::getInputBuffer() { return mInputBuffer; }
 int					Client::getResponseCode() const { return mResponseCode; }
-pid_t				Client::getCGI() const { return mPid; }
+pid_t				Client::getPid() const { return mPid; }
 int					Client::getRequestStatus() const { return mRequestStatus; }
-// std::time_t			Client::getReadLast() const { return mReadLast; }
-// std::time_t			Client::getWriteLast() const { return mWriteLast; }
 
 void				Client::setReadStatus(int mStatus) { this->mReadStatus = mStatus; }
 void				Client::setResponseCode(int code) { mResponseCode = code; }
-void				Client::setCGI(pid_t mPid) { this->mPid = mPid; }
+// void				Client::setCGI(pid_t mPid) { this->mPid = mPid; }
 void				Client::setRequestStatus(int mRequestStatus) {this->mRequestStatus = mRequestStatus; }
-// void				Client::setReadLast() { mReadLast = Time::stamp(); }
-// void				Client::setWriteLast() { mWriteLast = Time::stamp(); }

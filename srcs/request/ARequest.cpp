@@ -18,6 +18,7 @@ ARequest::ARequest(string root, int mType, map<string, string> header_key_val, v
 		case GET: mMethod = "GET"; break;
 		case POST: mMethod = "POST"; break;
 		case DELETE: mMethod = "DELETE"; break;
+		case PUT: mMethod = "PUT"; break;
 		case BAD: mMethod = "BAD"; break;
 		case HEAD: mMethod = "HEAD"; break;
 		default: break;
@@ -50,7 +51,7 @@ ARequest::ARequest(string root, int mType, map<string, string> header_key_val, v
 		mRoot = mServer.getRoot() + "/" + mRoot;
 
 	//존재 확인
-	if (mType != POST && !mLocation.getRedirect().size() && access(mRoot.c_str(), F_OK) < 0)
+	if (mType != POST && mType != PUT && !mLocation.getRedirect().size() && access(mRoot.c_str(), F_OK) < 0)
 	{
 		// cout << "404 not found? : "<< mRoot.c_str() << endl;
 		throw 404;
@@ -72,14 +73,14 @@ ARequest::ARequest(string root, int mType, map<string, string> header_key_val, v
 		mBody.setMaxBodySize(mLocation.getLocationMaxBodySize());
 }
 
-ARequest::ARequest(int mType, map<string, string> header_key_val, vector<Server>* servers) : mRoot(""), mType(mType), mSendLen(0)
+ARequest::ARequest(int mType, map<string, string> header_key_val, vector<Server>* servers) : mRoot(""), mType(mType), mReadPipe(0), mWritePipe(0), mSendLen(0)
 {
 	mBasics.host = header_key_val["Host"];
 	mServer = findServer(servers);
 }
 
 
-ARequest::ARequest(int mType, Server mServer) : mRoot(""), mType(mType), mServer(mServer), mSendLen(0) { }
+ARequest::ARequest(int mType, Server mServer) : mRoot(""), mType(mType), mServer(mServer), mReadPipe(0), mWritePipe(0), mSendLen(0) { }
 ARequest::~ARequest() { }
 
 // member functions
@@ -148,7 +149,7 @@ void	ARequest::findLocation(Server& server)
 	findRootLocation(server, mRoot);
 	
 	//Find extension location으로 cgi path 업데이트 해주기 (있는 경우에만)
-	findExtensionLocation(server);
+	// findExtensionLocation(server); put은 제외
 }
 
 void	ARequest::findRootLocation(Server& server, string root)

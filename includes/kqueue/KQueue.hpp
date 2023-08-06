@@ -25,6 +25,7 @@ class KQueue
 		void			addClientSocketFd(int fd, void* udata);
 		void			addProcessPid(pid_t pid, void* udata);
 		void			addPipeFd(int writeFd, int readFd, void* udata);
+		void			deleteProcessPid(int pid);
 		void			deleteTimer(int fd);
 		void			resetTimer(int fd, void* udata);
 

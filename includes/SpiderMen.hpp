@@ -8,6 +8,7 @@
 #include <netinet/in.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <signal.h>
 #include "./config/Config.hpp"
 #include "./kqueue/KQueue.hpp"
 #include "./socket/Client.hpp"

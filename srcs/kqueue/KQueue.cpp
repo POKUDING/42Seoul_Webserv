@@ -28,16 +28,26 @@ void	KQueue::setNextEvent(int RequestStatus, int fd, void* udata)
 
 	// cout << "\n============== after Client handler, request status: " << RequestStatus  << "\n" << endl; 
 	if (RequestStatus == SENDING) {
-		EV_SET(&event, fd, EVFILT_WRITE, EV_ADD | EV_CLEAR, 0, 0, udata);
-		mChangeList.push_back(event);
-		EV_SET(&event, fd, EVFILT_READ, EV_DELETE | EV_CLEAR, 0, 0, udata);
-		mChangeList.push_back(event);
+		EV_SET(&event, fd, EVFILT_WRITE, EV_ADD, 0, 0, udata);
+		// mChangeList.push_back(event);
+		if (kevent(mKq, &event, 1, NULL, 0, NULL) == -1)
+			throw runtime_error("evadd1 failed");
+		EV_SET(&event, fd, EVFILT_READ, EV_DELETE, 0, 0, udata);
+		// mChangeList.push_back(event);
+		// if (kevent(mKq, &event, 1, NULL, 0, NULL) == -1)
+		// 	throw runtime_error("evadd2 failed");
+		kevent(mKq, &event, 1, NULL, 0, NULL);
 	}
 	else {
-		EV_SET(&event, fd, EVFILT_WRITE, EV_DELETE | EV_CLEAR, 0, 0, udata);
-		mChangeList.push_back(event);
-		EV_SET(&event, fd, EVFILT_READ, EV_ADD | EV_CLEAR, 0, 0, udata);
-		mChangeList.push_back(event);
+		EV_SET(&event, fd, EVFILT_WRITE, EV_DELETE, 0, 0, udata);
+		// mChangeList.push_back(event);
+		// if (kevent(mKq, &event, 1, NULL, 0, NULL) == -1)
+		// 	throw runtime_error("evadd3 failed");
+		kevent(mKq, &event, 1, NULL, 0, NULL);
+		EV_SET(&event, fd, EVFILT_READ, EV_ADD, 0, 0, udata);
+		// mChangeList.push_back(event);
+		if (kevent(mKq, &event, 1, NULL, 0, NULL) == -1)
+			throw runtime_error("evadd4 failed");
 	}
 }
 
@@ -87,10 +97,22 @@ void	KQueue::deleteTimer(int fd)
 {
 	struct kevent event;
 
-	EV_SET(&event, fd, EVFILT_TIMER, EV_DELETE | EV_DISABLE, 0, 0, 0);
-	if (kevent(mKq, &event, 1, NULL, 0, NULL) == -1)
-		throw runtime_error("deleteTimer failed");
-	// kevent(mKq, &event, 1, NULL, 0, NULL);
+	EV_SET(&event, fd, EVFILT_TIMER, EV_DISABLE, 0, 0, 0);
+	// if (kevent(mKq, &event, 1, NULL, 0, NULL) == -1)
+	// 	throw runtime_error("deleteTimer failed");
+	kevent(mKq, &event, 1, NULL, 0, NULL);
+}
+
+void	KQueue::resetTimer(int fd, void* udata)
+{
+	struct kevent event;
+
+	EV_SET(&event, fd, EVFILT_TIMER, EV_ADD, NOTE_SECONDS, TIMEOUT_SEC, udata);
+	// mChangeList.push_back(event);
+
+	// if (kevent(mKq, &event, 1, NULL, 0, NULL) == -1)
+	// 	throw runtime_error("deleteTimer failed");
+	kevent(mKq, &event, 1, NULL, 0, NULL);
 }
 
 // getters

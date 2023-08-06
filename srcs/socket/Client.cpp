@@ -3,10 +3,7 @@
 // constructor and destructor
 
 Client::Client(bool mType, int mFd, int mPort, vector<Server>* mServer, KQueue& mKq)
-			: Socket(mType, mFd, mPort, mServer, mKq), mReadStatus(WAITING), mRequestStatus(EMPTY),mResponseCode(0), mPid(0), mWriteLast(0)
-{
-	setReadLast();	//read 시간 초기화
-}
+			: Socket(mType, mFd, mPort, mServer, mKq), mReadStatus(WAITING), mRequestStatus(EMPTY),mResponseCode(0), mPid(0) { }
 
 Client::~Client()
 {
@@ -66,32 +63,32 @@ void			Client::handleProcess(struct kevent* event)
 
 void	Client::readSocket(struct kevent* event)
 {
-	size_t	buffer_size = event->data;
+	(void)event;
+	size_t	buffer_size = 1000000;
 	char	buffer[buffer_size];
-	
+
+	// cout << "\n====ReadSock call\n" << endl;
+
+	// cout << "before input Buff : \n$" << mInputBuffer << "$" << endl; 
 	memset(buffer, 0, buffer_size);
+	// cout << "recv call==" << endl;
 	ssize_t s = recv(getFd(), buffer, buffer_size, 0);
-	
 	if (s < 1) {
-		if (s == 0) {
-			// cerr << "socket closed" << endl;
+		if (s == 0 && event->data == 0) { // s == 0 에서 테스터기가 우리가 닫았다고 오류가떠서 && event->Data 추가
+			cout << "socket closed" << endl;
 			throw 0;
-		} else {
-			// cerr << "read socket error" << endl;
+		} else 
 			throw 500;
-		}
 	}
-
+	cout << "read len : " << s << endl;
 	mInputBuffer.append(buffer, s);
-
 	// cout << "recv buffer: " << mInputBuffer << endl;
-	
+	// cout << "after input Buff : \n$" << mInputBuffer << "$" << endl; 
 	while (addBuffer())
 	{
 		if (mHeader.getHeadBuffer().size())
 			addRequests(createRequest(mHeader));
 	}
-	
 }
 
 int			Client::addBuffer()
@@ -99,7 +96,6 @@ int			Client::addBuffer()
 	if (mReadStatus <= READING_HEADER)	{
 		mReadStatus = READING_HEADER;
 		return mHeader.addHead(mInputBuffer);
-		
 	} else if (mReadStatus == READING_BODY && mRequests.back()->getBody().addBody(mInputBuffer)) {
 		// cout << "requests Type: " << mRequests.back()->getType() << endl;		
 		if (mRequests.back()->getBody().getMaxBodySize() < mRequests.back()->getBody().getSize())
@@ -122,19 +118,16 @@ int			Client::addBuffer()
 
 void	Client::readPipe(struct kevent* event)
 {
-	char	buff[event->data];
+	char	buff[1000000];
 	string	readvalue;
-	int		readlen = 1;
+	int		readlen;
 
-	// cout << "start" << endl;
-	readlen = read(event->ident, buff, event->data);
+	// cout << "\n====ReadPipe call\n" << endl;
+	// cout << "read call==" << endl;
+	readlen = read(event->ident, buff, 1000000);
 	if (readlen < 0) {
-		close (event->ident);//close(mRequests.front()->getReadPipe());
-		close (mRequests.front()->getWritePipe());
-		// cerr << "readPipe error" << endl;
 		throw 500;
 	}
-	mRequests.front()->getPipeValue().append(buff, readlen);
 
 	// cout << "fin, buff: " << buff << endl;
 	
@@ -152,6 +145,7 @@ void	Client::readPipe(struct kevent* event)
 		// cout << "find \\r\\n" << mRequests.front()->getPipeValue().find("\r\r\n", 17) << ": " << mRequests.front()->getPipeValue().substr(mRequests.front()->getPipeValue().find("\r\r\n", 17)) << endl;
 		mRequestStatus = SENDING;
 	}
+	mRequests.front()->getPipeValue().append(buff, readlen);
 }
 
 //requests func
@@ -160,6 +154,7 @@ void			Client::addRequests(ARequest* request)
 {
 	// cout <<"--------in Add Request: chunked: " << request->getBody().getChunked() << endl;
 	mRequests.push(request);
+	cout << "requests size: "<<mRequests.size() << endl;
 	if (request->getType() == POST)
 		mReadStatus = READING_BODY;
 	else
@@ -237,6 +232,7 @@ map<string,string>	Client::createHttpKeyVal(const vector<string>& header_line)
 void			Client::operateRequest(ARequest* request)
 {
 	// cout << request->getBody().getBody() << endl;
+	cout << getFd() <<" IS OPERATE REQUESTS!" << endl;
 	pid_t	pid = request->operate();
 	
 	if (pid) {
@@ -247,7 +243,7 @@ void			Client::operateRequest(ARequest* request)
 		// cout << "now to PROCESSING" << endl;
 	} else {
 		mRequestStatus = SENDING;
-		// cout << "now to SENDING\n";		
+		cout << getFd() <<" NOW SENDING!" << endl;
 	}
 }
 
@@ -255,6 +251,7 @@ void			Client::operateRequest(ARequest* request)
 
 void			Client::writeSocket(struct kevent* event)
 {
+		cout << "\n====Write socket call\n" << endl;
 	if (mResponseMSG.size() == 0 && mRequests.size())
 	{
 		if (mRequests.front()->getCode() < 400)
@@ -289,9 +286,9 @@ int			Client::sendResponseMSG(struct kevent* event)
 	// cout << "Request: " << getRequests().front()->getType() << ", dir: " << getRequests().front()->getRoot() << endl;
 	if (getRequests().front()->getSendLen() == 0) {
 		if (getResponseMSG().size() > 1000)
-			cout << "Response+++++++++\n" << getResponseMSG().substr(0, 500) << "++++++++++++++"<< endl;
+			cout << getFd() <<" Response+++++++++\n" << getResponseMSG().substr(0, 500) << "++++++++++++++"<< endl;
 		else
-			cout << "Response+++++++++\n" << getResponseMSG() << "++++++++++++++" << endl;
+			cout << getFd() <<" Response+++++++++\n" << getResponseMSG() << "++++++++++++++" << endl;
 	}
 
 	
@@ -324,6 +321,7 @@ void		Client::writePipe(struct kevent* event)
 	size_t	sendingLen = event->data;
 	size_t	sendLen = 0;
 
+			// cout << "\n====Write Pipe call\n" << endl;
 	if (sendingLen >= mRequests.front()->getBody().getBody().size())
 		sendingLen = mRequests.front()->getBody().getBody().size();
 	if (sendingLen)
@@ -358,12 +356,12 @@ string&				Client::getInputBuffer() { return mInputBuffer; }
 int					Client::getResponseCode() const { return mResponseCode; }
 pid_t				Client::getCGI() const { return mPid; }
 int					Client::getRequestStatus() const { return mRequestStatus; }
-std::time_t			Client::getReadLast() const { return mReadLast; }
-std::time_t			Client::getWriteLast() const { return mWriteLast; }
+// std::time_t			Client::getReadLast() const { return mReadLast; }
+// std::time_t			Client::getWriteLast() const { return mWriteLast; }
 
 void				Client::setReadStatus(int mStatus) { this->mReadStatus = mStatus; }
 void				Client::setResponseCode(int code) { mResponseCode = code; }
 void				Client::setCGI(pid_t mPid) { this->mPid = mPid; }
 void				Client::setRequestStatus(int mRequestStatus) {this->mRequestStatus = mRequestStatus; }
-void				Client::setReadLast() { mReadLast = Time::stamp(); }
-void				Client::setWriteLast() { mWriteLast = Time::stamp(); }
+// void				Client::setReadLast() { mReadLast = Time::stamp(); }
+// void				Client::setWriteLast() { mWriteLast = Time::stamp(); }

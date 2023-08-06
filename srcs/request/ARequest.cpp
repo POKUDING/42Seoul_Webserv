@@ -121,7 +121,7 @@ string&				ARequest::getPipeValue() { return mPipeValue; }
 size_t				ARequest::getSendLen() const { return mSendLen; }
 int					ARequest::getCode() const { return mCode; }
 int					ARequest::getType() const { return mType; }
-Server				ARequest::getServer() const { return mServer; }
+Server				ARequest::getServer() { return mServer; }
 const string&		ARequest::getRoot() const { return mRoot; }
 const t_basic&		ARequest::getBasics() const { return mBasics; }
 Body&				ARequest::getBody() { return mBody; }

@@ -34,6 +34,7 @@ void	Body::writeBody(int fd)
 	}
 	mSendLen += sendLen;
 	if (mBody.size() == mSendLen && mReadEnd) {
+		cout << "write pipe end" << endl;
 		close (fd);
 	}
 }

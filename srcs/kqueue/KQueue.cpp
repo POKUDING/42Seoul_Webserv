@@ -114,13 +114,14 @@ void	KQueue::deleteTimer(int fd)
 void	KQueue::resetTimer(int fd, void* udata)
 {
 	struct kevent event;
-
+	
 	EV_SET(&event, fd, EVFILT_TIMER, EV_ADD, NOTE_SECONDS, TIMEOUT_SEC, udata);
 	// mChangeList.push_back(event);
 
 	// if (kevent(mKq, &event, 1, NULL, 0, NULL) == -1)
 	// 	throw runtime_error("deleteTimer failed");
 	kevent(mKq, &event, 1, NULL, 0, NULL);
+	// cerr << "resetTimer" << endl;
 }
 
 // getters

@@ -67,7 +67,9 @@ void	SpiderMen::run()
 						throw 0;
 					}
 					this->handleClient(&mKq.getEvents()[i], reinterpret_cast<Client *>(sock_ptr));
-					mKq.resetTimer(sock_ptr->getFd(), sock_ptr);
+					// mKq.resetTimer(sock_ptr->getFd(), sock_ptr);
+					if (sock_ptr->getFd() == static_cast<int>(mKq.getEvents()[i].ident))
+						mKq.resetTimer(sock_ptr->getFd(), sock_ptr);
 				} catch (int error) {
 					cout << "Error: Client Handler: "<< sock_ptr->getFd() << ", error status: " << error<< endl;
 					if (error) {
@@ -169,7 +171,7 @@ void	SpiderMen::handleClient(struct kevent* event, Client* client)
 		// cout << "PROC" << endl;
 		client->handleProcess(event);
 	} else if (event->filter == EVFILT_TIMER) {
-		cout << "TIMER" << endl;
+		cerr << "TIMER" << endl;
 		switch (client->getRequestStatus())
 		{
 		case EMPTY:		throw 0;
@@ -201,19 +203,19 @@ void	SpiderMen::handleError(Client* client)
 {
 	if (client->getRequests().empty())
 		throw 0;
-	Server server = client->getRequests().front()->getServer();
 
+	Server server = client->getRequests().front()->getServer();
+	if (client->getPid()) {
+		cerr << "pid delete!" <<endl;
+		mKq.deleteProcessPid(client->getPid());
+		kill(client->getPid(), 2);
+		waitpid(client->getPid(), NULL, 0);
+	}
 	if (client->getRequests().front()->getReadPipe())
 		close(client->getRequests().front()->getReadPipe());
 	if (client->getRequests().front()->getWritePipe())
 		close (client->getRequests().front()->getWritePipe());
-	if (client->getPid()){
-		cout << "pid delete!" <<endl;
-		mKq.deleteProcessPid(client->getPid());
-		kill(client->getPid(), 2);
-	}
-	for (size_t i = 0, end = client->getRequests().size(); i < end; ++i)
-	{
+	for (size_t i = 0, end = client->getRequests().size(); i < end; ++i) {
 		delete client->getRequests().front();
 		client->getRequests().front() = NULL;
 		client->getRequests().pop();

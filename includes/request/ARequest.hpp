@@ -88,10 +88,9 @@ class ARequest
 		size_t			mSendLen;
 
 		Server	 		findServer(vector<Server>* servers);
-		void			findLocation(Server& server);
+		// void			findLocation(Server& server);
 		void			findRootLocation(Server& server, string root);
 		void			findExtensionLocation(Server& server);
-		// int				findExtensionLocation(Server& server);
 		void			setPipe(int* fd);
 		void			setCgiEnv();
 		void			cutQuery();

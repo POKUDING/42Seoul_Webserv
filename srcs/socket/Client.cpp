@@ -9,18 +9,15 @@ Client::~Client()
 {
 	// cout << "\n\n 소멸자자자 " << mRequests.size() << endl;
 	size_t end = mRequests.size();
-	if (end && mRequests.front()->getReadPipe())
-	{
+	if (end && mRequests.front()->getReadPipe()) {
 		cout << "close read pipe : " << mRequests.front()->getReadPipe() <<endl;
 		close(mRequests.front()->getReadPipe());
 	}
-	if (end && mRequests.front()->getWritePipe())
-	{
+	if (end && mRequests.front()->getWritePipe()) {
 		cout << "close write pipe : " << mRequests.front()->getWritePipe() <<endl;
 		close(mRequests.front()->getWritePipe());
 	}
-	for (size_t i = 0; i < end; ++i)
-	{
+	for (size_t i = 0; i < end; ++i) {
 		delete mRequests.front();
 		mRequests.pop();
 	}

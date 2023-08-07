@@ -42,7 +42,10 @@ ARequest::ARequest(string root, int mType, map<string, string> header_key_val, v
 
 	cutQuery();
 	mServer = findServer(servers);
-	findLocation(mServer);
+
+	findRootLocation(mServer, mRoot);
+	if (mType != PUT)
+		findExtensionLocation(mServer);
 
 	//요청한 file/dir을 실제 location/server block root 주소에 따라 변경
 	if (mLocation.getRoot().size())//location 블럭에 루트가 있는 경우
@@ -116,16 +119,16 @@ Server	ARequest::findServer(vector<Server>* servers)
 	return (*servers)[0];
 }
 
-void	ARequest::findLocation(Server& server)
-{
-	// 왜 함수가 두개로 나누어져 있는지?
+// void	ARequest::findLocation(Server& server)
+// {
+// 	// 왜 함수가 두개로 나누어져 있는지?
 
-	//Find Root Location으로 루트 설정
-	findRootLocation(server, mRoot);
+// 	//Find Root Location으로 루트 설정
+// 	findRootLocation(server, mRoot);
 
-	//Find extension location으로 cgi path 업데이트 해주기 (있는 경우에만)
-	// findExtensionLocation(server); put은 제외
-}
+// 	//Find extension location으로 cgi path 업데이트 해주기 (있는 경우에만)
+// 	findExtensionLocation(server);// put은 제외
+// }
 
 void	ARequest::findRootLocation(Server& server, string root)
 {

@@ -35,10 +35,8 @@ class KQueue
 
 	private:
 		int						mKq;
-		vector<struct kevent>	mChangeList;
 		struct kevent			mEvents[MAX_EVENT];
-		
-		void 			changeEvents();
+
 };
 
 #endif // KQUEUE_HPP

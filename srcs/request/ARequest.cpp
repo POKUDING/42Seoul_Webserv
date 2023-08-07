@@ -192,33 +192,18 @@ void	ARequest::setCgiEnv()
 	setenv("HTTP_X_SECRET_HEADER_FOR_TEST", getBasics().x_secret.c_str(), 1);
 
 	if (mBody.getChunked()) {
-		string	type = "text/plain";
+		// string	type = "chunked";
+		// setenv("HTTP_TRANSFER_ENCODING", type.c_str(), 1);
+		string type = "text/plain";
 		int		length = getBody().getBody().size();
 		setenv("CONTENT_TYPE", type.c_str(), 1);
 		setenv("CONTENT_LENGTH", SpiderMenUtil::itostr(length).c_str(), 1);
+		// cout << ">>>>> Setenv: chunked, size: " << length << endl;
 	} else {
 		setenv("CONTENT_TYPE", getBasics().content_type.c_str(), 1);
 		setenv("CONTENT_LENGTH", SpiderMenUtil::itostr(getBasics().content_length).c_str(), 1);
 	}
-	//밑 두 줄 원본임
-	// setenv("CONTENT_HTML", getBasics().content_type.c_str(), 1);
-	// setenv("CONTENT_LENGTH", SpiderMenUtil::itostr(getBasics().content_length).c_str(), 1);
-
-
-	// // SERVER_NAME
-	// // SERVER_SOFTWARE // CGI 프로그램 이름 및 버전 ex) 아파치 / 2.2.14
-	// SERVER_PROTOCOL // ??? HTTP/1.1 ?
-	// // SERVER_PORT // ???
-	// // REQUEST_METHOD // GET POST ..
-	// // PATH_INFO // CGI path /wevsrv/cgi_bin/example.cgi
-	// DOCUMENT_ROOT // ???
-	// QUERY_STRING // url?key=value&key=value ..
-	// REMOTE_HOST	//client host name 없으면 정의 x
-	// REMOTE_ADDR	//client ip
-	// // CONTENT_HTML
-	// // CONTENT_LENGTH
-	// HTTP_REFERER // ????
-	// // HTTP_USER_AGENT
+	
 }
 
 void	ARequest::cutQuery()

@@ -227,6 +227,5 @@ void	SpiderMen::handleError(Client* client)
 	// cout << "--> call operate request 4" << endl;
 	client->operateRequest(client->getRequests().front());
 
-	// client->setRequestStatus(SENDING);
 	mKq.setNextEvent(client->getRequestStatus(), client->getFd(), client);
 }

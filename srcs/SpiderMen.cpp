@@ -65,18 +65,17 @@ void	SpiderMen::run()
 					if (sock_ptr->getFd() == static_cast<int>(mKq.getEvents()[i].ident))
 						mKq.resetTimer(sock_ptr->getFd(), sock_ptr);
 				} catch (int error) {
-					cout << "Error: Client Handler: "<< sock_ptr->getFd() << ", error status: " << error<< endl;
+					// cout << "Error: Client Handler: "<< sock_ptr->getFd() << ", error status: " << error<< endl;
 					if (error) {
 						reinterpret_cast<Client *>(sock_ptr)->setResponseCode(error);
 						handleError(reinterpret_cast<Client *>(sock_ptr));
 					} else {
+						int fd = sock_ptr->getFd();
 						deleteClient(sock_ptr->getFd());
-						// cout << "======================= END of Error: client closed" << endl;
+						cout << "======================= client closed [" << fd << "]" << endl;
 					}
 				} catch (const exception& e) {
-					cout << "Error: Client Handler: " << e.what() << ", code: " << reinterpret_cast<Client *>(sock_ptr)->getResponseCode()<< endl;
-					cout << "CHANGE THIS EXCEPTION to INTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT" << endl;
-					cout << "======================= END of Error" << endl;
+					throw e;
 				}
 			}
 		}
@@ -88,7 +87,7 @@ void	SpiderMen::run()
 void	SpiderMen::deleteClient(int fd)
 {
 	if (mClients.find(fd) != mClients.end()) {
-		cout << "deleteClient: " << fd << endl;
+		// cout << "deleteClient: " << fd << endl;
 		close(fd);
 		mKq.deleteTimer(fd);
 		mClients.erase(fd);
@@ -121,17 +120,6 @@ void	SpiderMen::initServerSockets(const map<int,vector<Server> >& servers)
 		mServerSockets.push_back(sock);
 		mKq.addServerSocketFd(fd, reinterpret_cast<void *>(&(*(mServerSockets.rbegin()))));
 	}
-
-	// CONF FILE CHECK =======================================
-	// cout << "mKq: " << mKq << endl;
-	// for (size_t i = 0; i < mServerSockets.size(); ++i) {
-	// 	cout << "mServerSockets " << i+1 << ": " << mServerSockets[i].getPortNumber() << endl;
-	// 	for (size_t j = 0; j < mServerSockets[i].getServer()->size(); ++j) {
-	// 		cout << "	" << j+1 << ": " << endl;
-	// 		(*(mServerSockets[i].getServer()))[j].printMembers();
-	// 	}
-	// }
-	// END OF (CONF FILE CHECK) =======================================
 }
 
 void	SpiderMen::handleServer(Socket* sock)
@@ -165,30 +153,16 @@ void	SpiderMen::handleClient(struct kevent* event, Client* client)
 		// cout << "PROC" << endl;
 		client->handleProcess(event);
 	} else if (event->filter == EVFILT_TIMER) {
-		cerr << "TIMER" << endl;
-		switch (client->getRequestStatus())
-		{
-		case EMPTY:		throw 0;
-
-		case PROCESSING:
-			//Timer=> processing처리 잘 되는지 확인 후 정리
-			// if(client->getPid())
-			// {
-			// 	mKq.deleteProcessPid(client->getPid());
-			// 	kill(client->getPid(), 2);
-			// }
-			throw 500;
-
-		case SENDING:	throw 0;
-
-		default:
-			break;
+		// cerr << "TIMER" << endl;
+		switch (client->getRequestStatus()) {
+			case EMPTY:		throw 0;
+			case PROCESSING: throw 500;
+			case SENDING:	throw 0;
+			default:		break;
 		}
 	} else {
-		cout << "ERROR_EVFILT" << endl;
+		// cout << "ERROR_EVFILT" << endl;
 		throw 0;
-		// client->setResponseCode(0);
-		// throw runtime_error("Error: undefined EVFILT");
 	}
 	mKq.setNextEvent(client->getRequestStatus(), client->getFd(), client);
 }
@@ -200,7 +174,7 @@ void	SpiderMen::handleError(Client* client)
 
 	Server server = client->getRequests().front()->getServer();
 	if (client->getPid()) {
-		cerr << "pid delete!" <<endl;
+		// cerr << "pid delete!" <<endl;
 		mKq.deleteProcessPid(client->getPid());
 		kill(client->getPid(), 2);
 		waitpid(client->getPid(), NULL, 0);
@@ -214,7 +188,7 @@ void	SpiderMen::handleError(Client* client)
 		client->getRequests().front() = NULL;
 		client->getRequests().pop();
 	}
-	cout << "handleError called: " << client->getRequests().size() << endl;
+	// cout << "handleError called: " << client->getRequests().size() << endl;
 	client->getRequests().push(new RBad(client->getResponseCode(), server));
 	// cout << "handleError called after push: " << client->getRequests().size() << endl;
 

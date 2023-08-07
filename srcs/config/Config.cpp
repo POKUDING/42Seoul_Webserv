@@ -42,9 +42,7 @@ void	Config::parse(const string& file)
 			else
 				it->second.push_back(server);
 		} else {
-			// cout << "Wrong line: " << line << endl;
 			throw runtime_error("Error: config wrong arguments.");
-			exit(EXIT_FAILURE);
 		}
 	}
 	f_dataRead.close();
@@ -72,19 +70,5 @@ void	Config::parse(const string& file)
 		}
 	}
 }
-
-// void	Config::printMembers() const
-// {
-// 	cout <<"\n\n========= printMembers() =========\n" <<endl;
-
-// 	map< int, vector<Server> >::iterator it = mServer.begin();
-
-// 	for (; it != mServer.end(); ++it)
-// 	{
-// 		cout << "Port [" << it->first << "] --------------\n";
-
-// 		mServer[i].printMembers();
-// 	}
-// }
 
 const map< int, vector<Server> >&	Config::getServer() const { return this->mServer; }

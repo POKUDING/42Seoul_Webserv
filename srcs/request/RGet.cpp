@@ -82,9 +82,8 @@ void	RGet::executeCgi()
 	extern char** environ;
 	setCgiEnv();
 	char* const argv[2] = {const_cast<char * const>(mCgiPath.c_str()), NULL};
-	if (execve(argv[0], argv, environ) < 0) {
-		cerr << "execve failed!!" << strerror(errno) << endl;
-	}
+	if (execve(argv[0], argv, environ) < 0)
+		// cerr << "execve failed!!" << strerror(errno) << endl;
 	exit(EXIT_FAILURE);
 }
 
@@ -147,7 +146,7 @@ const string	RGet::createLegacyResponse()
 		return createRedirectResponse();
 	if (mIsFile == true) {
 
-		ifstream	fin(getRoot());
+		ifstream	fin(getRoot().c_str(), ios_base::in);
 		if (fin.fail())
 			throw 404;
 		tmp << fin.rdbuf();
@@ -189,7 +188,7 @@ const string	RGet::createLegacyResponse()
 
 			DIR* dir = opendir(mRoot.c_str());
 			if (!dir)
-				throw runtime_error("Error: GET autoindex read failed");
+				throw 400;//"GET autoindex read failed"
 			dirent * file;
 
 			file = readdir(dir);	// .

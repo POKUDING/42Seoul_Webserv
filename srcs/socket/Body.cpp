@@ -32,7 +32,7 @@ void	Body::writeBody(int fd)
 	}
 	mSendLen += sendLen;
 	if (mBody.size() == mSendLen && mReadEnd) {
-		cout << "write pipe end" << endl;
+		// cout << "write pipe end" << endl;
 		close (fd);
 	}
 }
@@ -66,8 +66,7 @@ int	Body::addChunkBody(InputBuffer& inputBuffer)
 		if (inputBuffer.size() - inputBuffer.getIndex() >= mChunkLen + 2) {
 			mBody.append(inputBuffer.getCharPointer(), mChunkLen);
 			if (inputBuffer.getCharPointer()[mChunkLen] != '\r' || inputBuffer.getCharPointer()[mChunkLen + 1] != '\n')
-				throw 400;
-				// throw runtime_error("Error: invalid chunk format");
+				throw 400;// runtime_error("Error: invalid chunk format");
 			inputBuffer.updateIndex(inputBuffer.getIndex() + mChunkLen + 2);
 			mChunkLen = parseChunkLen(inputBuffer);
 		} else

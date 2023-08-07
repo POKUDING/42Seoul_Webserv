@@ -142,23 +142,8 @@ void					Location::setLocationMaxBodySize(const string& mMaxBodySize)
 
 	if (mMaxBodySize.size() > 11 || (mMaxBodySize.size() == 10 && mMaxBodySize.compare("2147483647") > 0))
 		throw runtime_error("Error: invalid maxbodysize: not in range");
-	bodySizeTmp = atoi(mMaxBodySize.c_str());
+	bodySizeTmp = SpiderMenUtil::atoi(mMaxBodySize.c_str());
 	if (bodySizeTmp < 0)
 		throw runtime_error("Error: invalid maxbodysize: not in range : atoi error");
 	this->mLocationMaxBodySize = bodySizeTmp;
 }
-
-// print
-
-// void	Location::printMembers() const
-// {
-// 	cout << "		LimitExcept: \n";
-// 	for (size_t k = 0; k < this->getLimitExcept().size(); ++k)
-// 		cout << "\t\t\t" << k << ": " << this->getLimitExcept()[k] << "\n";
-// 	cout << "		Root: " << this->getRoot() << "\n";
-// 	cout << "		CgiPath: " << this->getCgiPath() << "\n";
-// 	cout << "		Index: " << this->getIndex() << "\n";
-// 	cout << "		AutoIndex: " << this->getAutoIndex() << "\n";
-// 	cout << "		Py: " << this->getPy() << "\n";
-// 	cout << "		Php: " << this->getPhp() << "\n";
-// }

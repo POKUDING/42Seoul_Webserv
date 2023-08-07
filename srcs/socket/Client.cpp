@@ -10,11 +10,11 @@ Client::~Client()
 	// cout << "\n\n 소멸자자자 " << mRequests.size() << endl;
 	size_t end = mRequests.size();
 	if (end && mRequests.front()->getReadPipe()) {
-		cout << "close read pipe : " << mRequests.front()->getReadPipe() <<endl;
+		// cout << "close read pipe : " << mRequests.front()->getReadPipe() <<endl;
 		close(mRequests.front()->getReadPipe());
 	}
 	if (end && mRequests.front()->getWritePipe()) {
-		cout << "close write pipe : " << mRequests.front()->getWritePipe() <<endl;
+		// cout << "close write pipe : " << mRequests.front()->getWritePipe() <<endl;
 		close(mRequests.front()->getWritePipe());
 	}
 	for (size_t i = 0; i < end; ++i) {
@@ -71,7 +71,7 @@ void	Client::readSocket(struct kevent* event)
 	ssize_t s = recv(getFd(), buffer, buffer_size, 0);
 	if (s < 1) {
 		if (s == 0 && event->data == 0) { // s == 0 에서 테스터기가 우리가 닫았다고 오류가떠서 && event->Data 추가
-			cout << "socket closed" << endl;
+			// cout << "socket closed" << endl;
 			throw 0;
 		} else
 			throw 500;
@@ -160,7 +160,7 @@ ARequest*	Client::createRequest(Head& head)
 	vector<string>		element_headline;
 	map<string,string>	header_key_val;
 
-	cout << "\n\n\nNew request ========\n" << head.getHeadBuffer() << endl;
+	// cout << "\n\n\nNew request ========\n" << head.getHeadBuffer() << endl;
 	string header = head.getHeadBuffer();
 	try {
 		vector<string>		header_line;
@@ -210,11 +210,11 @@ map<string,string>	Client::createHttpKeyVal(const vector<string>& header_line)
 	{
 		pos = header_line[i].find(": ");
 		if (pos == string::npos)
-			throw runtime_error("Error: invalid http" + header_line[i]);
+			throw 400;//runtime_error("Error: invalid http" + header_line[i]);
 		if (rtn[header_line[i].substr(0, pos)] == "")
 			rtn[header_line[i].substr(0, pos)] = header_line[i].substr(pos + 2, header_line[i].size() - pos + 2);
 		else
-			throw runtime_error("Error: invalid http duplicated key");
+			throw 400;//runtime_error("Error: invalid http duplicated key");
 	}
 	return rtn;
 }
@@ -272,13 +272,12 @@ void			Client::writeSocket(struct kevent* event)
 int			Client::sendResponseMSG(struct kevent* event)
 {
 	//TEST_CODE: response msg
-	// cout << "Request: " << getRequests().front()->getType() << ", dir: " << getRequests().front()->getRoot() << endl;
-	if (getRequests().front()->getSendLen() == 0) {
-		if (getResponseMSG().size() > 1000)
-			cout << getFd() << " " << event->ident << " Response+++++++++\n" << getResponseMSG().substr(0, 500) << "++++++++++++++"<< endl;
-		else
-			cout << getFd() << " " << event->ident << " Response+++++++++\n" << getResponseMSG() << "++++++++++++++" << endl;
-	}
+	// if (getRequests().front()->getSendLen() == 0) {
+	// 	if (getResponseMSG().size() > 1000)
+	// 		cout << getFd() << " " << event->ident << " Response+++++++++\n" << getResponseMSG().substr(0, 500) << "++++++++++++++"<< endl;
+	// 	else
+	// 		cout << getFd() << " " << event->ident << " Response+++++++++\n" << getResponseMSG() << "++++++++++++++" << endl;
+	// }
 
 
 
@@ -287,10 +286,9 @@ int			Client::sendResponseMSG(struct kevent* event)
 		sendinglen = event->data;
 	sendinglen = send(getFd(), getResponseMSG().c_str() + getRequests().front()->getSendLen(), sendinglen, 0);
 
-	//이 아래 if문 필요한지 확인 필요 (필요하면 중괄호 안 내용 수정 필요할듯합니다 => throw error)
 	// 0일 때도 처리해야 하는 거 아닌지?
 	if (sendinglen == (size_t) -1) {
-		cout << "sending len -1" << endl;
+		// cout << "sending len -1" << endl;
 		throw 0;
 	}
 
@@ -299,7 +297,7 @@ int			Client::sendResponseMSG(struct kevent* event)
 
 	if (getRequests().front()->getSendLen() == getResponseMSG().size())
 	{
-		cout << "send done==========" << endl;
+		// cout << "send done==========" << endl;
 		mResponseMSG.clear();
 		return 1;
 	}

@@ -26,8 +26,7 @@ RPost::RPost(string mRoot, map<string, string> header_key_val, vector<Server>* s
 	}
 
 	//method 사용가능한지 확인
-	if (find(mLocation.getLimitExcept().begin(), mLocation.getLimitExcept().end(), "POST") == mLocation.getLimitExcept().end() && \
-		find(mLocation.getLimitExcept().begin(), mLocation.getLimitExcept().end(), "PUT") == mLocation.getLimitExcept().end())
+	if (find(mLocation.getLimitExcept().begin(), mLocation.getLimitExcept().end(), "POST") == mLocation.getLimitExcept().end())
 		throw 405;
 }
 
@@ -43,12 +42,12 @@ pid_t	RPost::operate()
 	int	outFd[2];
 
 	if (pipe(outFd) == -1)
-		throw runtime_error("Error: pipe error");
+		throw 500;// runtime_error("Error: pipe error");
 	if (pipe(inFd) == -1)
-		throw runtime_error("Error: pipe error");
+		throw 500;// runtime_error("Error: pipe error");
 	pid_t pid = fork();
 	if (pid == -1)
-		throw runtime_error("Error: fork error");
+		throw 500;// runtime_error("Error: fork error");
 	else if (pid == 0) {
 		if (dup2(inFd[0], STDIN_FILENO) == -1) {
 			exit (EXIT_FAILURE);
@@ -103,9 +102,6 @@ const string	RPost::createResponse()
 		mMSG.append(SpiderMenUtil::itostr(mPipeValue.size() - (mPipeValue.find("\r\n\r\n") + 4)).c_str());
 		mMSG.append("\r\n");
 		mMSG.append(mPipeValue);
-		// 하기 코드가 있으면 테스터에서 에러뜸
-		// 에러내용: nsolicited response received on idle HTTP channel starting with "\r\n\r\n"; err=<nil>
-		// mMSG.append("\r\n\r\n");
 	} else {
 		mMSG.append("0\r\n\r\n");
 	}
@@ -120,8 +116,7 @@ void	RPost::executeCgi()
 	extern char** environ;
 	char* const argv[2] = {const_cast<char * const>(mCgiPath.c_str()), NULL};
 	setCgiEnv();
-	if (execve(argv[0], argv, environ) == -1) {
-		cerr << "execve failed!!" << strerror(errno) << endl;;
-	}
+	if (execve(argv[0], argv, environ) == -1)
+		// cerr << "RPOST: execve failed!!" << strerror(errno) << endl;;
 	exit(EXIT_FAILURE);
 }

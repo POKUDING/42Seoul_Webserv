@@ -54,7 +54,7 @@ void			RBad::createErrorResponse(int code)
 		filename = DEFAULT_ERROR_PAGE;
 	}
 
-	ifstream	fin(filename);
+	ifstream	fin(filename.c_str(), ios_base::in);
 	if (fin.fail())
 		throw 0;
 

@@ -8,7 +8,7 @@ ARequest::ARequest(string root, int mType, map<string, string> header_key_val, v
 	memset((void *)&mBasics, 0, sizeof(mBasics));
 	mBasics.host = header_key_val["Host"];
 	mBasics.user_agent = header_key_val["User-Agent"];
-	mBasics.content_length = atoi(header_key_val["Content-Length"].c_str());
+	mBasics.content_length = SpiderMenUtil::atoi(header_key_val["Content-Length"].c_str());
 	mBasics.content_type = header_key_val["Content-Type"];
 	mBasics.content_disposition = header_key_val["Content-Disposition"];
 	mBasics.transfer_encoding = header_key_val["Transfer-Encoding"];
@@ -175,7 +175,7 @@ void	ARequest::findExtensionLocation(Server& server)
 void	ARequest::setPipe(int *fd)
 {
 	if (pipe(fd) < 0)
-		throw runtime_error("Error: pipe create failed");
+		throw 500;// throw runtime_error("Error: pipe create failed");
 }
 
 void	ARequest::setCgiEnv()

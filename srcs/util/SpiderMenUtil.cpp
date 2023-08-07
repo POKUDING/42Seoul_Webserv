@@ -70,6 +70,11 @@ string	SpiderMenUtil::itostr(int num)
 	return rtn;
 }
 
+int SpiderMenUtil::atoi(const char* str)
+{
+    return static_cast<int>(strtod(str, NULL));
+}
+
 string SpiderMenUtil::replaceCRLF(const string& input)
 {
     string result;

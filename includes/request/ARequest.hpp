@@ -3,13 +3,14 @@
 #define AREQUEST_HPP
 
 #include <map>
-#include <string>
+#include <cstring>
 #include <sstream>
 #include <fstream>
 #include <cstdlib>
 #include <unistd.h>
 #include <dirent.h>
 #include <fcntl.h>
+#include <algorithm>
 #include "../config/Server.hpp"
 #include "../basic.hpp"
 #include "../util/Time.hpp"

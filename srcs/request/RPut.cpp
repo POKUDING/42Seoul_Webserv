@@ -26,8 +26,7 @@ RPut::RPut(string mRoot, map<string, string> header_key_val, vector<Server>* ser
 	}
 
 	//method 사용가능한지 확인
-	if (find(mLocation.getLimitExcept().begin(), mLocation.getLimitExcept().end(), "POST") == mLocation.getLimitExcept().end() && \
-		find(mLocation.getLimitExcept().begin(), mLocation.getLimitExcept().end(), "PUT") == mLocation.getLimitExcept().end())
+	if (find(mLocation.getLimitExcept().begin(), mLocation.getLimitExcept().end(), "PUT") == mLocation.getLimitExcept().end())
 		throw 405;
 }
 
@@ -99,13 +98,10 @@ const string	RPut::createResponse()
 		mMSG.append(SpiderMenUtil::itostr(mPipeValue.size() - (mPipeValue.find("\r\n\r\n") + 4)).c_str());
 		mMSG.append("\r\n");
 		mMSG.append(mPipeValue);
-		// 하기 코드가 있으면 테스터에서 에러뜸
-		// 에러내용: nsolicited response received on idle HTTP channel starting with "\r\n\r\n"; err=<nil>
-		// mMSG.append("\r\n\r\n");
 	} else
 	{
 		mMSG.append("0\r\n\r\n");
-		cerr << "mPipeValue cannot found CRLF" << endl;
+		// cerr << "mPipeValue cannot found CRLF" << endl;
 	}
 
 	return mMSG;
@@ -119,6 +115,6 @@ void	RPut::executeCgi()
 	char* const argv[2] = {const_cast<char * const>(mCgiPath.c_str()), NULL};
 	setCgiEnv();
 	if (execve(argv[0], argv, environ) == -1)
-		cerr << "excute falied error\n";
+		cerr << "RPUT: excute falied error\n";
 	exit(EXIT_FAILURE);
 }

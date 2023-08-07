@@ -23,12 +23,10 @@ class SpiderMen
 		void	run();
 
 	private:
-		map<int,const Server&>	mFdServers;
-		map<int, Client>		mClients;
-		deque<Socket>			mServerSockets;
-		KQueue					mKq;
+		map<int, Client>	mClients;
+		deque<Socket>		mServerSockets;
+		KQueue				mKq;
 
-		void				deleteClientKQ(int fd);
 		void				deleteClient(int fd);
 		void				initServerSockets(const map<int,vector<Server> >& servers);
 

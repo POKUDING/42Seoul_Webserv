@@ -64,8 +64,6 @@ class Client : public Socket
 
 		//read-pipe
 		void				readPipe(struct kevent* event);
-		//write-pipe
-		void				writePipe(struct kevent* event);
 
 		//reset client
 		void				clearClient();

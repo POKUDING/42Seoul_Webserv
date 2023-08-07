@@ -50,7 +50,7 @@ pid_t	RPost::operate()
 	if (pid == -1)
 		throw runtime_error("Error: fork error");
 	else if (pid == 0) {
-		if (dup2(inFd[0], STDIN_FILENO) == 1) {
+		if (dup2(inFd[0], STDIN_FILENO) == -1) {
 			exit (EXIT_FAILURE);
 		}
 		if (dup2(outFd[1], STDOUT_FILENO) == -1) {
@@ -106,10 +106,8 @@ const string	RPost::createResponse()
 		// 하기 코드가 있으면 테스터에서 에러뜸
 		// 에러내용: nsolicited response received on idle HTTP channel starting with "\r\n\r\n"; err=<nil>
 		// mMSG.append("\r\n\r\n");
-	} else
-	{
+	} else {
 		mMSG.append("0\r\n\r\n");
-		cerr << "mPipeValue cannot found CRLF" << endl;
 	}
 
 	return mMSG;

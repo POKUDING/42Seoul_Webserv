@@ -29,7 +29,7 @@ ARequest::ARequest(string root, int mType, map<string, string> header_key_val, v
 		throw 400;
 	//method 필수요소 확인: connection
 	if (header_key_val["Connection"] == "close")
-		mBasics.connection = CLOSE;
+		mBasics.connection = "close";
 	else
 		mBasics.connection = KEEP_ALIVE;
 	//method 필수요소 확인: content_length 확인 (숫자인지 아닌지 여부)

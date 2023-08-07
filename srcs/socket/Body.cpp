@@ -18,7 +18,7 @@ int	Body::addBody(InputBuffer& inputBuffer)
 	}
 }
 
-int	Body::writeBody(int fd)
+void	Body::writeBody(int fd)
 {
 	size_t	sendLen = 0;
 	size_t	sendingLen = mBody.size() - mSendLen;
@@ -36,7 +36,6 @@ int	Body::writeBody(int fd)
 	if (mBody.size() == mSendLen && mReadEnd) {
 		close (fd);
 	}
-	return sendLen;
 }
 
 // getters and setters
@@ -44,12 +43,14 @@ int	Body::writeBody(int fd)
 size_t	Body::getSize() { return mBody.size(); }
 size_t	Body::getMaxBodySize() { return mMaxBodySize; }
 bool	Body::getChunked() { return mChunked; }
+size_t	Body::getSendLen() { return mSendLen; }
 size_t	Body::getContentLen() { return mContentLen; }
 bool	Body::getReadEnd() { return mReadEnd; }
 string&	Body::getBody() { return mBody; }
 void	Body::setMaxBodySize(size_t mMaxbody) { this->mMaxBodySize = mMaxbody; }
-void	Body::setContentLen(size_t len) { this->mContentLen = len; }
 void	Body::setChunked(bool chunk) { this->mChunked = chunk; }
+void	Body::setSendLen(size_t mSendLen) { this->mSendLen = mSendLen; }
+void	Body::setContentLen(size_t len) { this->mContentLen = len; }
 
 // private
 

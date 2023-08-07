@@ -43,7 +43,7 @@ void	Client::handleClientRead(struct kevent* event)
 void	Client::handleClientWrite(struct kevent* event)
 {
 	if (mRequests.size() && mRequests.front()->getType() != BAD && static_cast<int>(event->ident) == mRequests.front()->getWritePipe())
-		writePipe(event);//write pipe;
+		mRequests.front()->getBody().writeBody(event->ident);//write pipe;//준형님 고멘 writePipe 없앰ㅋㅋ ㅎㅎ ㅈㅅ
 	else if (getFd() == static_cast<int>(event->ident))
 		writeSocket(event);
 }
@@ -92,13 +92,13 @@ void	Client::readSocket(struct kevent* event)
 
 int	Client::addBuffer()
 {
+
 	if (mReadStatus <= READING_HEADER)	{
 		mReadStatus = READING_HEADER;
 		return mHeader.addHead(mInputBuffer);
 	} else if (mReadStatus == READING_BODY && mRequests.back()->getBody().addBody(mInputBuffer)) {
 		// cout << "requests Type: " << mRequests.back()->getType() << endl;
-		if (mRequests.back()->getBody().getMaxBodySize() < mRequests.back()->getBody().getSize())
-		{
+		if (mRequests.back()->getBody().getMaxBodySize() < mRequests.back()->getBody().getSize()) {
 			// cerr << "in Len body over than maxbody size Error" << endl;
 			mReadStatus = ERROR;
 			throw 413;
@@ -134,7 +134,7 @@ void	Client::readPipe(struct kevent* event)
 			size_t pos = mRequests.front()->getPipeValue().find("\r\n\r\n");
 			if (pos == string::npos)
 				mRequests.front()->getPipeValue() = "\r\n" + mRequests.front()->getPipeValue();
-			mRequests.front()->getPipeValue() = "Content-Type: text/plain; charset=UTF-8\r\n" + mRequests.front()->getPipeValue();
+			mRequests.front()->getPipeValue() = CONTENT_PLAIN + mRequests.front()->getPipeValue();
 		}
 		mRequestStatus = SENDING;
 	}
@@ -147,7 +147,7 @@ void	Client::addRequests(ARequest* request)
 {
 	// cout <<"--------in Add Request: chunked: " << request->getBody().getChunked() << endl;
 	mRequests.push(request);
-	cout << "requests size: "<<mRequests.size() << endl;
+	// cout << "requests size: "<<mRequests.size() << endl;
 	if (request->getType() == POST || request->getType() == PUT)
 		mReadStatus = READING_BODY;
 	else
@@ -226,7 +226,7 @@ map<string,string>	Client::createHttpKeyVal(const vector<string>& header_line)
 
 void			Client::operateRequest(ARequest* request)
 {
-	cout << getFd() <<" IS OPERATE REQUESTS!" << endl;
+	// cout << getFd() <<" IS OPERATE REQUESTS!" << endl;
 	pid_t	pid = request->operate();
 
 	if (pid) {
@@ -236,7 +236,7 @@ void			Client::operateRequest(ARequest* request)
 		mRequestStatus = PROCESSING;
 	} else {
 		mRequestStatus = SENDING;
-		cout << getFd() <<" NOW SENDING!" << endl;
+		// cout << getFd() <<" NOW SENDING!" << endl;
 	}
 }
 
@@ -244,7 +244,7 @@ void			Client::operateRequest(ARequest* request)
 
 void			Client::writeSocket(struct kevent* event)
 {
-		cout << "\n====Write socket call\n" << endl;
+		// cout << "\n====Write socket call\n" << endl;
 	if (mResponseMSG.size() == 0 && mRequests.size())
 	{
 		if (mRequests.front()->getCode() < 400)
@@ -307,11 +307,6 @@ int			Client::sendResponseMSG(struct kevent* event)
 		return 1;
 	}
 	return 0;
-}
-
-void		Client::writePipe(struct kevent* event)
-{
-	mRequests.front()->getBody().writeBody(event->ident);
 }
 
 void			Client::clearClient()

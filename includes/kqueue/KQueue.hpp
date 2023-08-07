@@ -11,6 +11,7 @@
 #include "../config/Server.hpp"
 #include <fcntl.h>
 
+// errno == EBADF 무시
 using namespace std;
 
 class KQueue

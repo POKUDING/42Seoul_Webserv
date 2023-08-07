@@ -50,16 +50,14 @@ void			RBad::createErrorResponse(int code)
 		mMSG.append(CONTENT_HTML);	//Content-Type: text/html; charset=UTF-8\r\n
 		filename = mServer.getRoot() + "/" +  mServer.getErrorPage()[SpiderMenUtil::itostr(code)];
 	} else {
-		mMSG.append("Content-Type: text/plain; charset=UTF-8\r\n");
+		mMSG.append(CONTENT_PLAIN);
 		filename = DEFAULT_ERROR_PAGE;
 	}
 
 	ifstream	fin(filename);
 	if (fin.fail())
-	{
-		// cerr << "code: " << code <<" file open failed" << endl;
 		throw 0;
-	}
+
 	tmp << fin.rdbuf();
 	body = tmp.str();
 	fin.close();
@@ -71,7 +69,6 @@ void			RBad::createErrorResponse(int code)
 	Time::stamp(timeStamp);
 	mMSG.append(timeStamp);		//Date: Tue, 20 Jul 2023 12:34:56 GMT\r\n
 	mMSG.append(SPIDER_SERVER);	//Server: SpiderMen/1.0.0\r\n
-
 
 	if (code == 413)
 	{
@@ -90,6 +87,4 @@ void			RBad::createErrorResponse(int code)
 
 	//BODY 추가
 	mMSG.append(body.c_str(), body.size());
-	// mMSG.append("\r\n");//end of body
-
 }

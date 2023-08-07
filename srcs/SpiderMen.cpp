@@ -8,7 +8,7 @@ SpiderMen::~SpiderMen()
 	for (size_t i = 0, end = mServerSockets.size(); i < end; ++i)
 		close(mServerSockets[i].getFd());
 	for (map<int, Client>::iterator it = mClients.begin(); it != mClients.end(); ++it)
-		close(it->first);
+		deleteClient(it->first);
 }
 
 // member functions
@@ -54,12 +54,10 @@ void	SpiderMen::run()
 				} catch (int fd) {
 					//client socket 에러 (accept(), kevent())
 					cout << "Error: Server Handler: close client [" << fd << "]" << endl;
-					if (fd) {
+					if (fd)
 						deleteClient(fd);
-					}
 				} catch (const exception& e) {
-					//client fd 만들어지기 전 에러
-					cout << "Error: Server Handler: " << e.what() << endl;
+					throw e;
 				}
 			} else if (sock_ptr->getType() == CLIENT) {
 				try {
@@ -177,6 +175,7 @@ void	SpiderMen::handleClient(struct kevent* event, Client* client)
 		case EMPTY:		throw 0;
 
 		case PROCESSING:
+			//Timer=> processing처리 잘 되는지 확인 후 정리
 			// if(client->getPid())
 			// {
 			// 	mKq.deleteProcessPid(client->getPid());

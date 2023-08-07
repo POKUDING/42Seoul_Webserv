@@ -159,7 +159,7 @@ const string	RGet::createLegacyResponse()
 		string	extension = mRoot.substr(pos);
 
 		if (pos == string::npos || mime[extension].size() == 0)
-			mMSG.append("Content-Type: text/plain; charset=UTF-8\r\n");
+			mMSG.append(CONTENT_PLAIN);
 		else {
 			mMSG.append("Content-Type: ");
 			mMSG.append(mime[extension]);
@@ -183,7 +183,7 @@ const string	RGet::createLegacyResponse()
 		mMSG.append(body.c_str(), body.size());
 
 	} else {//if dir
-		mMSG.append("Content-Type: text/plain; charset=UTF-8\r\n");
+		mMSG.append(CONTENT_PLAIN);
 
 		if (mLocation.getAutoIndex()) {// autoindex yes => 리스트 보여줌
 

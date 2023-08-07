@@ -21,16 +21,18 @@ class Body
 		int			addChunkBody(InputBuffer& inputBuffer);
 		int			addLenBody(InputBuffer& inputBuffer);
 		size_t		parseChunkLen(InputBuffer& inputBuffer);
-		int			writeBody(int fd);
+		void		writeBody(int fd);
 
 		size_t		getSize();
 		size_t		getMaxBodySize();
 		size_t		getContentLen();
 		bool		getReadEnd();
 		bool		getChunked();
+		size_t		getSendLen();
 		string& 	getBody();
 		void		setMaxBodySize(size_t mMaxbody);
 		void		setChunked(bool chunk);
+		void		setSendLen(size_t mSendLen);
 		void		setContentLen(size_t len);
 
 	private:

@@ -35,5 +35,11 @@ int	main(int argc, char* argv[], char** envp)
 		exit(EXIT_FAILURE);
 	}
 
+	//error 발생 시 기존에 남아있던 server fd, client fd, process, memory, kq 모두 정리 후 서버 재시작
+	//spidermen 소멸자에 넣는다
+	while (1) {
+
+	}
+
 	return EXIT_SUCCESS;
 }

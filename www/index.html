@@ -30,22 +30,14 @@
   <ol>
     <li><a href="http://0.0.0.0:4242/index.py">to Python Page</a></li>
     <li><a href="http://0.0.0.0:4242/index.php">to PHP Page</a></li>
-    <li><a href="http://0.0.0.0:4242/directory/nop">GET test(/dir/nop)</a></li>
   </ol>
 
   <h1>File send</h1>
   <div class="choices">
-	<form action="http://0.0.0.0:4242/upload/upload.py" method="POST" enctype="multipart/form-data">
+	<form action="http://0.0.0.0:4242/upload/" method="POST" enctype="multipart/form-data">
 		<input type="file" name="name" id="abc">
 		<button type="upload">submit</button>
 	</form>
-
-  <h1>bla test</h1>
-  <div class="choices">
-    <form action="http://0.0.0.0:4242/directory/youpi.bla" method="POST" enctype="chunck">
-      <input name="name" id="abc">
-      <button type="upload">submit</button>
-    </form>
 
   <h1>File delete</h1>
   <div class="choices">

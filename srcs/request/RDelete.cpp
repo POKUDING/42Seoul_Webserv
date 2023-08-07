@@ -10,8 +10,8 @@ RDelete::RDelete(string mRoot, map<string, string> header_key_val, vector<Server
 	if (mBasics.content_length || mBasics.transfer_encoding.size())
 		throw 400;
 	//dir or file 체크
-	if (mIsFile ==  false)
-		throw 400; // 404 아닌가용
+	if (mIsFile == false)
+		throw 400;
 	//method 사용가능한지 확인
 	if (find(mLocation.getLimitExcept().begin(), mLocation.getLimitExcept().end(), "DELETE") == \
 			mLocation.getLimitExcept().end())

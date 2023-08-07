@@ -192,13 +192,8 @@ void	ARequest::setCgiEnv()
 	setenv("HTTP_X_SECRET_HEADER_FOR_TEST", getBasics().x_secret.c_str(), 1);
 
 	if (mBody.getChunked()) {
-		// string	type = "chunked";
-		// setenv("HTTP_TRANSFER_ENCODING", type.c_str(), 1);
-		string type = "text/plain";
-		int		length = getBody().getBody().size();
-		setenv("CONTENT_TYPE", type.c_str(), 1);
-		setenv("CONTENT_LENGTH", SpiderMenUtil::itostr(length).c_str(), 1);
-		// cout << ">>>>> Setenv: chunked, size: " << length << endl;
+		string	type = "chunked";
+		setenv("HTTP_TRANSFER_ENCODING", type.c_str(), 1);
 	} else {
 		setenv("CONTENT_TYPE", getBasics().content_type.c_str(), 1);
 		setenv("CONTENT_LENGTH", SpiderMenUtil::itostr(getBasics().content_length).c_str(), 1);

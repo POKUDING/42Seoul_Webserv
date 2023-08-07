@@ -23,10 +23,8 @@ void	Body::writeBody(int fd)
 	size_t	sendLen = 0;
 	size_t	sendingLen = mBody.size() - mSendLen;
 
-	// cout << "write body called sendinglen : " << sendingLen << endl;
 	if (sendingLen)
 		sendLen = write(fd, mBody.c_str() + mSendLen, sendingLen);
-	// cout << " here" << endl;
 	if (sendingLen && sendLen <= 0) {
 		close (fd);
 		cerr << "input to pipe error" << endl;
@@ -104,12 +102,13 @@ size_t	Body::parseChunkLen(InputBuffer& inputbuff)
 int	Body::addLenBody(InputBuffer& inputBuffer)
 {
 	//body + header의 경우 error 던져짐
-	if (inputBuffer.size() < mContentLen + 4)
+	if (inputBuffer.size() - inputBuffer.getIndex() < mContentLen)
 		return 0;
 	mBody.append(inputBuffer.getCharPointer(), mContentLen);
-	if (inputBuffer.compare(inputBuffer.getIndex() + mContentLen, 4, "/r/n/r/n"))
-		throw runtime_error("Error: invlaid len body format");
-	inputBuffer.reset(inputBuffer.getIndex() + mContentLen + 4);
+	if (inputBuffer.size() - inputBuffer.getIndex() != mContentLen)
+		throw 413;
+	inputBuffer.reset();
 	mReadEnd = true;
+
 	return 1;
 }

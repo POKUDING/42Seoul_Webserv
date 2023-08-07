@@ -28,13 +28,7 @@ void	SpiderMen::run()
 		for (int i = 0; i < eventNum; ++i) {
 			if (mKq.getEvents()[i].ident == 0)
 				break;
-			// TEST_CODE : filter print
-			// if (mKq.getEvents()[i].filter == EVFILT_TIMER) {
-			// 	cout << "TIMER" << endl;
-			// } else if (mKq.getEvents()[i].filter == EVFILT_PROC) {
-			// 	cout << "proces" << endl;
-			// }
-
+			
 			Socket* sock_ptr = reinterpret_cast<Socket *>(mKq.getEvents()[i].udata);
 			// cout << "filter: " << mKq.getEvents()[i].filter<< ", IDNET: "<< mKq.getEvents()[i].ident <<endl;
 			// cout << "TYPE:" <<sock_ptr->getType() << ", FD: "<<sock_ptr->getFd() << ", IDENT: "<< (&mKq.getEvents()[i])->ident << endl;

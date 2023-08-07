@@ -9,8 +9,8 @@ NAME				:=	webserv
 # ---------------------------------------------------------------------------- #
 
 CPP					=	c++
-CPPFLAGS			=	-Wall -Werror -Wextra -std=c++98 -g -fsanitize=address
-# CPPFLAGS			=	-Wall -Werror -Wextra -std=c++98 -O3
+# CPPFLAGS			=	-Wall -Werror -Wextra -std=c++98 -g -fsanitize=address
+CPPFLAGS			=	-Wall -Werror -Wextra -std=c++98 -O3
 DEPFLAGS			=	-MMD -MP -MF $(BUILD_DIR)/$(DEP_DIR)/$*.d
 
 # ---------------------------------------------------------------------------- #

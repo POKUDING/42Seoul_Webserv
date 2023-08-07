@@ -89,7 +89,6 @@ void	Client::readSocket(struct kevent* event)
 
 int	Client::addBuffer()
 {
-
 	if (mReadStatus <= READING_HEADER)	{
 		mReadStatus = READING_HEADER;
 		return mHeader.addHead(mInputBuffer);
@@ -104,6 +103,7 @@ int	Client::addBuffer()
 			mReadStatus = ERROR;
 		else
 			mReadStatus = WAITING;
+
 		if (mRequests.size() == 1 && mRequests.front()->getType() == PUT) {
 			// cout << "--> call operate request 2" << endl;
 			operateRequest(mRequests.front());

@@ -1,6 +1,6 @@
 <h2>이것은 php2.txt입니다</h2>
 여기에서는 배경색 테스트를 해볼게요<br>
 
-<div style="background-color:red>배경 빨간색</div>
-<div style="background-color:rgb(0,255,0)>배경 초록색</div>
-<div style="background-color:#0000FF>배경 파란색</div>
+<div style="background-color:rgb(255,0,0)">배경 빨간색</div>
+<div style="background-color:rgb(0,255,0)">배경 초록색</div>
+<div style="background-color:rgb(0,0,255)">배경 파란색</div>

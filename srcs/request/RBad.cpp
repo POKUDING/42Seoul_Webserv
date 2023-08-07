@@ -47,8 +47,10 @@ void			RBad::createErrorResponse(int code)
 	}
 
 	if (mServer.getErrorPage()[SpiderMenUtil::itostr(code)].size()) {
+		mMSG.append(CONTENT_HTML);	//Content-Type: text/html; charset=UTF-8\r\n
 		filename = mServer.getRoot() + "/" +  mServer.getErrorPage()[SpiderMenUtil::itostr(code)];
 	} else {
+		mMSG.append("Content-Type: text/plain; charset=UTF-8\r\n");
 		filename = DEFAULT_ERROR_PAGE;
 	}
 
@@ -68,26 +70,26 @@ void			RBad::createErrorResponse(int code)
 	//HEADER============================================
 	Time::stamp(timeStamp);
 	mMSG.append(timeStamp);		//Date: Tue, 20 Jul 2023 12:34:56 GMT\r\n
-	mMSG.append(SPIDER_SERVER);	//Server: SpiderMen/1.0.0\r\n	
-	mMSG.append(CONTENT_HTML);	//Content-Type: text/html; charset=UTF-8\r\n
+	mMSG.append(SPIDER_SERVER);	//Server: SpiderMen/1.0.0\r\n
+
+
 	if (code == 413)
 	{
-		mMSG.append("\r\n\r\n");//end of head
+		mMSG.append("\r\n");//end of head
 		return ;
 	}
-	
+
 	mMSG.append("Content-Length: ");
 	to_str << body.size();
 	to_str >> buffer;
 	mMSG.append(buffer);
 	mMSG.append("\r\n\r\n");//end of head
 
-	if (mType != HEAD) {
-		//BODY 추가
-		mMSG.append(body.c_str(), body.size());
-	}
+	if (mType == HEAD)
+		return;
 
-	// if (code == 405)
-	// 	cout << "ERROR msg: " << mType << "\n~~~~~~~~~~~~~~~~~~~~" << mMSG <<"~~~~~~~~~~~~~~~~~~~~~~~~~"<< endl;
+	//BODY 추가
+	mMSG.append(body.c_str(), body.size());
+	// mMSG.append("\r\n");//end of body
 
 }

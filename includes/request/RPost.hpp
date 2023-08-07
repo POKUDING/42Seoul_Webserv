@@ -14,11 +14,8 @@ class RPost: public ARequest
 		virtual pid_t			operate();
 		virtual	const string	createResponse();
 
-		const Body&		getBody() const;
-
 	private:
 		void	executeCgi();
-		string	getRequestMethod();
 };
 
 #endif // RPOST_HPP

@@ -23,8 +23,8 @@ void	SpiderMen::run()
 		eventNum = mKq.getEventNum();
 		if (eventNum == -1)
 			eventNum = MAX_EVENT;
-		cout << "\nEvent num: " <<eventNum << endl;
-		cout << "clients size: " << mClients.size() << endl;
+		// cout << "\nEvent num: " <<eventNum << endl;
+		// cout << "clients size: " << mClients.size() << endl;
 		for (int i = 0; i < eventNum; ++i) {
 			if (mKq.getEvents()[i].ident == 0)
 				break;
@@ -36,13 +36,13 @@ void	SpiderMen::run()
 			// }
 
 			Socket* sock_ptr = reinterpret_cast<Socket *>(mKq.getEvents()[i].udata);
-			cout << "filter: " << mKq.getEvents()[i].filter<< "IDNET: "<< mKq.getEvents()[i].ident <<endl;
-			cout << "TYPE:" <<sock_ptr->getType() << " FD: "<<sock_ptr->getFd() << " IDENT: "<< (&mKq.getEvents()[i])->ident << endl;
+			// cout << "filter: " << mKq.getEvents()[i].filter<< ", IDNET: "<< mKq.getEvents()[i].ident <<endl;
+			// cout << "TYPE:" <<sock_ptr->getType() << ", FD: "<<sock_ptr->getFd() << ", IDENT: "<< (&mKq.getEvents()[i])->ident << endl;
 
 
 			// TEST_CODE : kqueue
 			// cout << "Event rise => socket: " << sock_ptr->getFd() << ", type: " << sock_ptr->getType() << ", filter: " << mKq.getEvents()[i].filter << endl;
-			
+
 			if (sock_ptr->getType() == SERVER) {
 				try {
 					if (mKq.getEvents()[i].flags == EV_ERROR) {
@@ -94,6 +94,7 @@ void	SpiderMen::run()
 void	SpiderMen::deleteClient(int fd)
 {
 	if (mClients.find(fd) != mClients.end()) {
+		cout << "deleteClient: " << fd << endl;
 		close(fd);
 		mKq.deleteTimer(fd);
 		mClients.erase(fd);
@@ -128,7 +129,7 @@ void	SpiderMen::initServerSockets(const map<int,vector<Server> >& servers)
 	}
 
 	// CONF FILE CHECK =======================================
-	// cout << "mKq: " << mKq << endl;	
+	// cout << "mKq: " << mKq << endl;
 	// for (size_t i = 0; i < mServerSockets.size(); ++i) {
 	// 	cout << "mServerSockets " << i+1 << ": " << mServerSockets[i].getPortNumber() << endl;
 	// 	for (size_t j = 0; j < mServerSockets[i].getServer()->size(); ++j) {
@@ -221,12 +222,10 @@ void	SpiderMen::handleError(Client* client)
 	cout << "handleError called: " << client->getRequests().size() << endl;
 	client->getRequests().push(new RBad(client->getResponseCode(), server));
 	// cout << "handleError called after push: " << client->getRequests().size() << endl;
-	
+
 	// cout << "--> call operate request 4" << endl;
 	client->operateRequest(client->getRequests().front());
 
 	// client->setRequestStatus(SENDING);
 	mKq.setNextEvent(client->getRequestStatus(), client->getFd(), client);
-	
-
 }

@@ -12,7 +12,7 @@ Head::~Head() {}
 void	Head::clear() { mHeadBuffer.clear(); }
 
 int	Head::addHead(InputBuffer& inputBuff)
-{	
+{
 	// cout << "\n==== input buffer size: " << inputBuff.size() << endl;
 	size_t	pos = inputBuff.find("\r\n\r\n");
 	if (pos != string::npos)

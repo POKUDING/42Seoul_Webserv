@@ -7,7 +7,7 @@ RPost::RPost(string mRoot, map<string, string> header_key_val, vector<Server>* s
 {
 	if (mBasics.content_length) {
 		size_t	pos;
-		
+
 		pos = mBasics.content_type.find("boundary=");
 		mBody.setContentLen(mBasics.content_length);
 		if (pos != string::npos)
@@ -20,11 +20,11 @@ RPost::RPost(string mRoot, map<string, string> header_key_val, vector<Server>* s
 	}
 
 	//file only인 location에 dir 요청으로 들어온 경우
-	if (mLocation.getOnlyFile() && !mIsFile) {
+	if (mLocation.getOnlyFile() && mIsFile ==  false) {
 		// cerr << "/* only file Error" << endl;
 		throw 400;
 	}
-	
+
 	//method 사용가능한지 확인
 	if (find(mLocation.getLimitExcept().begin(), mLocation.getLimitExcept().end(), "POST") == mLocation.getLimitExcept().end() && \
 		find(mLocation.getLimitExcept().begin(), mLocation.getLimitExcept().end(), "PUT") == mLocation.getLimitExcept().end())
@@ -39,8 +39,6 @@ RPost::~RPost() { }
 
 pid_t	RPost::operate()
 {
-	// cout << "POST operate called\n" << endl;
-	mMethod = "POST";
 	int	inFd[2];
 	int	outFd[2];
 
@@ -52,27 +50,40 @@ pid_t	RPost::operate()
 	if (pid == -1)
 		throw runtime_error("Error: fork error");
 	else if (pid == 0) {
-		if (dup2(inFd[0], STDIN_FILENO) == 1)
-		{
-			cerr << "dup2 error\n";
+		if (dup2(inFd[0], STDIN_FILENO) == 1) {
 			exit (EXIT_FAILURE);
 		}
 		if (dup2(outFd[1], STDOUT_FILENO) == -1) {
-			cerr << "dup2 error" << endl;
 			exit(EXIT_FAILURE);
-		} 
-		close (outFd[1]);
-		close (outFd[0]);
-		close (inFd[1]);
-		close (inFd[0]);
+		}
+		if (close(outFd[1]) == -1) {
+			exit(EXIT_FAILURE);
+		}
+		if (close(outFd[0]) == -1) {
+			exit(EXIT_FAILURE);
+		}
+		if (close(inFd[1]) == -1) {
+			exit(EXIT_FAILURE);
+		}
+		if (close(inFd[0]) == -1) {
+			exit(EXIT_FAILURE);
+		}
 		executeCgi();
 	}
 	mWritePipe = inFd[1];
 	mReadPipe = outFd[0];
-	fcntl(mWritePipe, F_SETFL, O_NONBLOCK);
-	fcntl(mReadPipe, F_SETFL, O_NONBLOCK);
-	close(inFd[0]);
-	close(outFd[1]);
+	if (fcntl(mWritePipe, F_SETFL, O_NONBLOCK) == -1) {
+		throw 500;
+	}
+	if (fcntl(mReadPipe, F_SETFL, O_NONBLOCK) == -1) {
+		throw 500;
+	}
+	if (close(inFd[0]) == -1) {
+		throw 500;
+	}
+	if (close(outFd[1]) == -1) {
+		throw 500;
+	}
 	return pid;
 }
 
@@ -83,7 +94,7 @@ const string	RPost::createResponse()
 
 	mMSG.append(STATUS_200);
 	Time::stamp(timeStamp);
-	mMSG.append(timeStamp);	
+	mMSG.append(timeStamp);
 	mMSG.append(SPIDER_SERVER);
 	if (this->getBasics().connection == KEEP_ALIVE)
 		mMSG.append("Connection: keep-alive\r\n");
@@ -108,35 +119,11 @@ const string	RPost::createResponse()
 
 void	RPost::executeCgi()
 {
-	// 표준 출력 rediretion (자식프로세스의 표준 출력을 mPipe의 write로)
-
-	// 표준 입력 redirection (자식프로세스의 표준 입력을 생성한 파이프의 read로)
-
-	// pipFd[1] 에 Body 쓰기
-
-	// 환경변수 set/conf
-
-	// char* const argv[3] = {const_cast<char * const>(mLocation.getCgiBin().c_str()), const_cast<char * const>(mLocation.getCgiPath().c_str()), NULL};
 	extern char** environ;
 	char* const argv[2] = {const_cast<char * const>(mCgiPath.c_str()), NULL};
 	setCgiEnv();
-	// for (int i = 0; i < 1; ++i)
-	// cerr << argv[0] << endl;
-	if (execve(argv[0], argv, environ) == -1)
-		cerr << "excute falied error\n";
+	if (execve(argv[0], argv, environ) == -1) {
+		cerr << "execve failed!!" << strerror(errno) << endl;;
+	}
 	exit(EXIT_FAILURE);
 }
-
-string RPost::getRequestMethod()
-{
-	if (mType == GET)
-		return "GET";
-	else if (mType == POST)
-		return "POST";
-	else // (mType == DELETE)
-		return "DELETE";
-}
-
-// getters and setters
-
-// const Body&	RPost::getBody() const { return mBody; }

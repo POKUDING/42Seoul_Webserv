@@ -79,40 +79,12 @@ ARequest::ARequest(int mType, map<string, string> header_key_val, vector<Server>
 	mServer = findServer(servers);
 }
 
-
 ARequest::ARequest(int mType, Server mServer) : mRoot(""), mType(mType), mServer(mServer), mReadPipe(0), mWritePipe(0), mSendLen(0) { }
 ARequest::~ARequest() { }
 
 // member functions
 
 // public
-
-// void	ARequest::checkPipe()
-// {
-// 	char	buff[1024];
-// 	string	readvalue;
-// 	int		readlen = 1;
-
-// 	while (readlen > 0)
-// 	{
-// 		cout << "start" << endl;
-// 		readlen = read(mPipe[0], buff, 1024);
-// 		if (readlen > 0)
-// 			readvalue.append(buff, readlen);
-// 		cout << "fin " << buff << endl;
-// 	}
-// 	close(mPipe[0]);
-// 	readvalue = SpiderMenUtil::replaceCRLF(readvalue);
-// 	if (readvalue.find("Content-Type:") == string::npos)
-// 	{
-// 		size_t pos = readvalue.find("\r\n\r\n");
-// 		if (pos == string::npos)
-// 			readvalue = "\r\n" + readvalue;
-// 		readvalue = "Content-Type: text/html; charset=UTF-8\r\n" + readvalue;
-// 	}
-// 	// cout << readvalue << endl;
-// 	mPipeValue = readvalue;
-// }
 
 // getters and setters
 
@@ -132,6 +104,7 @@ void				ARequest::addSendLen(size_t len) { mSendLen += len; }
 void				ARequest::setCode(int code) { this->mCode = code; }
 
 // protected
+
 Server	ARequest::findServer(vector<Server>* servers)
 {
 	for (int server_idx = 0,server_end = servers->size(); server_idx < server_end; ++server_idx)
@@ -145,9 +118,11 @@ Server	ARequest::findServer(vector<Server>* servers)
 
 void	ARequest::findLocation(Server& server)
 {
+	// 왜 함수가 두개로 나누어져 있는지?
+
 	//Find Root Location으로 루트 설정
 	findRootLocation(server, mRoot);
-	
+
 	//Find extension location으로 cgi path 업데이트 해주기 (있는 경우에만)
 	// findExtensionLocation(server); put은 제외
 }
@@ -159,7 +134,7 @@ void	ARequest::findRootLocation(Server& server, string root)
 	for(int loc_idx = 0, end = server.getLocation().size(); loc_idx < end; ++loc_idx) {
 		if (root.substr(0, server.getLocation()[loc_idx].getKey().size()) == server.getLocation()[loc_idx].getKey() && \
 			server.getLocation()[loc_idx].getKey().size() > find_len) {
-			
+
 			mLocation = server.getLocation()[loc_idx];
 			find_len = server.getLocation()[loc_idx].getKey().size();
 			if (mType != GET)
@@ -168,8 +143,6 @@ void	ARequest::findRootLocation(Server& server, string root)
 	}
 	if (find_len == 0)
 		findRootLocation(server, "/");
-
-	// cout << "find location: " << mLocation.getKey() << endl;
 }
 
 void	ARequest::findExtensionLocation(Server& server)
@@ -191,7 +164,7 @@ void	ARequest::findExtensionLocation(Server& server)
 					mCgiPath = server.getLocation()[loc_idx].getCgiPath();
 					return;
 				}
-			}	
+			}
 		}
 	}
 }
@@ -227,7 +200,7 @@ void	ARequest::setCgiEnv()
 	//밑 두 줄 원본임
 	// setenv("CONTENT_HTML", getBasics().content_type.c_str(), 1);
 	// setenv("CONTENT_LENGTH", SpiderMenUtil::itostr(getBasics().content_length).c_str(), 1);
-	
+
 
 	// // SERVER_NAME
 	// // SERVER_SOFTWARE // CGI 프로그램 이름 및 버전 ex) 아파치 / 2.2.14

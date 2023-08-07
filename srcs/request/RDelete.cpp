@@ -10,8 +10,8 @@ RDelete::RDelete(string mRoot, map<string, string> header_key_val, vector<Server
 	if (mBasics.content_length || mBasics.transfer_encoding.size())
 		throw 400;
 	//dir or file 체크
-	if (!mIsFile)
-		throw 400;
+	if (mIsFile ==  false)
+		throw 400; // 404 아닌가용
 	//method 사용가능한지 확인
 	if (find(mLocation.getLimitExcept().begin(), mLocation.getLimitExcept().end(), "DELETE") == \
 			mLocation.getLimitExcept().end())
@@ -40,21 +40,20 @@ const string	RDelete::createResponse()
 
 	//1st line: STATUS
 	mMSG.append(STATUS_200);	//"HTTP/1.1 200 OK\r\n"
-	
+
 	//HEADER============================================
 	Time::stamp(timeStamp);
 	mMSG.append(timeStamp);	//Date: Tue, 20 Jul 2023 12:34:56 GMT\r\n
 	mMSG.append(SPIDER_SERVER);	//Server: SpiderMen/1.0.0\r\n
 
 	mMSG.append(CONTENT_HTML);	//Content-Type: text/html; charset=UTF-8\r\n
-	// mMSG.append("Content-Type: ");	//png 등의 경우 별도의 content-type필요
-
+	// text/plain 아닌가용
 
 	mMSG.append("Content-Length: 15\r\n");
 
 	if (this->getBasics().connection == KEEP_ALIVE)
 		mMSG.append("Connection: Keep-Alive\r\n");
-		
+
 	mMSG.append("\r\n");		//end of head
 
 	//BODY============================================가

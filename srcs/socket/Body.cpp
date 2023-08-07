@@ -9,61 +9,73 @@ Body::~Body() {}
 
 // public
 
-int	Body::addBody(InputBuffer& inputbuffer)
+int	Body::addBody(InputBuffer& inputBuffer)
 {
-
-	if (mChunked)
-	{
-		// cout << "chunk Body called" << endl;
-		// cout << inputbuffer << endl;
-		return (addChunkBody(inputbuffer));
-	}
-	else
-	{
-		// cout << "Len Body called" << endl;
-		return (addLenBody(inputbuffer));
+	if (mChunked) {
+		return (addChunkBody(inputBuffer));
+	} else {
+		return (addLenBody(inputBuffer));
 	}
 }
 
-int	Body::addChunkBody(InputBuffer& inputbuffer)
+int	Body::writeBody(int fd)
+{
+	size_t	sendLen = 0;
+	size_t	sendingLen = mBody.size() - mSendLen;
+
+	// cout << "write body called sendinglen : " << sendingLen << endl;
+	if (sendingLen)
+		sendLen = write(fd, mBody.c_str() + mSendLen, sendingLen);
+	// cout << " here" << endl;
+	if (sendingLen && sendLen <= 0) {
+		close (fd);
+		cerr << "input to pipe error" << endl;
+		throw 500;
+	}
+	mSendLen += sendLen;
+	if (mBody.size() == mSendLen && mReadEnd) {
+		close (fd);
+	}
+	return sendLen;
+}
+
+// getters and setters
+
+size_t	Body::getSize() { return mBody.size(); }
+size_t	Body::getMaxBodySize() { return mMaxBodySize; }
+bool	Body::getChunked() { return mChunked; }
+size_t	Body::getContentLen() { return mContentLen; }
+bool	Body::getReadEnd() { return mReadEnd; }
+string&	Body::getBody() { return mBody; }
+void	Body::setMaxBodySize(size_t mMaxbody) { this->mMaxBodySize = mMaxbody; }
+void	Body::setContentLen(size_t len) { this->mContentLen = len; }
+void	Body::setChunked(bool chunk) { this->mChunked = chunk; }
+
+// private
+
+int	Body::addChunkBody(InputBuffer& inputBuffer)
 {
 	string	input_tmp;
 
 	//body + header의 경우 error 던져짐
-	// mChunkBuf.append(inputbuff.c_str() + minputBuffIdx, inputbuff.size() - minputBuffIdx);
-	// inputbuff.clear();
 	if (mChunkLen == 0)
-		mChunkLen = parseChunkLen(inputbuffer);
-		// mChunkLen = parseChunkLen(inputbuff.c_str() + minputBuffIdx);
-	cout << "mChunkLen: "<<mChunkLen <<", input size : " <<inputbuffer.size() - inputbuffer.getIndex() << endl;
-	while (!mReadEnd && mChunkLen && inputbuffer.size() - inputbuffer.getIndex())
+		mChunkLen = parseChunkLen(inputBuffer);
+	// cout << "mChunkLen: "<<mChunkLen <<", input size : " <<inputBuffer.size() - inputBuffer.getIndex() << endl;
+	while (mReadEnd == false && mChunkLen && inputBuffer.size() - inputBuffer.getIndex())
 	{
-		if (inputbuffer.size() - inputbuffer.getIndex() >= mChunkLen + 2) {
-			mBody.append(inputbuffer.getCharPointer(), mChunkLen);
-			// mChunkBuf = mChunkBuf.substr(mChunkLen);
-			if (inputbuffer.getCharPointer()[mChunkLen] != '\r' || inputbuffer.getCharPointer()[mChunkLen + 1] != '\n')
-				throw runtime_error("Error: invalid chunk format");
-			inputbuffer.updateIndex(inputbuffer.getIndex() + mChunkLen + 2);
-			mChunkLen = parseChunkLen(inputbuffer);
+		if (inputBuffer.size() - inputBuffer.getIndex() >= mChunkLen + 2) {
+			mBody.append(inputBuffer.getCharPointer(), mChunkLen);
+			if (inputBuffer.getCharPointer()[mChunkLen] != '\r' || inputBuffer.getCharPointer()[mChunkLen + 1] != '\n')
+				throw 400;
+				// throw runtime_error("Error: invalid chunk format");
+			inputBuffer.updateIndex(inputBuffer.getIndex() + mChunkLen + 2);
+			mChunkLen = parseChunkLen(inputBuffer);
 		} else
 			break;
 	}
-	if (mReadEnd == true) {
-		// cout << "chunked finished++++" << endl;
-		// cout << "++++++++++++++++++++" << endl;
-		cerr << "mReadEnd == true" << endl;
-		cout << inputbuffer.getCharPointer() << endl;
-		if (inputbuffer.size() - inputbuffer.getIndex() - mChunkLen >= 2)
-		{
-			cerr << "if 문 안" << endl;
-			inputbuffer.reset(inputbuffer.getIndex() + 2);
-			return 1;
-		}
-		// if (inputbuffer.size() - inputbuffer.getIndex() - mChunkLen == 2)
-		// {
-		// 	inputbuffer.reset();
-		// 	return 1;
-		// }
+	if (mReadEnd == true && inputBuffer.size() - inputBuffer.getIndex() - mChunkLen >= 2) {
+		inputBuffer.reset(inputBuffer.getIndex() + 2);
+		return 1;
 	}
 	return 0;
 
@@ -74,12 +86,10 @@ size_t	Body::parseChunkLen(InputBuffer& inputbuff)
 	char 	*end_ptr;
 	size_t	len;
 
-	// cout << "in Parse chunklen input buff : \n$" <<inputbuff.getCharPointer() << "$" << endl;
 	len = strtol(inputbuff.getCharPointer(), &end_ptr, 16);
-	// cerr << "len: " << len << endl;
 	if (end_ptr[0] != '\r' || end_ptr[1] != '\n')
 		return 0;
-	if (len == 0) 
+	if (len == 0)
 	{
 		if (end_ptr[2] != '\r' || end_ptr[3] != '\n')
 			return 0;
@@ -89,54 +99,15 @@ size_t	Body::parseChunkLen(InputBuffer& inputbuff)
 	return len;
 }
 
-int	Body::addLenBody(InputBuffer& inputbuffer)
+int	Body::addLenBody(InputBuffer& inputBuffer)
 {
 	//body + header의 경우 error 던져짐
-	if (inputbuffer.size() < mContentLen + 4)
+	if (inputBuffer.size() < mContentLen + 4)
 		return 0;
-	mBody.append(inputbuffer.getCharPointer(), mContentLen);
-	if (inputbuffer.compare(inputbuffer.getIndex() + mContentLen, 4, "/r/n/r/n"))
+	mBody.append(inputBuffer.getCharPointer(), mContentLen);
+	if (inputBuffer.compare(inputBuffer.getIndex() + mContentLen, 4, "/r/n/r/n"))
 		throw runtime_error("Error: invlaid len body format");
-	inputbuffer.reset(inputbuffer.getIndex() + mContentLen + 4);
+	inputBuffer.reset(inputBuffer.getIndex() + mContentLen + 4);
 	mReadEnd = true;
 	return 1;
 }
-
-int	Body::writeBody(int fd)
-{
-	size_t	sendLen = 0;
-	size_t	sendingLen = mBody.size() - mSendLen;
-	
-	cout << "write body called sendinglen : " << sendingLen << endl;
-	if (sendingLen)
-		sendLen = write(fd, mBody.c_str() + mSendLen, sendingLen);
-	cout << " here" << endl;
-	if (sendingLen && sendLen <= 0)
-	{
-		close (fd);
-		cerr << "input to pipe error" << endl;
-		throw 500;
-	}
-	cout << "SendLen success : " <<sendLen <<endl;
-	mSendLen += sendLen;
-	if (mBody.size() == mSendLen && mReadEnd)
-	{
-		cout << "close pipe" << endl;
-		close (fd);
-	}
-	return sendLen;
-}
-
-// getters and setters
-
-void	Body::setMaxBodySize(size_t mMaxbody) { this->mMaxBodySize = mMaxbody; }
-void	Body::setContentLen(size_t len) { this->mContentLen = len; }
-void	Body::setChunked(bool chunk) { this->mChunked = chunk; }
-
-
-size_t	Body::getSize() { return mBody.size(); }
-size_t	Body::getMaxBodySize() { return mMaxBodySize; }
-bool	Body::getChunked() { return mChunked; }
-size_t	Body::getContentLen() { return mContentLen; }
-bool	Body::getReadEnd() { return mReadEnd; }
-string&	Body::getBody() { return mBody; }

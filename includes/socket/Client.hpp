@@ -41,12 +41,12 @@ class Client : public Socket
 	public:
 		Client(bool mType, int mFd, int mPort, vector<Server>* mServer, KQueue& mKq);
 		virtual ~Client();
-		
+
 		//handler
 		void				handleClientRead(struct kevent* event);
 		void				handleClientWrite(struct kevent* event);
 		void				handleProcess(struct kevent* event);
-		
+
 		//read
 		void				readSocket(struct kevent* event);
 		int					addBuffer();
@@ -87,12 +87,12 @@ class Client : public Socket
 		void				setResponseCode(int code);
 		// void				setCGI(pid_t mPid);
 		void				setRequestStatus(int mRequestStatus);
-		
+
 	private:
 		// void			parseHeader(void);
 		queue<ARequest*>	mRequests;
 		int					mReadStatus;	//eClient
-		int					mRequestStatus; 
+		int					mRequestStatus;
 		int					mResponseCode;
 		InputBuffer			mInputBuffer;
 		string				mResponseMSG;

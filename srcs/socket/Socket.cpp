@@ -3,7 +3,7 @@
 
 Socket::Socket(bool mType, int mFd, int mPortNumber, vector<Server>* mServer, KQueue& mKq)
 	: mType(mType), mFd(mFd), mPortNumber(mPortNumber), mServer(mServer), mKq(mKq) { }
-	
+
 Socket::~Socket(void) { }
 
 // member functions

@@ -19,23 +19,23 @@
 
 using namespace std;
 
-typedef struct	s_basic 
+typedef struct	s_basic
 {
 	//must for METHOD
-	string	host;//Host: 
+	string	host;//Host:
 	string	connection; // default: keep-alive
 	string	user_agent;	//우선 없으면 bad request로 처리
 	// string	accept;		//크롬이면 기본으로 다 되니까 필요없을듯?
 	// string	accept_encoding;	//필요 없을듯?
 	// string	accept_language;	//필요 없을듯?
-	
+
 	//must for POST
 	size_t	content_length;//Content-Length:
 	string	content_type;//Content-Type:	// if (multipart/form-data) => boundary 데이터 필요
 	string	boundary;	//(in Content-Type) body 부분 구분자
 	string	transfer_encoding;//Transfer-encoding << chunked 여부가 이 태그로 옵니당
 	//하기 두개는 Body에서 확인 가능함
-	string	content_disposition;	//(in boundary) Content-Disposition: 
+	string	content_disposition;	//(in boundary) Content-Disposition:
 	string	filename;					//(in Content-Disposition) 저장할 filename(확장자명까지)
 	string	x_secret;
 
@@ -51,8 +51,6 @@ class ARequest
 
 		virtual pid_t			operate() = 0;
 		virtual	const string	createResponse() = 0;
-
-		// void				checkPipe();
 
 		string&				getPipeValue();
 		int					getReadPipe();
@@ -88,7 +86,7 @@ class ARequest
 		string			mCgiPath;
 		string			mCgiBin;
 		size_t			mSendLen;
-		
+
 		Server	 		findServer(vector<Server>* servers);
 		void			findLocation(Server& server);
 		void			findRootLocation(Server& server, string root);
@@ -97,7 +95,6 @@ class ARequest
 		void			setPipe(int* fd);
 		void			setCgiEnv();
 		void			cutQuery();
-		int				checkDeleteFile();
 };
 
 #endif // AREQUEST_HPP

@@ -31,7 +31,8 @@ Client::~Client()
 // public
 
 // handler
-void			Client::handleClientRead(struct kevent* event)
+
+void	Client::handleClientRead(struct kevent* event)
 {
 	if (mRequests.size() && static_cast<int>(event->ident) == mRequests.front()->getReadPipe())
 		readPipe(event); //read pipe value;
@@ -39,7 +40,7 @@ void			Client::handleClientRead(struct kevent* event)
 		readSocket(event);
 }
 
-void			Client::handleClientWrite(struct kevent* event)
+void	Client::handleClientWrite(struct kevent* event)
 {
 	if (mRequests.size() && mRequests.front()->getType() != BAD && static_cast<int>(event->ident) == mRequests.front()->getWritePipe())
 		writePipe(event);//write pipe;
@@ -47,31 +48,18 @@ void			Client::handleClientWrite(struct kevent* event)
 		writeSocket(event);
 }
 
-void			Client::handleProcess(struct kevent* event)
+void	Client::handleProcess(struct kevent* event)
 {
 	int	exit_status = 0;
 
 	waitpid(event->ident, &exit_status, 0);
 	mPid = 0;
-	// cout << "handle process: " << exit_status <<endl;
-
-	// cout << mRequests.front()->getPipeValue() << "$" << endl;
-
-	// mRequests.front()->checkPipe();
-	
-	// cout << mRequests.front()->getPipeValue() << endl;
-
-	if (exit_status != EXIT_SUCCESS)
-	{
-		// cerr << "fork exit with 1 " << endl;
+	if (exit_status != EXIT_SUCCESS) {
 		throw 500;
 	}
-	// 	mRequests.front()->setCode(500);
-	// else
-	// 	mRequests.front()->setCode(0);
 }
 
-// readfunc
+// read
 
 void	Client::readSocket(struct kevent* event)
 {
@@ -80,7 +68,7 @@ void	Client::readSocket(struct kevent* event)
 
 	// cout << "\n====ReadSock call\n" << endl;
 
-	// cout << "before input Buff : \n$" << mInputBuffer << "$" << endl; 
+	// cout << "before input Buff : \n$" << mInputBuffer << "$" << endl;
 	memset(buffer, 0, buffer_size);
 	// cout << "recv call==" << endl;
 	ssize_t s = recv(getFd(), buffer, buffer_size, 0);
@@ -88,13 +76,13 @@ void	Client::readSocket(struct kevent* event)
 		if (s == 0 && event->data == 0) { // s == 0 에서 테스터기가 우리가 닫았다고 오류가떠서 && event->Data 추가
 			cout << "socket closed" << endl;
 			throw 0;
-		} else 
+		} else
 			throw 500;
 	}
-	cout << "read len : " << s << endl;
+	// cout << "fd: " << event->ident <<  "read len : " << s << endl;
 	mInputBuffer.append(buffer, s);
 	// cout << "recv buffer: " << mInputBuffer << endl;
-	// cout << "after input Buff : \n$" << mInputBuffer << "$" << endl; 
+	// cout << "after input Buff : \n$" << mInputBuffer << "$" << endl;
 	while (addBuffer())
 	{
 		if (mHeader.getHeadBuffer().size())
@@ -102,13 +90,13 @@ void	Client::readSocket(struct kevent* event)
 	}
 }
 
-int			Client::addBuffer()
+int	Client::addBuffer()
 {
 	if (mReadStatus <= READING_HEADER)	{
 		mReadStatus = READING_HEADER;
 		return mHeader.addHead(mInputBuffer);
 	} else if (mReadStatus == READING_BODY && mRequests.back()->getBody().addBody(mInputBuffer)) {
-		// cout << "requests Type: " << mRequests.back()->getType() << endl;		
+		// cout << "requests Type: " << mRequests.back()->getType() << endl;
 		if (mRequests.back()->getBody().getMaxBodySize() < mRequests.back()->getBody().getSize())
 		{
 			// cerr << "in Len body over than maxbody size Error" << endl;
@@ -134,27 +122,20 @@ void	Client::readPipe(struct kevent* event)
 	string	readvalue;
 	int		readlen;
 
-	// cout << "\n====ReadPipe call\n" << endl;
-	// cout << "read call==" << endl;
 	readlen = read(event->ident, buff, 1000000);
 	if (readlen < 0) {
 		throw 500;
 	}
 
-	// cout << "fin, buff: " << buff << endl;
-	
 	if (readlen == 0) {
 		close (event->ident);//read pipe close;
 		mRequests.front()->getPipeValue() = SpiderMenUtil::replaceCRLF(mRequests.front()->getPipeValue());
-		if (mRequests.front()->getPipeValue().find("Content-Type:") == string::npos)
-		{
+		if (mRequests.front()->getPipeValue().find("Content-Type:") == string::npos) {
 			size_t pos = mRequests.front()->getPipeValue().find("\r\n\r\n");
 			if (pos == string::npos)
 				mRequests.front()->getPipeValue() = "\r\n" + mRequests.front()->getPipeValue();
 			mRequests.front()->getPipeValue() = "Content-Type: text/plain; charset=UTF-8\r\n" + mRequests.front()->getPipeValue();
 		}
-		// cout << mRequests.front()->getPipeValue() << "$ if 문 안쪽 "<<endl;
-		// cout << "find \\r\\n" << mRequests.front()->getPipeValue().find("\r\r\n", 17) << ": " << mRequests.front()->getPipeValue().substr(mRequests.front()->getPipeValue().find("\r\r\n", 17)) << endl;
 		mRequestStatus = SENDING;
 	}
 	mRequests.front()->getPipeValue().append(buff, readlen);
@@ -162,7 +143,7 @@ void	Client::readPipe(struct kevent* event)
 
 //requests func
 
-void			Client::addRequests(ARequest* request)
+void	Client::addRequests(ARequest* request)
 {
 	// cout <<"--------in Add Request: chunked: " << request->getBody().getChunked() << endl;
 	mRequests.push(request);
@@ -181,12 +162,12 @@ ARequest*	Client::createRequest(Head& head)
 {
 	vector<string>		element_headline;
 	map<string,string>	header_key_val;
-	
+
 	cout << "\n\n\nNew request ========\n" << head.getHeadBuffer() << endl;
 	string header = head.getHeadBuffer();
 	try {
 		vector<string>		header_line;
-		
+
 		header_line = SpiderMenUtil::splitString(header, "\r\n");
 		header_key_val = createHttpKeyVal(header_line);
 		element_headline = SpiderMenUtil::splitString(header_line[0]);
@@ -227,7 +208,7 @@ map<string,string>	Client::createHttpKeyVal(const vector<string>& header_line)
 {
 	map<string, string>	rtn;
 	size_t				pos;
-	
+
 	for (size_t i = 1, end = header_line.size(); i < end; ++i)
 	{
 		pos = header_line[i].find(": ");
@@ -245,17 +226,14 @@ map<string,string>	Client::createHttpKeyVal(const vector<string>& header_line)
 
 void			Client::operateRequest(ARequest* request)
 {
-	// cout << request->getBody().getBody() << endl;
 	cout << getFd() <<" IS OPERATE REQUESTS!" << endl;
 	pid_t	pid = request->operate();
-	
+
 	if (pid) {
 		mPid = pid;
 		mKq.addProcessPid(pid, reinterpret_cast<void*>(this));
 		mKq.addPipeFd(mRequests.front()->getWritePipe(), mRequests.front()->getReadPipe(), reinterpret_cast<void*>(this));
-		//event push;
 		mRequestStatus = PROCESSING;
-		// cout << "now to PROCESSING" << endl;
 	} else {
 		mRequestStatus = SENDING;
 		cout << getFd() <<" NOW SENDING!" << endl;
@@ -282,7 +260,6 @@ void			Client::writeSocket(struct kevent* event)
 	if (mRequests.size() && sendResponseMSG(event))
 	{
 		if (mRequests.front()->getType() == BAD) {
-			cerr << "front type is BAD" << endl;
 			throw 0;
 		}
 		delete mRequests.front();
@@ -306,22 +283,23 @@ int			Client::sendResponseMSG(struct kevent* event)
 			cout << getFd() << " " << event->ident << " Response+++++++++\n" << getResponseMSG() << "++++++++++++++" << endl;
 	}
 
-	
-	
+
+
 	size_t	sendinglen = getResponseMSG().size() - getRequests().front()->getSendLen();
 	if (static_cast<size_t>(event->data) <= sendinglen)
 		sendinglen = event->data;
 	sendinglen = send(getFd(), getResponseMSG().c_str() + getRequests().front()->getSendLen(), sendinglen, 0);
-	
+
 	//이 아래 if문 필요한지 확인 필요 (필요하면 중괄호 안 내용 수정 필요할듯합니다 => throw error)
+	// 0일 때도 처리해야 하는 거 아닌지?
 	if (sendinglen == (size_t) -1) {
 		cout << "sending len -1" << endl;
 		throw 0;
 	}
-	
+
 	getRequests().front()->addSendLen(sendinglen);
 	// cout << "sent this time: " << sendinglen << ", already sent: " << getRequests().front()->getSendLen() << endl;
-	
+
 	if (getRequests().front()->getSendLen() == getResponseMSG().size())
 	{
 		cout << "send done==========" << endl;

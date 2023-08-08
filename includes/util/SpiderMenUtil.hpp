@@ -7,6 +7,7 @@
 # include <cctype>
 # include <iostream>
 # include <sstream>
+# include <cstdlib>
 
 using namespace std;
 
@@ -17,6 +18,7 @@ class SpiderMenUtil
 		static vector<string>	splitString(string str);
 		static string			itostr(int num);
 		static string 			replaceCRLF(const string& input);
+		static int				atoi(const char* str);
 	private:
 		// SpiderMenUtil();
 		// SpiderMenUtil(SpiderMenUtil& src);

@@ -17,9 +17,10 @@ class RGet : public ARequest
 
 		virtual pid_t			operate();
 		virtual	const string	createResponse();
-		
+
 	private:
-		const string 	redirectResponse();
+		void			executeCgi();
+		const string 	createRedirectResponse();
 		const string	createLegacyResponse();
 		const string	createCgiResponse();
 };

@@ -9,8 +9,8 @@ NAME				:=	webserv
 # ---------------------------------------------------------------------------- #
 
 CPP					=	c++
-CPPFLAGS			=	-Wall -Werror -Wextra -std=c++98 -g -fsanitize=address
-# CPPFLAGS			=	-Wall -Werror -Wextra -std=c++98
+# CPPFLAGS			=	-Wall -Werror -Wextra -std=c++98 -g -fsanitize=address
+CPPFLAGS			=	-Wall -Werror -Wextra -std=c++98 -O3
 DEPFLAGS			=	-MMD -MP -MF $(BUILD_DIR)/$(DEP_DIR)/$*.d
 
 # ---------------------------------------------------------------------------- #
@@ -35,9 +35,9 @@ SRCS				:=	$(addprefix $(SRC_DIR)/, main.cpp)
 SRCS				+=	$(addprefix $(SRC_DIR)/, SpiderMen.cpp)
 SRCS				+=	$(addprefix $(SRC_DIR)/$(CONFIG_DIR)/, Config.cpp Location.cpp Server.cpp)
 SRCS				+=	$(addprefix $(SRC_DIR)/$(KQUEUE_DIR)/, KQueue.cpp)
-SRCS				+=	$(addprefix $(SRC_DIR)/$(REQUEST_DIR)/, ARequest.cpp RBad.cpp RDelete.cpp RGet.cpp RPost.cpp)
+SRCS				+=	$(addprefix $(SRC_DIR)/$(REQUEST_DIR)/, ARequest.cpp RBad.cpp RDelete.cpp RGet.cpp RPost.cpp RPut.cpp)
 SRCS				+=	$(addprefix $(SRC_DIR)/$(SOCKET_DIR)/, Body.cpp Client.cpp Head.cpp Socket.cpp )
-SRCS				+=	$(addprefix $(SRC_DIR)/$(UTIL_DIR)/, SpiderMenUtil.cpp Time.cpp Mime.cpp)
+SRCS				+=	$(addprefix $(SRC_DIR)/$(UTIL_DIR)/, SpiderMenUtil.cpp Time.cpp Mime.cpp InputBuffer.cpp)
 OBJS				:=	$(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/$(OBJ_DIR)/%.o, $(SRCS))
 DEPS				:=	$(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/$(DEP_DIR)/%.d, $(SRCS))
 

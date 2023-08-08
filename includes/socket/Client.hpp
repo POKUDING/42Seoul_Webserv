@@ -16,10 +16,12 @@
 #include "../request/RGet.hpp"
 #include "../request/RPost.hpp"
 #include "../request/RDelete.hpp"
+#include "../request/RPut.hpp"
 #include "./Socket.hpp"
 #include "./Head.hpp"
 #include "./Body.hpp"
 #include "../util/Time.hpp"
+#include "../util/InputBuffer.hpp"
 
 //REQUEST STRUCT
 	// method
@@ -39,12 +41,12 @@ class Client : public Socket
 	public:
 		Client(bool mType, int mFd, int mPort, vector<Server>* mServer, KQueue& mKq);
 		virtual ~Client();
-		
+
 		//handler
 		void				handleClientRead(struct kevent* event);
 		void				handleClientWrite(struct kevent* event);
 		void				handleProcess(struct kevent* event);
-		
+
 		//read
 		void				readSocket(struct kevent* event);
 		int					addBuffer();
@@ -62,8 +64,6 @@ class Client : public Socket
 
 		//read-pipe
 		void				readPipe(struct kevent* event);
-		//write-pipe
-		void				writePipe(struct kevent* event);
 
 		//reset client
 		void				clearClient();
@@ -78,30 +78,24 @@ class Client : public Socket
 		string&				getHeadBuffer();
 		string&				getInputBuffer();
 		int					getResponseCode() const;
-		pid_t				getCGI() const;
+		pid_t				getPid() const;
 		int					getRequestStatus() const;
-		std::time_t			getReadLast() const;
-		std::time_t			getWriteLast() const;
 
 		void				setReadStatus(int mStatus);
 		void				setResponseCode(int code);
-		void				setCGI(pid_t mPid);
+		// void				setCGI(pid_t mPid);
 		void				setRequestStatus(int mRequestStatus);
-		// void				setReadLast();
-		// void				setWriteLast();
 
 	private:
 		// void			parseHeader(void);
 		queue<ARequest*>	mRequests;
 		int					mReadStatus;	//eClient
-		int					mRequestStatus; 
+		int					mRequestStatus;
 		int					mResponseCode;
-		string				mInputBuffer;
+		InputBuffer			mInputBuffer;
 		string				mResponseMSG;
 		pid_t				mPid;
 		Head				mHeader;
-		// time_t				mReadLast;
-		// time_t				mWriteLast;
 };
 
 #endif //CLIENT_HPP

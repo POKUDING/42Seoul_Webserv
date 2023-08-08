@@ -8,6 +8,7 @@
 #include <netinet/in.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <signal.h>
 #include "./config/Config.hpp"
 #include "./kqueue/KQueue.hpp"
 #include "./socket/Client.hpp"
@@ -22,12 +23,10 @@ class SpiderMen
 		void	run();
 
 	private:
-		map<int,const Server&>	mFdServers;
-		map<int, Client>		mClients;
-		deque<Socket>			mServerSockets;
-		KQueue					mKq;
+		map<int, Client>	mClients;
+		deque<Socket>		mServerSockets;
+		KQueue				mKq;
 
-		void				deleteClientKQ(int fd);
 		void				deleteClient(int fd);
 		void				initServerSockets(const map<int,vector<Server> >& servers);
 

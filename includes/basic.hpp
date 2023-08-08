@@ -5,9 +5,8 @@
 #define MAX_PORT_SIZE 65535		//max(short)
 #define DEFAULT_CONF_FILE "./conf/default.conf"
 #define DEFAULT_ERROR_PAGE "./www/errors/error_default.html"
-#define BACKLOG 15
+#define BACKLOG 1024
 #define MAX_EVENT 2048
-#define PACKET_SIZE 1460
 
 #define STATUS_200 "HTTP/1.1 200 OK\r\n"
 #define STATUS_201 "HTTP/1.1 201 Created\r\n"
@@ -22,15 +21,14 @@
 #define STATUS_504 "HTTP/1.1 504 Gateway Time-out\r\n"
 #define STATUS_505 "HTTP/1.1 505 HTTP Version not supported\r\n"
 
-#define SPIDER_SERVER "Server: SpiderMen/1.2.3\r\n"
+#define SPIDER_SERVER "Server: SpiderMen/1.5.2\r\n"
 #define CONTENT_HTML "Content-Type: text/html; charset=UTF-8\r\n"
+#define CONTENT_PLAIN "Content-Type: text/plain; charset=UTF-8\r\n"
 
-#define CLOSE "close"
 #define KEEP_ALIVE "keep-alive"
 
 #define TIMEOUT_SEC 10
 
-#define CHUNKED -1
 #define FAIL_FD 0
 
 enum eSocket {
@@ -42,8 +40,9 @@ enum eMethod {
 	GET = 0,
 	POST = 1,
 	DELETE = 2,
-	BAD = 3,
-	HEAD = 4
+	PUT = 3,
+	BAD = 4,
+	HEAD = 5
 };
 
 enum eReadStatus {

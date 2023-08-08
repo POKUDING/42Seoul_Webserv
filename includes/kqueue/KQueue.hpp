@@ -11,6 +11,7 @@
 #include "../config/Server.hpp"
 #include <fcntl.h>
 
+// errno == EBADF 무시
 using namespace std;
 
 class KQueue
@@ -25,6 +26,7 @@ class KQueue
 		void			addClientSocketFd(int fd, void* udata);
 		void			addProcessPid(pid_t pid, void* udata);
 		void			addPipeFd(int writeFd, int readFd, void* udata);
+		void			deleteProcessPid(int pid);
 		void			deleteTimer(int fd);
 		void			resetTimer(int fd, void* udata);
 
@@ -33,10 +35,8 @@ class KQueue
 
 	private:
 		int						mKq;
-		vector<struct kevent>	mChangeList;
 		struct kevent			mEvents[MAX_EVENT];
-		
-		void 			changeEvents();
+
 };
 
 #endif // KQUEUE_HPP

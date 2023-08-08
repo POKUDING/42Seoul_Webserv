@@ -94,11 +94,9 @@ void						Server::setListen(const string& mListen)
 		if (isdigit(mListen[i]) == false)
 			throw runtime_error("Error: invalid listen port");
 	}
-	portNumber = atoi(mListen.c_str());
+	portNumber = SpiderMenUtil::atoi(mListen.c_str());
 	if (portNumber < 1 || portNumber > MAX_PORT_SIZE)
 		throw runtime_error("Error: invlid listen port");
-	// if (!(1 <= portNumber && portNumber <= MAX_PORT_SIZE))
-	// 	throw runtime_error("Error: invlid listen port");
 
 	this->mListen = portNumber;
 }
@@ -116,27 +114,8 @@ void	Server::setClientMaxBodySize(const string& mClientMaxBodySize)
 	}
 	if (mClientMaxBodySize.size() > 10 || (mClientMaxBodySize.size() == 10 && mClientMaxBodySize.compare("2147483647") > 0))
 		throw runtime_error("Error: invalid maxbodysize: not in range");
-	tmp = atoi(mClientMaxBodySize.c_str());
+	tmp = SpiderMenUtil::atoi(mClientMaxBodySize.c_str());
 	if (tmp < 0)
 		throw runtime_error("Error: invalid maxbodysize: not in range");
 	this->mClientMaxBodySize = tmp;
 }
-
-// print
-
-// void						Server::printMembers() const
-// {
-// 	cout << "	ErrorPage: \n";
-// 	printMap(this->getErrorPage());
-// 	cout << "	ServerName: \n";
-// 	for (size_t j = 0; j < this->getServerName().size(); ++j)
-// 		cout << "\t\t" << j << ": " << this->getServerName()[j] << "\n";
-// 	cout << "	Root: " << this->getRoot() << "\n";
-// 	cout << "	Listen: " << this->getListen() << "\n";
-// 	cout << "	ClientMaxBodySize: " << this->getClientMaxBodySize() << "\n";
-// 	for (size_t j = 0, end = this->getLocation().size(); j < end; ++j)
-// 	{
-// 		cout << "	Location [" << this->getLocation()[j].getKey() << "] --------------\n";
-// 		this->getLocation()[j].printMembers();
-// 	}
-// }

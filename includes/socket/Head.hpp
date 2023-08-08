@@ -3,6 +3,7 @@
 
 #include <string>
 #include <iostream>
+#include "../util/InputBuffer.hpp"
 
 using namespace std;
 
@@ -11,13 +12,12 @@ class Head
 	public:
 		Head();
 		~Head();
-
 		void	clear();
-		int		addHead(string& inputBuff);
+		int		addHead(InputBuffer& inputBuff);
 		
 		string&	getHeadBuffer();
 	private:
 		string	mHeadBuffer;
 };
 
-#endif // HEAD_HPP
+#endif // HEAD_HP

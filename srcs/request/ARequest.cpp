@@ -8,7 +8,7 @@ ARequest::ARequest(string root, int mType, map<string, string> header_key_val, v
 	memset((void *)&mBasics, 0, sizeof(mBasics));
 	mBasics.host = header_key_val["Host"];
 	mBasics.user_agent = header_key_val["User-Agent"];
-	mBasics.content_length = atoi(header_key_val["Content-Length"].c_str());
+	mBasics.content_length = SpiderMenUtil::atoi(header_key_val["Content-Length"].c_str());
 	mBasics.content_type = header_key_val["Content-Type"];
 	mBasics.content_disposition = header_key_val["Content-Disposition"];
 	mBasics.transfer_encoding = header_key_val["Transfer-Encoding"];
@@ -18,6 +18,7 @@ ARequest::ARequest(string root, int mType, map<string, string> header_key_val, v
 		case GET: mMethod = "GET"; break;
 		case POST: mMethod = "POST"; break;
 		case DELETE: mMethod = "DELETE"; break;
+		case PUT: mMethod = "PUT"; break;
 		case BAD: mMethod = "BAD"; break;
 		case HEAD: mMethod = "HEAD"; break;
 		default: break;
@@ -28,7 +29,7 @@ ARequest::ARequest(string root, int mType, map<string, string> header_key_val, v
 		throw 400;
 	//method 필수요소 확인: connection
 	if (header_key_val["Connection"] == "close")
-		mBasics.connection = CLOSE;
+		mBasics.connection = "close";
 	else
 		mBasics.connection = KEEP_ALIVE;
 	//method 필수요소 확인: content_length 확인 (숫자인지 아닌지 여부)
@@ -41,7 +42,10 @@ ARequest::ARequest(string root, int mType, map<string, string> header_key_val, v
 
 	cutQuery();
 	mServer = findServer(servers);
-	findLocation(mServer);
+
+	findRootLocation(mServer, mRoot);
+	if (mType != PUT)
+		findExtensionLocation(mServer);
 
 	//요청한 file/dir을 실제 location/server block root 주소에 따라 변경
 	if (mLocation.getRoot().size())//location 블럭에 루트가 있는 경우
@@ -50,7 +54,7 @@ ARequest::ARequest(string root, int mType, map<string, string> header_key_val, v
 		mRoot = mServer.getRoot() + "/" + mRoot;
 
 	//존재 확인
-	if (mType != POST && !mLocation.getRedirect().size() && access(mRoot.c_str(), F_OK) < 0)
+	if (mType != POST && mType != PUT && !mLocation.getRedirect().size() && access(mRoot.c_str(), F_OK) < 0)
 	{
 		// cout << "404 not found? : "<< mRoot.c_str() << endl;
 		throw 404;
@@ -72,46 +76,18 @@ ARequest::ARequest(string root, int mType, map<string, string> header_key_val, v
 		mBody.setMaxBodySize(mLocation.getLocationMaxBodySize());
 }
 
-ARequest::ARequest(int mType, map<string, string> header_key_val, vector<Server>* servers) : mRoot(""), mType(mType), mSendLen(0)
+ARequest::ARequest(int mType, map<string, string> header_key_val, vector<Server>* servers) : mRoot(""), mType(mType), mReadPipe(0), mWritePipe(0), mSendLen(0)
 {
 	mBasics.host = header_key_val["Host"];
 	mServer = findServer(servers);
 }
 
-
-ARequest::ARequest(int mType, Server mServer) : mRoot(""), mType(mType), mServer(mServer), mSendLen(0) { }
+ARequest::ARequest(int mType, Server mServer) : mRoot(""), mType(mType), mServer(mServer), mReadPipe(0), mWritePipe(0), mSendLen(0) { }
 ARequest::~ARequest() { }
 
 // member functions
 
 // public
-
-// void	ARequest::checkPipe()
-// {
-// 	char	buff[1024];
-// 	string	readvalue;
-// 	int		readlen = 1;
-
-// 	while (readlen > 0)
-// 	{
-// 		cout << "start" << endl;
-// 		readlen = read(mPipe[0], buff, 1024);
-// 		if (readlen > 0)
-// 			readvalue.append(buff, readlen);
-// 		cout << "fin " << buff << endl;
-// 	}
-// 	close(mPipe[0]);
-// 	readvalue = SpiderMenUtil::replaceCRLF(readvalue);
-// 	if (readvalue.find("Content-Type:") == string::npos)
-// 	{
-// 		size_t pos = readvalue.find("\r\n\r\n");
-// 		if (pos == string::npos)
-// 			readvalue = "\r\n" + readvalue;
-// 		readvalue = "Content-Type: text/html; charset=UTF-8\r\n" + readvalue;
-// 	}
-// 	// cout << readvalue << endl;
-// 	mPipeValue = readvalue;
-// }
 
 // getters and setters
 
@@ -131,6 +107,7 @@ void				ARequest::addSendLen(size_t len) { mSendLen += len; }
 void				ARequest::setCode(int code) { this->mCode = code; }
 
 // protected
+
 Server	ARequest::findServer(vector<Server>* servers)
 {
 	for (int server_idx = 0,server_end = servers->size(); server_idx < server_end; ++server_idx)
@@ -142,14 +119,16 @@ Server	ARequest::findServer(vector<Server>* servers)
 	return (*servers)[0];
 }
 
-void	ARequest::findLocation(Server& server)
-{
-	//Find Root Location으로 루트 설정
-	findRootLocation(server, mRoot);
-	
-	//Find extension location으로 cgi path 업데이트 해주기 (있는 경우에만)
-	findExtensionLocation(server);
-}
+// void	ARequest::findLocation(Server& server)
+// {
+// 	// 왜 함수가 두개로 나누어져 있는지?
+
+// 	//Find Root Location으로 루트 설정
+// 	findRootLocation(server, mRoot);
+
+// 	//Find extension location으로 cgi path 업데이트 해주기 (있는 경우에만)
+// 	findExtensionLocation(server);// put은 제외
+// }
 
 void	ARequest::findRootLocation(Server& server, string root)
 {
@@ -158,7 +137,7 @@ void	ARequest::findRootLocation(Server& server, string root)
 	for(int loc_idx = 0, end = server.getLocation().size(); loc_idx < end; ++loc_idx) {
 		if (root.substr(0, server.getLocation()[loc_idx].getKey().size()) == server.getLocation()[loc_idx].getKey() && \
 			server.getLocation()[loc_idx].getKey().size() > find_len) {
-			
+
 			mLocation = server.getLocation()[loc_idx];
 			find_len = server.getLocation()[loc_idx].getKey().size();
 			if (mType != GET)
@@ -167,8 +146,6 @@ void	ARequest::findRootLocation(Server& server, string root)
 	}
 	if (find_len == 0)
 		findRootLocation(server, "/");
-
-	// cout << "find location: " << mLocation.getKey() << endl;
 }
 
 void	ARequest::findExtensionLocation(Server& server)
@@ -190,7 +167,7 @@ void	ARequest::findExtensionLocation(Server& server)
 					mCgiPath = server.getLocation()[loc_idx].getCgiPath();
 					return;
 				}
-			}	
+			}
 		}
 	}
 }
@@ -198,7 +175,7 @@ void	ARequest::findExtensionLocation(Server& server)
 void	ARequest::setPipe(int *fd)
 {
 	if (pipe(fd) < 0)
-		throw runtime_error("Error: pipe create failed");
+		throw 500;// throw runtime_error("Error: pipe create failed");
 }
 
 void	ARequest::setCgiEnv()
@@ -208,40 +185,20 @@ void	ARequest::setCgiEnv()
 	setenv("HTTP_USER_AGENT", getBasics().user_agent.c_str(), 1);
 	setenv("SERVER_SOFTWARE", SPIDER_SERVER, 1); // "\r\n 빼야하나?"
 	setenv("REQUEST_METHOD", mMethod.c_str(), 1);
-	setenv("SERVER_PORT", to_string(mServer.getListen()).c_str(), 1);
+	setenv("SERVER_PORT", SpiderMenUtil::itostr(mServer.getListen()).c_str(), 1);
 	setenv("SERVER_PROTOCOL", "HTTP/1.1", 1);
 	setenv("QUERY_STRING", mQuery.c_str(), 1);
 	setenv("PATH_INFO", getCgiPath().c_str(), 1);
 	setenv("HTTP_X_SECRET_HEADER_FOR_TEST", getBasics().x_secret.c_str(), 1);
 
 	if (mBody.getChunked()) {
-		string	type = "text/plain";
-		int		length = getBody().getBody().size();
-		setenv("CONTENT_TYPE", type.c_str(), 1);
-		setenv("CONTENT_LENGTH", SpiderMenUtil::itostr(length).c_str(), 1);
+		string	type = "chunked";
+		setenv("HTTP_TRANSFER_ENCODING", type.c_str(), 1);
 	} else {
 		setenv("CONTENT_TYPE", getBasics().content_type.c_str(), 1);
 		setenv("CONTENT_LENGTH", SpiderMenUtil::itostr(getBasics().content_length).c_str(), 1);
 	}
-	//밑 두 줄 원본임
-	// setenv("CONTENT_HTML", getBasics().content_type.c_str(), 1);
-	// setenv("CONTENT_LENGTH", SpiderMenUtil::itostr(getBasics().content_length).c_str(), 1);
 	
-
-	// // SERVER_NAME
-	// // SERVER_SOFTWARE // CGI 프로그램 이름 및 버전 ex) 아파치 / 2.2.14
-	// SERVER_PROTOCOL // ??? HTTP/1.1 ?
-	// // SERVER_PORT // ???
-	// // REQUEST_METHOD // GET POST ..
-	// // PATH_INFO // CGI path /wevsrv/cgi_bin/example.cgi
-	// DOCUMENT_ROOT // ???
-	// QUERY_STRING // url?key=value&key=value ..
-	// REMOTE_HOST	//client host name 없으면 정의 x
-	// REMOTE_ADDR	//client ip
-	// // CONTENT_HTML
-	// // CONTENT_LENGTH
-	// HTTP_REFERER // ????
-	// // HTTP_USER_AGENT
 }
 
 void	ARequest::cutQuery()

@@ -2,117 +2,112 @@
 
 // constructor and destructor
 
-Body::Body() :  mReadEnd(false), mChunked(false), mContentLen(0), mChunkLen(0) {}
+Body::Body() :  mReadEnd(false), mChunked(false), mSendLen(0), mContentLen(0), mChunkLen(0) {}
 Body::~Body() {}
 
 // memeber functions
 
 // public
 
-int	Body::addBody(string& inputbuffer)
+int	Body::addBody(InputBuffer& inputBuffer)
 {
-
-	if (mChunked)
-	{
-		// cout << "chunk Body called" << endl;
-		// cout << inputbuffer << endl;
-		return (addChunkBody(inputbuffer));
-	}
-	else
-	{
-		// cout << "Len Body called" << endl;
-		return (addLenBody(inputbuffer));
+	if (mChunked) {
+		return (addChunkBody(inputBuffer));
+	} else {
+		return (addLenBody(inputBuffer));
 	}
 }
 
-int	Body::addChunkBody(string& inputbuff)
+void	Body::writeBody(int fd)
 {
-	string	input_tmp;
+	size_t	sendLen = 0;
+	size_t	sendingLen = mBody.size() - mSendLen;
 
-	//body + header의 경우 error 던져짐
-	mChunkBuf.append(inputbuff.c_str(), inputbuff.size());
-	inputbuff.clear();
-	if (mChunkLen == 0)
-		mChunkLen = parseChunkLen(mChunkBuf);
-	while (!mReadEnd && mChunkLen && mChunkBuf.size())
-	{
-		// cout << "BEFORE chunke len : " << mChunkLen << " mChunkBuf size : " <<mChunkBuf.size() << endl;
-		if (mChunkBuf.size() < mChunkLen) {
-			mBody.append(mChunkBuf.c_str(), mChunkBuf.size());
-			mChunkLen -= (mChunkBuf.size());
-			mChunkBuf.clear();
-			// cout << "AFTER \n$" << mBody << "$" <<endl;
-			// cout << "AFTER chunke len : " << mChunkLen << " mChunkBuf size : " <<mChunkBuf.size() << endl;
-		} else {
-			mBody.append(mChunkBuf.c_str(), mChunkLen);
-			mChunkBuf = mChunkBuf.substr(mChunkLen);
-			// cout << "body size :" << mBody.size() << "\n$" << mBody  << "$" << endl;
-			// cout << "\\r\\n result : " << mBody.find("\r\n") << endl;
-			// cout << "in buffer : \n$" << mChunkBuf <<  "$"<<endl;
-			if (mBody.find("\r\n") != mBody.size() - 2)
-				throw runtime_error("Error: invalid chunk format");
-			mBody = mBody.substr(0, mBody.size() - 2);
-			mChunkLen = parseChunkLen(mChunkBuf);
-		}
+	if (sendingLen)
+		sendLen = write(fd, mBody.c_str() + mSendLen, sendingLen);
+	if (sendingLen && sendLen <= 0) {
+		close (fd);
+		cerr << "input to pipe error" << endl;
+		throw 500;
 	}
-	if (mReadEnd == true) {
-		// cout << "chunked finished++++" << endl;
-		// cout << mBody << endl;
-		// cout << "++++++++++++++++++++" << endl;
-		if (mChunkBuf.size() >= 2)
-		{
-			inputbuff.append(mChunkBuf.c_str() + 2, mChunkBuf.size() - 2);
-			return 1;
-		}
+	mSendLen += sendLen;
+	if (mBody.size() == mSendLen && mReadEnd) {
+		// cout << "write pipe end" << endl;
+		close (fd);
 	}
-	return 0;
-
-}
-
-size_t	Body::parseChunkLen(string& ChunkBuf)
-{
-	char 	*end_ptr;
-	size_t	len;
-
-	len = strtol(ChunkBuf.c_str(), &end_ptr, 16);
-	if (end_ptr[0] != '\r' || end_ptr[1] != '\n')
-		return 0;
-	if (len == 0)
-		mReadEnd = true;
-	ChunkBuf = ChunkBuf.substr(ChunkBuf.find("\r\n") + 2);
-	return len + 2;
-}
-
-int	Body::addLenBody(string& inputbuffer)
-{
-	//body + header의 경우 error 던져짐
-	mBody.append(inputbuffer.c_str(), inputbuffer.size());
-	inputbuffer.clear();
-	if (mBody.size() + inputbuffer.size() > mContentLen + 4)
-	{
-		inputbuffer = mBody.substr(mContentLen + 4);
-		mBody = mBody.substr(0, mContentLen + 4);
-	}
-	if (mBody.size() == mContentLen + 4)
-	{
-		mReadEnd = true;
-		if (mBody.find("\r\n\r\n", mContentLen) == string::npos)
-			throw runtime_error("Error: invlaid len body format");
-		return 1;
-	}
-	return 0;
 }
 
 // getters and setters
 
-void	Body::setMaxBodySize(size_t mMaxbody) { this->mMaxBodySize = mMaxbody; }
-void	Body::setContentLen(size_t len) { this->mContentLen = len; }
-void	Body::setChunked(bool chunk) { this->mChunked = chunk; }
-
-
 size_t	Body::getSize() { return mBody.size(); }
 size_t	Body::getMaxBodySize() { return mMaxBodySize; }
 bool	Body::getChunked() { return mChunked; }
+size_t	Body::getSendLen() { return mSendLen; }
 size_t	Body::getContentLen() { return mContentLen; }
 bool	Body::getReadEnd() { return mReadEnd; }
 string&	Body::getBody() { return mBody; }
+void	Body::setMaxBodySize(size_t mMaxbody) { this->mMaxBodySize = mMaxbody; }
+void	Body::setChunked(bool chunk) { this->mChunked = chunk; }
+void	Body::setSendLen(size_t mSendLen) { this->mSendLen = mSendLen; }
+void	Body::setContentLen(size_t len) { this->mContentLen = len; }
+
+// private
+
+int	Body::addChunkBody(InputBuffer& inputBuffer)
+{
+	string	input_tmp;
+
+	//body + header의 경우 error 던져짐
+	if (mChunkLen == 0)
+		mChunkLen = parseChunkLen(inputBuffer);
+	// cout << "mChunkLen: "<<mChunkLen <<", input size : " <<inputBuffer.size() - inputBuffer.getIndex() << endl;
+	while (mReadEnd == false && mChunkLen && inputBuffer.size() - inputBuffer.getIndex())
+	{
+		if (inputBuffer.size() - inputBuffer.getIndex() >= mChunkLen + 2) {
+			mBody.append(inputBuffer.getCharPointer(), mChunkLen);
+			if (inputBuffer.getCharPointer()[mChunkLen] != '\r' || inputBuffer.getCharPointer()[mChunkLen + 1] != '\n')
+				throw 400;// runtime_error("Error: invalid chunk format");
+			inputBuffer.updateIndex(inputBuffer.getIndex() + mChunkLen + 2);
+			mChunkLen = parseChunkLen(inputBuffer);
+		} else
+			break;
+	}
+	if (mReadEnd == true && inputBuffer.size() - inputBuffer.getIndex() - mChunkLen >= 2) {
+		inputBuffer.reset(inputBuffer.getIndex() + 2);
+		return 1;
+	}
+	return 0;
+
+}
+
+size_t	Body::parseChunkLen(InputBuffer& inputbuff)
+{
+	char 	*end_ptr;
+	size_t	len;
+
+	len = strtol(inputbuff.getCharPointer(), &end_ptr, 16);
+	if (end_ptr[0] != '\r' || end_ptr[1] != '\n')
+		return 0;
+	if (len == 0)
+	{
+		if (end_ptr[2] != '\r' || end_ptr[3] != '\n')
+			return 0;
+		mReadEnd = true;
+	}
+	inputbuff.updateIndex(inputbuff.getIndex() + (end_ptr - inputbuff.getCharPointer() + 2));
+	return len;
+}
+
+int	Body::addLenBody(InputBuffer& inputBuffer)
+{
+	//body + header의 경우 error 던져짐
+	if (inputBuffer.size() - inputBuffer.getIndex() < mContentLen)
+		return 0;
+	mBody.append(inputBuffer.getCharPointer(), mContentLen);
+	if (inputBuffer.size() - inputBuffer.getIndex() != mContentLen)
+		throw 413;
+	inputBuffer.reset();
+	mReadEnd = true;
+
+	return 1;
+}

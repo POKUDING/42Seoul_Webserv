@@ -4,7 +4,7 @@
 
 #include <iostream>
 #include <ostream>
-#include <string>
+#include <cstring>
 #include <ctime>
 
 using namespace std;

@@ -15,19 +15,18 @@ RPost::RPost(string mRoot, map<string, string> header_key_val, vector<Server>* s
 	} else if (mBasics.transfer_encoding == "chunked") {
 		mBody.setChunked(true);
 	} else {
-		// cerr << "content length fail" << endl;
-		throw 400;
-	}
-
-	//file only인 location에 dir 요청으로 들어온 경우
-	if (mLocation.getOnlyFile() && mIsFile ==  false) {
-		// cerr << "/* only file Error" << endl;
 		throw 400;
 	}
 
 	//method 사용가능한지 확인
 	if (find(mLocation.getLimitExcept().begin(), mLocation.getLimitExcept().end(), "POST") == mLocation.getLimitExcept().end())
 		throw 405;
+
+	//file only인 location에 dir 요청으로 들어온 경우
+	if (mLocation.getOnlyFile() && mIsFile ==  false) {
+		// cerr << "/* only file Error" << endl;
+		throw 400;
+	}
 }
 
 RPost::~RPost() { }
@@ -116,7 +115,6 @@ void	RPost::executeCgi()
 	extern char** environ;
 	char* const argv[2] = {const_cast<char * const>(mCgiPath.c_str()), NULL};
 	setCgiEnv();
-	if (execve(argv[0], argv, environ) == -1)
-		// cerr << "RPOST: execve failed!!" << strerror(errno) << endl;;
+	execve(argv[0], argv, environ);
 	exit(EXIT_FAILURE);
 }

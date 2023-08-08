@@ -9,6 +9,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <unistd.h>
+#include <signal.h>
 #include <fcntl.h>
 #include "../kqueue/KQueue.hpp"
 #include "../request/ARequest.hpp"
@@ -83,7 +84,7 @@ class Client : public Socket
 
 		void				setReadStatus(int mStatus);
 		void				setResponseCode(int code);
-		// void				setCGI(pid_t mPid);
+		void				setPid(pid_t mPid);
 		void				setRequestStatus(int mRequestStatus);
 
 	private:

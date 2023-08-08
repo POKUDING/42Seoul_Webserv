@@ -14,7 +14,7 @@ def parse_multipart_octet_stream():
     #if content_length
     if content_length:
         # Read the raw POST data
-        post_data = sys.stdin.buffer.read(content_length)
+        post_data = sys.stdin.buffer.read()
 
         if content_type.startswith('multipart/form-data'):
             boundary = content_type.split('boundary=')[-1].encode('utf-8')
@@ -46,6 +46,12 @@ def parse_multipart_octet_stream():
             with open(upload_dir, 'wb') as f:
                 f.write(content)
 
+        elif content_type == 'plain/text':
+            print("Content-Type: text/plain")
+            print()
+            print("안녕하세요 평가자님.\n평가에 오신 것을 환영합니다^^")
+            sys.exit(0)
+
         else:
             print("Content-Type: text/plain")
             print()
@@ -55,20 +61,17 @@ def parse_multipart_octet_stream():
 
     #if chunked
     elif os.environ.get('HTTP_TRANSFER_ENCODING') == "chunked":
-        try:
-            while True:
-                data = sys.stdin.buffer.read(4096)
-                if not data:
-                    break
+        post_data = sys.stdin.read()
+        
+        # upload_path = upload_dir[:upload_dir.rfind('/')]
 
-                pos = upload_dir.rfind('/')
-                os.makedirs(upload_dir[:pos], exist_ok=True)
-                with open(upload_dir, 'wb') as f:
-                    f.write(data)
-
-        except KeyboardInterrupt:
-            pass
-    
+        # # Create the upload_dir if it doesn't exist
+        # os.makedirs(upload_path, exist_ok=True)
+        with open(upload_dir, 'ab') as f:
+            if (len(post_data)):
+                f.write(post_data.encode("utf-8"))
+                # f.write(post_data)
+            # print(post_data, file=sys.stderr)
     else:
         print("Content-Type: text/plain")
         print()
@@ -90,7 +93,7 @@ if __name__ == "__main__":
     try:
         parse_multipart_octet_stream()
     except Exception as e:
-        print(f"Error: {str(e)}")
+        print(f"Error: {str(e)}", file=sys.stderr)
         sys.exit(1)
 
 

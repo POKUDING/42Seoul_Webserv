@@ -28,8 +28,10 @@ int	main(int argc, char* argv[])
 		signal(SIGINT, sigHandler);
 		signal(SIGQUIT, sigHandler);
 		while (42) {
+			
+			SpiderMen spiderMen(config);
+			
 			try {
-				SpiderMen spiderMen(config);
 				cout << "\n============================\n\n\n   server start ! \n\n\n============================" << endl;
 				spiderMen.run();
 			} catch (const exception& e) {

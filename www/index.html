@@ -51,6 +51,11 @@
   <!-- 삭제할 파일 c.png -->
   <button type="button" onclick="sendDeleteRequest('http://0.0.0.0:4242/upload/c.png')">c.png 삭제</button><br>
 
+  <h1>/upload/ 확인하기</h1>
+  <form action="http://0.0.0.0:4242/upload/" method="GET">
+    <input type="submit" value="upload 폴더 안으로 고고"/>
+  </form>
+
   <h1>Redirect Test</h1>
   <form action="http://0.0.0.0:4242/youtube" method="GET">
     <input type="submit" value="YouTube"/>

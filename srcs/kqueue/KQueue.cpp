@@ -53,12 +53,13 @@ void	KQueue::addClientSocketFd(int fd, void* udata)
 	struct kevent event;
 
 	EV_SET(&event, fd, EVFILT_READ, EV_ADD, 0, 0, udata);
-	if (kevent(mKq, &event, 1, NULL, 0, NULL) == -1)
+	if (kevent(mKq, &event, 1, NULL, 0, NULL) == -1) {
 		throw runtime_error("addClientSocketFd failed1");
+	}
 	EV_SET(&event, fd, EVFILT_WRITE, EV_ADD | EV_DISABLE, 0, 0, udata);
 	if (kevent(mKq, &event, 1, NULL, 0, NULL) == -1)
 		throw runtime_error("addClientSocketFd failed2");
-	EV_SET(&event, fd, EVFILT_TIMER, EV_ADD, NOTE_SECONDS, TIMEOUT_SEC, udata);
+	EV_SET(&event, fd, EVFILT_TIMER, EV_ADD | EV_ENABLE, NOTE_SECONDS, TIMEOUT_SEC, udata);
 	if (kevent(mKq, &event, 1, NULL, 0, NULL) == -1)
 		throw runtime_error("addClientSocketFd failed3");
 }
@@ -92,9 +93,17 @@ void	KQueue::addPipeFd(int writeFd, int readFd, void* udata)
 void	KQueue::deleteProcessPid(int pid)
 {
 	struct kevent event;
+	int status;
+
+	waitpid(static_cast<pid_t>(pid), &status, WNOHANG);
+	if (WIFEXITED(status)) {
+		return ;
+	}
 	EV_SET(&event, pid, EVFILT_PROC, EV_DELETE, 0, 0, NULL);
-	if (kevent(mKq, &event, 1, NULL, 0, NULL) == -1)
+	if (kevent(mKq, &event, 1, NULL, 0, NULL) == -1) {
+		// cout << strerror(errno) << endl;
 		throw runtime_error("deleteProcessPid failed");
+	}
 }
 
 void	KQueue::deleteTimer(int fd)
@@ -110,7 +119,7 @@ void	KQueue::resetTimer(int fd, void* udata)
 {
 	struct kevent event;
 	
-	EV_SET(&event, fd, EVFILT_TIMER, EV_ADD, NOTE_SECONDS, TIMEOUT_SEC, udata);
+	EV_SET(&event, fd, EVFILT_TIMER, EV_ADD | EV_ENABLE, NOTE_SECONDS, TIMEOUT_SEC, udata);
 
 	if (kevent(mKq, &event, 1, NULL, 0, NULL) == -1)
 		throw runtime_error("resetTimer failed");

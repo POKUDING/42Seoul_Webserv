@@ -38,9 +38,19 @@ void	Config::parse(const string& file)
 				vector<Server> tempServer;
 				tempServer.push_back(server);
 				mServer.insert(pair<int, vector<Server> >(server.getListen(), tempServer));				
-			}
-			else
+			} else {
+
+				vector<Server>::iterator sit = it->second.begin();
+				vector<Server>::iterator send = it->second.end();
+				int hostsize = server.getServerName().size();
+				for (; sit != send; ++sit) {
+					for (int i = 0; i < hostsize; ++i) {
+						if (find(sit->getServerName().begin(), sit->getServerName().end(), server.getServerName()[i]) != sit->getServerName().end())
+							throw runtime_error("Error: config wrong arguments - duplicated server_name.");
+					}
+				}
 				it->second.push_back(server);
+			}
 		} else {
 			throw runtime_error("Error: config wrong arguments.");
 		}

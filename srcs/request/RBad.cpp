@@ -46,11 +46,20 @@ void			RBad::createErrorResponse(int code)
 		default: mMSG.append(STATUS_500); break;
 	}
 
+	Time::stamp(timeStamp);
+	mMSG.append(timeStamp);		//Date: Tue, 20 Jul 2023 12:34:56 GMT\r\n
+	mMSG.append(SPIDER_SERVER);	//Server: SpiderMen/1.0.0\r\n
+
+	// if (code == 413) {
+	// 	mMSG.append("\r\n");//end of head
+	// 	return ;
+	// }
+
 	if (mServer.getErrorPage()[SpiderMenUtil::itostr(code)].size()) {
 		mMSG.append(CONTENT_HTML);	//Content-Type: text/html; charset=UTF-8\r\n
 		filename = mServer.getRoot() + "/" +  mServer.getErrorPage()[SpiderMenUtil::itostr(code)];
 	} else {
-		mMSG.append(CONTENT_PLAIN);
+		mMSG.append(CONTENT_HTML);
 		filename = DEFAULT_ERROR_PAGE;
 	}
 
@@ -66,15 +75,7 @@ void			RBad::createErrorResponse(int code)
 		body = mMSG;
 
 	//HEADER============================================
-	Time::stamp(timeStamp);
-	mMSG.append(timeStamp);		//Date: Tue, 20 Jul 2023 12:34:56 GMT\r\n
-	mMSG.append(SPIDER_SERVER);	//Server: SpiderMen/1.0.0\r\n
-
-	if (code == 413)
-	{
-		mMSG.append("\r\n");//end of head
-		return ;
-	}
+	
 
 	mMSG.append("Content-Length: ");
 	to_str << body.size();

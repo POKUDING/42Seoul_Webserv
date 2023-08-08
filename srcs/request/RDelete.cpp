@@ -7,15 +7,15 @@ RDelete::RDelete(string mRoot, map<string, string> header_key_val, vector<Server
 {
 	// cout << "DELETE CALL!!" << endl;
 	mMethod = "DELETE";
+	if (find(mLocation.getLimitExcept().begin(), mLocation.getLimitExcept().end(), "DELETE") == \
+			mLocation.getLimitExcept().end())
+		throw 405;
 	if (mBasics.content_length || mBasics.transfer_encoding.size())
 		throw 400;
 	//dir or file 체크
 	if (mIsFile == false)
 		throw 400;
 	//method 사용가능한지 확인
-	if (find(mLocation.getLimitExcept().begin(), mLocation.getLimitExcept().end(), "DELETE") == \
-			mLocation.getLimitExcept().end())
-		throw 405;
 }
 
 RDelete::~RDelete() { }

@@ -50,7 +50,7 @@ void			RBad::createErrorResponse(int code)
 		mMSG.append(CONTENT_HTML);	//Content-Type: text/html; charset=UTF-8\r\n
 		filename = mServer.getRoot() + "/" +  mServer.getErrorPage()[SpiderMenUtil::itostr(code)];
 	} else {
-		mMSG.append(CONTENT_PLAIN);
+		mMSG.append(CONTENT_HTML);
 		filename = DEFAULT_ERROR_PAGE;
 	}
 

@@ -5,7 +5,7 @@
 #define MAX_PORT_SIZE 65535		//max(short)
 #define DEFAULT_CONF_FILE "./conf/default.conf"
 #define DEFAULT_ERROR_PAGE "./www/errors/error_default.html"
-#define BACKLOG 1024
+#define BACKLOG 2048
 #define MAX_EVENT 2048
 
 #define STATUS_200 "HTTP/1.1 200 OK\r\n"
@@ -27,7 +27,7 @@
 
 #define KEEP_ALIVE "keep-alive"
 
-#define TIMEOUT_SEC 10
+#define TIMEOUT_SEC 30
 
 #define FAIL_FD 0
 

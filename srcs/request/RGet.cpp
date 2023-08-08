@@ -6,13 +6,14 @@ RGet::RGet(string mRoot, map<string, string> header_key_val, vector<Server>* ser
 			: ARequest(mRoot, GET, header_key_val, servers)
 {
 	mMethod = "GET";
-	if (mBasics.content_length || mBasics.transfer_encoding.size())
-		throw 400;
 
-	//해당 location 블록에서 method 사용가능한지 확인
 	if (find(mLocation.getLimitExcept().begin(), mLocation.getLimitExcept().end(), "GET") == \
 			mLocation.getLimitExcept().end())
 		throw 405;
+
+	if (mBasics.content_length || mBasics.transfer_encoding.size())
+		throw 400;
+
 }
 
 RGet::~RGet() { }
@@ -82,8 +83,7 @@ void	RGet::executeCgi()
 	extern char** environ;
 	setCgiEnv();
 	char* const argv[2] = {const_cast<char * const>(mCgiPath.c_str()), NULL};
-	if (execve(argv[0], argv, environ) < 0)
-		// cerr << "execve failed!!" << strerror(errno) << endl;
+	execve(argv[0], argv, environ);
 	exit(EXIT_FAILURE);
 }
 
@@ -209,6 +209,8 @@ const string	RGet::createLegacyResponse()
 			to_str >> buffer;
 			mMSG.append(buffer + "\r\n\r\n");
 			mMSG.append(body);
+			
+			closedir(dir);
 
 		} else {// autoindex np => 뭘 보여주지
 			// mMSG.clear();

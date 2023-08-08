@@ -7,8 +7,10 @@ SpiderMen::~SpiderMen()
 {
 	for (size_t i = 0, end = mServerSockets.size(); i < end; ++i)
 		close(mServerSockets[i].getFd());
-	for (map<int, Client>::iterator it = mClients.begin(); it != mClients.end(); ++it)
-		deleteClient(it->first);
+	map<int, Client>::iterator begin = mClients.begin();
+	map<int, Client>::iterator end = mClients.end();
+	for (;begin != end; ++begin)
+		close(begin->second.getFd());
 }
 
 // member functions
@@ -74,6 +76,7 @@ void	SpiderMen::run()
 						deleteClient(sock_ptr->getFd());
 						cout << "======================= client closed [" << fd << "]" << endl;
 					}
+					break;
 				} catch (const exception& e) {
 					throw e;
 				}
@@ -153,12 +156,12 @@ void	SpiderMen::handleClient(struct kevent* event, Client* client)
 		// cout << "PROC" << endl;
 		client->handleProcess(event);
 	} else if (event->filter == EVFILT_TIMER) {
-		// cerr << "TIMER" << endl;
+		cerr << "TIMER" << endl;
 		switch (client->getRequestStatus()) {
 			case EMPTY:		throw 0;
 			case PROCESSING: throw 500;
 			case SENDING:	throw 0;
-			default:		break;
+			default:	cout << "Request Status: " << client->getRequestStatus() << endl;	break;
 		}
 	} else {
 		// cout << "ERROR_EVFILT" << endl;
@@ -173,11 +176,13 @@ void	SpiderMen::handleError(Client* client)
 		throw 0;
 
 	Server server = client->getRequests().front()->getServer();
+
 	if (client->getPid()) {
 		// cerr << "pid delete!" <<endl;
 		mKq.deleteProcessPid(client->getPid());
 		kill(client->getPid(), 2);
 		waitpid(client->getPid(), NULL, 0);
+		client->setPid(0);
 	}
 	if (client->getRequests().front()->getReadPipe())
 		close(client->getRequests().front()->getReadPipe());

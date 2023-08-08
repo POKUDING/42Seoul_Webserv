@@ -7,6 +7,8 @@ ARequest::ARequest(string root, int mType, map<string, string> header_key_val, v
 {
 	memset((void *)&mBasics, 0, sizeof(mBasics));
 	mBasics.host = header_key_val["Host"];
+	if (mBasics.host.find(':') != string::npos)
+		mBasics.host = mBasics.host.substr(0,mBasics.host.find(':'));
 	mBasics.user_agent = header_key_val["User-Agent"];
 	mBasics.content_length = SpiderMenUtil::atoi(header_key_val["Content-Length"].c_str());
 	mBasics.content_type = header_key_val["Content-Type"];
@@ -110,11 +112,11 @@ void				ARequest::setCode(int code) { this->mCode = code; }
 
 Server	ARequest::findServer(vector<Server>* servers)
 {
-	for (int server_idx = 0,server_end = servers->size(); server_idx < server_end; ++server_idx)
-	{
-		for (int name_idx = 0, name_end = (*servers)[server_idx].getServerName().size(); name_idx < name_end; ++name_idx)
+	for (int server_idx = 0,server_end = servers->size(); server_idx < server_end; ++server_idx) {
+		for (int name_idx = 0, name_end = (*servers)[server_idx].getServerName().size(); name_idx < name_end; ++name_idx) {
 			if (mBasics.host == (*servers)[server_idx].getServerName()[name_idx])
 				return (*servers)[server_idx];
+		}
 	}
 	return (*servers)[0];
 }
@@ -191,7 +193,15 @@ void	ARequest::setCgiEnv()
 	setenv("PATH_INFO", getCgiPath().c_str(), 1);
 	setenv("HTTP_X_SECRET_HEADER_FOR_TEST", getBasics().x_secret.c_str(), 1);
 
-	if (mBody.getChunked()) {
+	if (mType == PUT) {
+		if (getBasics().content_type.size())
+			setenv("CONTENT_TYPE", getBasics().content_type.c_str(), 1);
+		else {
+			string type = "text/plain";
+			setenv("CONTENT_TYPE", type.c_str(), 1);
+		}
+		setenv("CONTENT_LENGTH", SpiderMenUtil::itostr(mBody.getBody().size()).c_str(), 1);
+	} else if (mBody.getChunked()) {
 		string	type = "chunked";
 		setenv("HTTP_TRANSFER_ENCODING", type.c_str(), 1);
 	} else {

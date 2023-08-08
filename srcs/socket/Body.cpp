@@ -27,12 +27,10 @@ void	Body::writeBody(int fd)
 		sendLen = write(fd, mBody.c_str() + mSendLen, sendingLen);
 	if (sendingLen && sendLen <= 0) {
 		close (fd);
-		cerr << "input to pipe error" << endl;
 		throw 500;
 	}
 	mSendLen += sendLen;
 	if (mBody.size() == mSendLen && mReadEnd) {
-		// cout << "write pipe end" << endl;
 		close (fd);
 	}
 }

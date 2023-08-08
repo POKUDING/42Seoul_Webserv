@@ -278,12 +278,12 @@ void			Client::writeSocket(struct kevent* event)
 int			Client::sendResponseMSG(struct kevent* event)
 {
 	// TEST_CODE: response msg
-	// if (getRequests().front()->getSendLen() == 0) {
-	// 	if (getResponseMSG().size() > 1000)
-	// 		cout << getFd() << " " << event->ident << " Response+++++++++\n" << getResponseMSG().substr(0, 500) << "++++++++++++++"<< endl;
-	// 	else
-	// 		cout << getFd() << " " << event->ident << " Response+++++++++\n" << getResponseMSG() << "++++++++++++++" << endl;
-	// }
+	if (getRequests().front()->getSendLen() == 0) {
+		if (getResponseMSG().size() > 1000)
+			cout << getFd() << " " << event->ident << " Response+++++++++\n" << getResponseMSG().substr(0, 500) << "++++++++++++++"<< endl;
+		else
+			cout << getFd() << " " << event->ident << " Response+++++++++\n" << getResponseMSG() << "++++++++++++++" << endl;
+	}
 
 
 
@@ -302,6 +302,7 @@ int			Client::sendResponseMSG(struct kevent* event)
 	if (getRequests().front()->getSendLen() == getResponseMSG().size())
 	{
 		mResponseMSG.clear();
+		// cout << "send done ======" << endl;
 		return 1;
 	}
 	return 0;

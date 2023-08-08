@@ -68,13 +68,13 @@ void	SpiderMen::run()
 						mKq.resetTimer(sock_ptr->getFd(), sock_ptr);
 				} catch (int error) {
 					// cout << "Error: Client Handler: "<< sock_ptr->getFd() << ", error status: " << error<< endl;
-					if (error) {
+					if (error && reinterpret_cast<Client *>(sock_ptr)->getRequests().empty() == false) {
+						cerr << error << endl;
 						reinterpret_cast<Client *>(sock_ptr)->setResponseCode(error);
 						handleError(reinterpret_cast<Client *>(sock_ptr));
 					} else {
-						int fd = sock_ptr->getFd();
+						// cout << "======================= client closed [" << sock_ptr->getFd() << "]" << endl;
 						deleteClient(sock_ptr->getFd());
-						cout << "======================= client closed [" << fd << "]" << endl;
 					}
 					break;
 				} catch (const exception& e) {
@@ -136,6 +136,12 @@ void	SpiderMen::handleServer(Socket* sock)
 	if (fd == -1) {
 		throw FAIL_FD;
 	}
+	//RE
+	struct linger opt;
+    opt.l_onoff = 1;  // linger를 활성화
+    opt.l_linger = 0;
+	setsockopt(fd, SOL_SOCKET, SO_LINGER, &opt, sizeof(opt));
+
 	Client client_tmp(CLIENT, fd, sock->getPortNumber(), sock->getServer(), mKq);
 	if (fcntl(client_tmp.getFd(), F_SETFL, O_NONBLOCK) == -1)
 		throw fd;
@@ -161,7 +167,7 @@ void	SpiderMen::handleClient(struct kevent* event, Client* client)
 			case EMPTY:		throw 0;
 			case PROCESSING: throw 500;
 			case SENDING:	throw 0;
-			default:	cout << "Request Status: " << client->getRequestStatus() << endl;	break;
+			default:		break;
 		}
 	} else {
 		// cout << "ERROR_EVFILT" << endl;
@@ -172,9 +178,6 @@ void	SpiderMen::handleClient(struct kevent* event, Client* client)
 
 void	SpiderMen::handleError(Client* client)
 {
-	if (client->getRequests().empty())
-		throw 0;
-
 	Server server = client->getRequests().front()->getServer();
 
 	if (client->getPid()) {

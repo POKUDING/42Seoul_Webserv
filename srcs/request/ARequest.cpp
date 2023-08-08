@@ -185,7 +185,7 @@ void	ARequest::setCgiEnv()
 	setenv("HTTP_USER_AGENT", getBasics().user_agent.c_str(), 1);
 	setenv("SERVER_SOFTWARE", SPIDER_SERVER, 1); // "\r\n 빼야하나?"
 	setenv("REQUEST_METHOD", mMethod.c_str(), 1);
-	setenv("SERVER_PORT", to_string(mServer.getListen()).c_str(), 1);
+	setenv("SERVER_PORT", SpiderMenUtil::itostr(mServer.getListen()).c_str(), 1);
 	setenv("SERVER_PROTOCOL", "HTTP/1.1", 1);
 	setenv("QUERY_STRING", mQuery.c_str(), 1);
 	setenv("PATH_INFO", getCgiPath().c_str(), 1);

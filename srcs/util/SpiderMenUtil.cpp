@@ -101,30 +101,30 @@ string SpiderMenUtil::replaceCRLF(const string& input)
     return result;
 }
 
-std::vector<std::pair<std::string, std::string> > parseQueryString(const std::string& query) {
-    std::vector<std::pair<std::string, std::string> > result;
+vector<pair<string, string> > parseQueryString(const string& query) {
+    vector<pair<string, string> > result;
 
     size_t pos = 0;
     while (pos < query.length()) {
         size_t equalPos = query.find('=', pos);
-        if (equalPos == std::string::npos) {
+        if (equalPos == string::npos) {
             break; // '='을 찾지 못하면 종료
         }
 
-        std::string key = query.substr(pos, equalPos - pos);
+        string key = query.substr(pos, equalPos - pos);
         pos = equalPos + 1;
 
         size_t ampPos = query.find('&', pos);
-        if (ampPos == std::string::npos) {
+        if (ampPos == string::npos) {
             ampPos = query.length();
         }
 
-        std::string value = query.substr(pos, ampPos - pos);
+        string value = query.substr(pos, ampPos - pos);
         pos = ampPos + 1;
 
         // URL 인코딩된 문자열을 원래 값으로 디코딩
-        std::replace(value.begin(), value.end(), '+', ' '); // +를 공백으로 대체
-        std::string decodedValue;
+        replace(value.begin(), value.end(), '+', ' '); // +를 공백으로 대체
+        string decodedValue;
         for (size_t i = 0; i < value.length(); ++i) {
             if (value[i] == '%') {
                 int hexValue;
@@ -136,7 +136,7 @@ std::vector<std::pair<std::string, std::string> > parseQueryString(const std::st
             }
         }
 
-        result.push_back(std::make_pair(key, decodedValue));
+        result.push_back(make_pair(key, decodedValue));
     }
 
     return result;

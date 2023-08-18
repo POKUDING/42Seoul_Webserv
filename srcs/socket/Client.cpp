@@ -290,7 +290,8 @@ int			Client::sendResponseMSG(struct kevent* event)
 	size_t	sendinglen = getResponseMSG().size() - getRequests().front()->getSendLen();
 	if (static_cast<size_t>(event->data) <= sendinglen)
 		sendinglen = event->data;
-	sendinglen = send(getFd(), getResponseMSG().c_str() + getRequests().front()->getSendLen(), sendinglen, 0);
+	//MSG_NOSIGNAL added after 평가
+	sendinglen = send(getFd(), getResponseMSG().c_str() + getRequests().front()->getSendLen(), sendinglen, MSG_NOSIGNAL);
 
 	if (sendinglen == static_cast<size_t>(-1) || sendinglen == 0) {
 		throw 0;

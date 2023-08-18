@@ -138,9 +138,12 @@ void	SpiderMen::handleServer(Socket* sock)
 	}
 	//RE
 	struct linger opt;
-    opt.l_onoff = 1;  // linger를 활성화
-    opt.l_linger = 0;
+    	opt.l_onoff = 1;  // linger를 활성화
+    	opt.l_linger = 0;
 	setsockopt(fd, SOL_SOCKET, SO_LINGER, &opt, sizeof(opt));
+	//pipe 터짐 방지용으로 추가됨 (after 평가ㅎㅎ)
+	int socket_option = 1;
+	setsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, &socket_option, sizeof(socket_option));
 
 	Client client_tmp(CLIENT, fd, sock->getPortNumber(), sock->getServer(), mKq);
 	if (fcntl(client_tmp.getFd(), F_SETFL, O_NONBLOCK) == -1)
